@@ -48,7 +48,6 @@ const NewQuestion = () => {
 	const handleSubmit = async () => {
 		console.log('HANDLE SUBMIT');
 		if (currentUser !== null) {
-
 			try {
 				const collectionRef = collection(db, 'questions');
 				if (questionTitle === '' || questionText === '') {

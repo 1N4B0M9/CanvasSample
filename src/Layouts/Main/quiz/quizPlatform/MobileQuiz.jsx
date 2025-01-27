@@ -4,8 +4,7 @@ import Box from '@mui/material/Box';
 import AnswerQuiz from '../answerQuiz/answerQuiz';
 import Result from '../results';
 import questions from '../quizData/questions';
-import mobileIcon from "../../../../assets/quizImages/mobile.png";
-
+import mobileIcon from '../../../../assets/quizImages/mobile.png';
 
 export default function MobileQuiz() {
 	const [result, setResult] = useState(null);
@@ -24,4 +23,3 @@ export default function MobileQuiz() {
 		</div>
 	);
 }
-

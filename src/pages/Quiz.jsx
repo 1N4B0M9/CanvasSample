@@ -1,14 +1,8 @@
 import QuizLayout from '../Layouts/Main/quiz';
 
 export default function Quiz() {
-
 	return <QuizLayout />;
-
 }
-
-
-
-
 
 // Old Code
 

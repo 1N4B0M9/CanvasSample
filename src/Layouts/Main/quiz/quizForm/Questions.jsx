@@ -14,7 +14,7 @@ const Question = ({ platform }) => {
 	const [difficulty, setDifficulty] = useState('easy');
 
 	const handleNext = () => {
-		const correctOption = currentQuestion.options.find(option => option.isCorrect);
+		const correctOption = currentQuestion.options.find((option) => option.isCorrect);
 		const isCorrect = selectedOption === correctOption.label;
 
 		let nextDifficulty;

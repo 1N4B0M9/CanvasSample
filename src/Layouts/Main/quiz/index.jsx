@@ -20,9 +20,7 @@ export default function QuizLayout() {
 		<>
 			<div className="flex flex-col w-full bg-blue-500 py-8 text-center">
 				<p className="text-2xl md:text-6xl mb-4">Don’t know where to start?</p>
-				<p className="md:text-4xl">
-					No worries! Take this quiz to get your personal suggestion!
-				</p>
+				<p className="md:text-4xl">No worries! Take this quiz to get your personal suggestion!</p>
 			</div>
 			<div className="max-w-lg mx-auto bg-white p-8 shadow-md rounded mt-8">
 				<form onSubmit={handleSubmit}>
@@ -66,5 +64,5 @@ export default function QuizLayout() {
 				</form>
 			</div>
 		</>
-	)
+	);
 }

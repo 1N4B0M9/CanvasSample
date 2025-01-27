@@ -18,6 +18,7 @@ import Quiz from './pages/Quiz';
 import Help from './pages/QuestionsPage';
 import QuestionDisplay from './Layouts/Main/FAQ/QuestionDisplay/index';
 import AddQuizQuestions from './pages/AddQuizQuestions';
+import Canvas from './pages/Canvas';
 
 const components = {
 	home: Home,
@@ -40,6 +41,7 @@ const components = {
 	updateVideo: UpdateVideo,
 	helpManager: HelpManager,
 	addQuizQuestions: AddQuizQuestions,
+	canvas: Canvas,
 };
 
 export default components;

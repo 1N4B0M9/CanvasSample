@@ -19,6 +19,7 @@ const PATHS = {
 	updateVideo: '/updateVideo/:videoId/:editType',
 	helpManager: '/helpManager',
 	addQuizQuestions: '/addQuizQuestions',
+	canvas: '/Canvas',
 };
 
 export default PATHS;
