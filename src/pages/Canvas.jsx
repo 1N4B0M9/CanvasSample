@@ -1,137 +1,198 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Stage, Layer, Image, Transformer } from 'react-konva';
+import React, { useState, useRef } from 'react';
+import CanvasElement from '../components/Canvas/CanvasElement';
+import SidePanel from '../components/Canvas/SidePanel';
 
-function Canvas() {
-	const [images, setImages] = useState([]);
-	const [selectedImageId, setSelectedImageId] = useState(null);
-	const stageRef = useRef(null);
-	const transformerRef = useRef(null);
-	const layerRef = useRef(null);
+const CustomCanvas = () => {
+	const [elements, setElements] = useState([]);
+	const [selectedId, setSelectedId] = useState(null);
+	const [isDragging, setIsDragging] = useState(false);
+	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+	const [isScaling, setIsScaling] = useState(false);
+	const canvasRef = useRef(null);
+	const scaleRef = useRef(null);
 
-	// Function to handle image drop
+	const handleAddText = () => {
+		const newText = {
+			id: Date.now().toString(),
+			type: 'text',
+			content: 'Double click to edit',
+			x: 100,
+			y: 100,
+			rotation: 0,
+			scale: 1,
+			fontSize: 16,
+			color: 'black',
+		};
+		setElements((prev) => [...prev, newText]);
+		setSelectedId(newText.id);
+	};
+
 	const handleDrop = (e) => {
 		e.preventDefault();
-		const stage = stageRef.current;
-		const { x, y } = stage.getPointerPosition();
-
 		const file = e.dataTransfer.files[0];
+		if (!file || !file.type.startsWith('image/')) return;
+
+		const rect = canvasRef.current.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+
 		const reader = new FileReader();
-		reader.onload = function () {
-			const img = new window.Image();
-			img.src = reader.result;
-			img.onload = function () {
-				const newImage = {
-					id: images.length.toString(),
-					x,
-					y,
-					img,
-					isDragging: false,
-					rotation: 0,
-					scaleX: 1,
-					scaleY: 1,
-				};
-				setImages([...images, newImage]);
+		reader.onload = (event) => {
+			const newImage = {
+				id: Date.now().toString(),
+				type: 'image',
+				content: event.target.result,
+				x,
+				y,
+				rotation: 0,
+				scale: 1,
 			};
+			setElements((prev) => [...prev, newImage]);
 		};
 		reader.readAsDataURL(file);
 	};
 
-	// Function to handle dragging start
-	const handleDragStart = (e) => {
-		const id = e.target.id();
-		setSelectedImageId(id);
-		setImages(
-			images.map((image) => ({
-				...image,
-				isDragging: image.id === id,
-			})),
-		);
-	};
-	//handle delete
-	/*const handleDelete = (e) => {
-		const id = e.target.id();
-		setSelectedImageId(id);
-
-
-	}*/
-
-	// Function to handle dragging end
-	const handleDragEnd = () => {
-		setImages(
-			images.map((image) => ({
-				...image,
-				isDragging: false,
-			})),
-		);
-	};
-
-	// Function to update image transformations (resize, rotate)
-	const handleTransformEnd = (e) => {
-		const node = e.target;
-		const id = node.id();
-
-		const updatedImages = images.map((img) => {
-			if (img.id === id) {
-				return {
-					...img,
-					x: node.x(),
-					y: node.y(),
-					rotation: node.rotation(),
-					scaleX: node.scaleX(),
-					scaleY: node.scaleY(),
-				};
-			}
-			return img;
-		});
-
-		setImages(updatedImages);
-	};
-
-	// Attach the transformer to the selected image
-	useEffect(() => {
-		if (selectedImageId) {
-			const selectedNode = layerRef.current.findOne(`#${selectedImageId}`);
-			transformerRef.current.nodes([selectedNode]);
-			transformerRef.current.getLayer().batchDraw();
+	const handleMouseDown = (e) => {
+		if (e.target === canvasRef.current) {
+			setSelectedId(null);
+			return;
 		}
-	}, [selectedImageId]);
+
+		if (!isScaling) {
+			const rect = canvasRef.current.getBoundingClientRect();
+			setIsDragging(true);
+			setDragStart({
+				x: e.clientX - rect.left,
+				y: e.clientY - rect.top,
+			});
+		}
+	};
+
+	const handleMouseMove = (e) => {
+		if (!canvasRef.current) return;
+		const rect = canvasRef.current.getBoundingClientRect();
+
+		if (isDragging && selectedId) {
+			const x = e.clientX - rect.left;
+			const y = e.clientY - rect.top;
+
+			setElements((prev) =>
+				prev.map((el) =>
+					el.id === selectedId
+						? {
+								...el,
+								x: el.x + (x - dragStart.x),
+								y: el.y + (y - dragStart.y),
+							}
+						: el,
+				),
+			);
+			setDragStart({ x, y });
+		} else if (isScaling && scaleRef.current) {
+			const { elementId, corner, centerX, centerY, initialScale, initialWidth, initialHeight } = scaleRef.current;
+
+			const currentX = e.clientX;
+			const currentY = e.clientY;
+
+			// Calculate distance from center to current mouse position
+			const dx = currentX - centerX;
+			const dy = currentY - centerY;
+			const distance = Math.sqrt(dx * dx + dy * dy);
+
+			// Calculate initial distance from center to corner
+			const initialDx = corner.includes('e') ? initialWidth / 2 : -initialWidth / 2;
+			const initialDy = corner.includes('s') ? initialHeight / 2 : -initialHeight / 2;
+			const initialDistance = Math.sqrt(initialDx * initialDx + initialDy * initialDy);
+
+			// Calculate scale factor
+			const scaleFactor = distance / initialDistance;
+			const newScale = initialScale * scaleFactor;
+
+			// Update element scale with limits
+			setElements((prev) =>
+				prev.map((el) =>
+					el.id === elementId
+						? {
+								...el,
+								scale: Math.max(0.2, Math.min(5, newScale)),
+							}
+						: el,
+				),
+			);
+		}
+	};
+
+	const handleMouseUp = () => {
+		setIsDragging(false);
+		setIsScaling(false);
+		scaleRef.current = null;
+	};
+
+	const handleWheel = (e) => {
+		if (!selectedId) return;
+		e.preventDefault();
+
+		setElements((prev) =>
+			prev.map((el) => {
+				if (el.id === selectedId) {
+					const scaleChange = e.deltaY > 0 ? 0.9 : 1.1;
+					const newScale = el.scale * scaleChange;
+					return {
+						...el,
+						scale: Math.max(0.2, Math.min(5, newScale)),
+					};
+				}
+				return el;
+			}),
+		);
+	};
+
+	const handleUpdateElement = (updatedElement) => {
+		setElements((prev) => prev.map((el) => (el.id === updatedElement.id ? updatedElement : el)));
+	};
+
+	const handleDeleteElement = (id) => {
+		setElements((prev) => prev.filter((el) => el.id !== id));
+		setSelectedId(null);
+	};
+
+	const handleScaleStart = (elementId, scaleInfo, event) => {
+		setIsScaling(true);
+		scaleRef.current = {
+			elementId,
+			...scaleInfo,
+		};
+	};
 
 	return (
-		<div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} style={{ width: '100%', height: '100vh' }}>
-			<Stage width={window.innerWidth} height={window.innerHeight} ref={stageRef}>
-				<Layer ref={layerRef}>
-					{images.map((image) => (
-						<Image
-							key={image.id}
-							id={image.id}
-							x={image.x}
-							y={image.y}
-							image={image.img}
-							draggable
-							rotation={image.rotation}
-							scaleX={image.scaleX}
-							scaleY={image.scaleY}
-							onClick={() => setSelectedImageId(image.id)}
-							onTap={() => setSelectedImageId(image.id)}
-							onDragStart={handleDragStart}
-							onDragEnd={handleDragEnd}
-							onTransformEnd={handleTransformEnd} // To handle resize/rotation end
-						/>
-					))}
-					<Transformer
-						ref={transformerRef}
-						boundBoxFunc={(oldBox, newBox) => {
-							// limit resize
-							if (newBox.width < 30 || newBox.height < 30) {
-								return oldBox;
-							}
-							return newBox;
-						}}
+		<div className="relative w-full h-screen">
+			<SidePanel handleAddText={handleAddText} />
+
+			<div
+				ref={canvasRef}
+				className="w-full h-full bg-white overflow-hidden"
+				onDrop={handleDrop}
+				onDragOver={(e) => e.preventDefault()}
+				onMouseDown={handleMouseDown}
+				onMouseMove={handleMouseMove}
+				onMouseUp={handleMouseUp}
+				onMouseLeave={handleMouseUp}
+				onWheel={handleWheel}
+			>
+				{elements.map((element) => (
+					<CanvasElement
+						key={element.id}
+						element={element}
+						isSelected={selectedId === element.id}
+						onSelect={setSelectedId}
+						onUpdate={handleUpdateElement}
+						onDelete={handleDeleteElement}
+						onScaleStart={handleScaleStart}
 					/>
-				</Layer>
-			</Stage>
+				))}
+			</div>
 		</div>
 	);
-}
+};
 
-export default Canvas;
+export default CustomCanvas;
