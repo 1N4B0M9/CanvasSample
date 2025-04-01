@@ -16,7 +16,7 @@ const CustomCanvas = () => {
 			id: Date.now().toString(),
 			type: 'text',
 			content: 'Double click to edit',
-			x: 100,
+			x: 400,
 			y: 100,
 			rotation: 0,
 			scale: 1,
@@ -26,6 +26,35 @@ const CustomCanvas = () => {
 		setElements((prev) => [...prev, newText]);
 		setSelectedId(newText.id);
 	};
+	const addImage = async (image, key) => {
+		try {
+			await fetch(`${image.downloadLink}?client_id=${key}`);
+
+		} catch (err) {
+			console.error('Error triggering download:', err);
+		}
+		console.log(key)
+
+		const img = new window.Image();
+		img.crossOrigin = 'anonymous';
+		img.src = image.url;
+
+		img.onload = () => {
+			const newImage = {
+				id: Date.now().toString(),
+				type: 'image',
+				content: img.src,
+				x: 500,
+				y: 100,
+				rotation: 0,
+				scale: 1,
+			};
+			setElements((prev) => [...prev, newImage]);
+
+		};
+	};
+
+
 
 	const handleDrop = (e) => {
 		e.preventDefault();
@@ -80,10 +109,10 @@ const CustomCanvas = () => {
 				prev.map((el) =>
 					el.id === selectedId
 						? {
-								...el,
-								x: el.x + (x - dragStart.x),
-								y: el.y + (y - dragStart.y),
-							}
+							...el,
+							x: el.x + (x - dragStart.x),
+							y: el.y + (y - dragStart.y),
+						}
 						: el,
 				),
 			);
@@ -113,9 +142,9 @@ const CustomCanvas = () => {
 				prev.map((el) =>
 					el.id === elementId
 						? {
-								...el,
-								scale: Math.max(0.2, Math.min(5, newScale)),
-							}
+							...el,
+							scale: Math.max(0.2, Math.min(5, newScale)),
+						}
 						: el,
 				),
 			);
@@ -166,7 +195,7 @@ const CustomCanvas = () => {
 
 	return (
 		<div className="relative w-full h-screen">
-			<SidePanel handleAddText={handleAddText} />
+			<SidePanel handleAddText={handleAddText} addImage={addImage} />
 
 			<div
 				ref={canvasRef}
