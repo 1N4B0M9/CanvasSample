@@ -26,6 +26,23 @@ const CustomCanvas = () => {
 		setElements((prev) => [...prev, newText]);
 		setSelectedId(newText.id);
 	};
+	const handleAddMentor = () => {
+		const newMentor = {
+			id: Date.now().toString(),
+			type: 'mentor',
+			content: 'Mentor Name',
+			image: null,
+			x: 400,
+			y: 100,
+			rotation: 0,
+			scale: 1,
+			fontSize: 16,
+			color: 'black',
+		};
+
+		setElements((prev) => [...prev, newMentor]);
+
+	};
 	const addImage = async (image, key) => {
 		try {
 			await fetch(`${image.downloadLink}?client_id=${key}`);
@@ -195,7 +212,7 @@ const CustomCanvas = () => {
 
 	return (
 		<div className="relative w-full h-screen">
-			<SidePanel handleAddText={handleAddText} addImage={addImage} />
+			<SidePanel handleAddText={handleAddText} handleAddMentor={handleAddMentor} addImage={addImage} />
 
 			<div
 				ref={canvasRef}

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import ImageSearch from "./ImageSearch";
-const SidePanel = ({ handleAddText, addImage }) => {
+const SidePanel = ({ handleAddText, handleAddMentor, addImage }) => {
 
 	const [isOpen, setIsOpen] = useState(true);
 
@@ -21,8 +21,11 @@ const SidePanel = ({ handleAddText, addImage }) => {
 				<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full mt-10 mb-2" onClick={togglePanel}>
 					Close Editing
 				</button>
-				<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full" onClick={handleAddText}>
+				<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full mb-2" onClick={handleAddText}>
 					Add Text
+				</button>
+				<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full" onClick={handleAddMentor}>
+					Add Mentor
 				</button>
 				<ImageSearch addImage={addImage} />
 

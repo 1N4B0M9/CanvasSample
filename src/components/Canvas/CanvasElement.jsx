@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import ImageElement from './ImageElement';
 import TextElement from './TextElement';
+import MentorElement from './MentorElement';
 
 const CanvasElement = ({ element, isSelected, onSelect, onUpdate, onDelete, onScaleStart }) => {
 	const [isEditing, setIsEditing] = useState(false);
@@ -8,7 +9,7 @@ const CanvasElement = ({ element, isSelected, onSelect, onUpdate, onDelete, onSc
 	const elementRef = useRef(null);
 
 	const handleDoubleClick = () => {
-		if (element.type === 'text') {
+		if (element.type === 'text' || element.type === 'mentor') {
 			setIsEditing(true);
 			setTimeout(() => {
 				textRef.current?.focus();
@@ -29,6 +30,34 @@ const CanvasElement = ({ element, isSelected, onSelect, onUpdate, onDelete, onSc
 		return `${base} ${cursors[corner]}`;
 	};
 
+	const renderElement = () => {
+		if (element.type === 'image') {
+			return <ImageElement element={element} />;
+		} else if (element.type === 'text') {
+			return (
+				<TextElement
+					element={element}
+					onUpdate={onUpdate}
+					isEditing={isEditing}
+					setIsEditing={setIsEditing}
+					textRef={textRef}
+				/>
+			);
+		} else if (element.type === 'mentor') {
+			return (
+				<MentorElement
+					element={element}
+					onUpdate={onUpdate}
+					isEditing={isEditing}
+					setIsEditing={setIsEditing}
+					textRef={textRef}
+				/>
+			);
+		} else {
+			return null;
+		}
+	};
+
 	return (
 		<div
 			ref={elementRef}
@@ -46,17 +75,7 @@ const CanvasElement = ({ element, isSelected, onSelect, onUpdate, onDelete, onSc
 			}}
 			onDoubleClick={handleDoubleClick}
 		>
-			{element.type === 'image' ? (
-				<ImageElement element={element} />
-			) : (
-				<TextElement
-					element={element}
-					onUpdate={onUpdate}
-					isEditing={isEditing}
-					setIsEditing={setIsEditing}
-					textRef={textRef}
-				/>
-			)}
+			{renderElement()}
 
 			{isSelected && (
 				<>
