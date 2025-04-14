@@ -1,198 +1,97 @@
-import React, { useState, useRef } from 'react';
-import CanvasElement from '../components/Canvas/CanvasElement';
-import SidePanel from '../components/Canvas/SidePanel';
+/**
+ * Canvas Component Module
+ *
+ * This module represents the main Canvas page of the application. It serves as a container
+ * for multiple canvas instances that users can switch between using tabs.
+ *
+ * Architecture Overview:
+ * - This component sits at the page level in the application structure
+ * - It utilizes the CanvasDataProvider context to manage and share canvas state
+ * - The component hierarchy is:
+ *   1. Canvas (main export) - Sets up the context provider with initial data
+ *   2. CanvasDataContent - Handles tab switching logic and renders the active canvas
+ *   3. CustomCanvas - The actual canvas implementation (imported from components/Canvas/Layout)
+ *
+ * The component implements a tab-based navigation system allowing users to switch between
+ * multiple canvas instances while maintaining their state within the CanvasDataProvider.
+ */
 
-const CustomCanvas = () => {
-	const [elements, setElements] = useState([]);
-	const [selectedId, setSelectedId] = useState(null);
-	const [isDragging, setIsDragging] = useState(false);
-	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-	const [isScaling, setIsScaling] = useState(false);
-	const canvasRef = useRef(null);
-	const scaleRef = useRef(null);
+import React, { useState } from 'react';
+import RenderCanvas from '../components/Canvas/Layout/RenderCanvas';
+import { CanvasDataProvider, useCanvasData } from '../components/Canvas/Utils/CanvasDataContext';
 
-	const handleAddText = () => {
-		const newText = {
-			id: Date.now().toString(),
-			type: 'text',
-			content: 'Double click to edit',
-			x: 100,
-			y: 100,
-			rotation: 0,
-			scale: 1,
-			fontSize: 16,
-			color: 'black',
-		};
-		setElements((prev) => [...prev, newText]);
-		setSelectedId(newText.id);
-	};
+/**
+ * CanvasDataContent Component
+ *
+ * This component consumes the canvas data from context and manages:
+ * - Tab navigation UI for switching between canvases
+ * - Active canvas display logic
+ * - State for tracking which canvas is currently active
+ *
+ * @returns {JSX.Element} The rendered canvas interface with tabs and active canvas
+ */
+const CanvasDataContent = () => {
+	const [activeTab, setActiveTab] = useState(0);
+	const { canvases } = useCanvasData();
 
-	const handleDrop = (e) => {
-		e.preventDefault();
-		const file = e.dataTransfer.files[0];
-		if (!file || !file.type.startsWith('image/')) return;
-
-		const rect = canvasRef.current.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
-
-		const reader = new FileReader();
-		reader.onload = (event) => {
-			const newImage = {
-				id: Date.now().toString(),
-				type: 'image',
-				content: event.target.result,
-				x,
-				y,
-				rotation: 0,
-				scale: 1,
-			};
-			setElements((prev) => [...prev, newImage]);
-		};
-		reader.readAsDataURL(file);
-	};
-
-	const handleMouseDown = (e) => {
-		if (e.target === canvasRef.current) {
-			setSelectedId(null);
-			return;
-		}
-
-		if (!isScaling) {
-			const rect = canvasRef.current.getBoundingClientRect();
-			setIsDragging(true);
-			setDragStart({
-				x: e.clientX - rect.left,
-				y: e.clientY - rect.top,
-			});
-		}
-	};
-
-	const handleMouseMove = (e) => {
-		if (!canvasRef.current) return;
-		const rect = canvasRef.current.getBoundingClientRect();
-
-		if (isDragging && selectedId) {
-			const x = e.clientX - rect.left;
-			const y = e.clientY - rect.top;
-
-			setElements((prev) =>
-				prev.map((el) =>
-					el.id === selectedId
-						? {
-								...el,
-								x: el.x + (x - dragStart.x),
-								y: el.y + (y - dragStart.y),
-							}
-						: el,
-				),
-			);
-			setDragStart({ x, y });
-		} else if (isScaling && scaleRef.current) {
-			const { elementId, corner, centerX, centerY, initialScale, initialWidth, initialHeight } = scaleRef.current;
-
-			const currentX = e.clientX;
-			const currentY = e.clientY;
-
-			// Calculate distance from center to current mouse position
-			const dx = currentX - centerX;
-			const dy = currentY - centerY;
-			const distance = Math.sqrt(dx * dx + dy * dy);
-
-			// Calculate initial distance from center to corner
-			const initialDx = corner.includes('e') ? initialWidth / 2 : -initialWidth / 2;
-			const initialDy = corner.includes('s') ? initialHeight / 2 : -initialHeight / 2;
-			const initialDistance = Math.sqrt(initialDx * initialDx + initialDy * initialDy);
-
-			// Calculate scale factor
-			const scaleFactor = distance / initialDistance;
-			const newScale = initialScale * scaleFactor;
-
-			// Update element scale with limits
-			setElements((prev) =>
-				prev.map((el) =>
-					el.id === elementId
-						? {
-								...el,
-								scale: Math.max(0.2, Math.min(5, newScale)),
-							}
-						: el,
-				),
-			);
-		}
-	};
-
-	const handleMouseUp = () => {
-		setIsDragging(false);
-		setIsScaling(false);
-		scaleRef.current = null;
-	};
-
-	const handleWheel = (e) => {
-		if (!selectedId) return;
-		e.preventDefault();
-
-		setElements((prev) =>
-			prev.map((el) => {
-				if (el.id === selectedId) {
-					const scaleChange = e.deltaY > 0 ? 0.9 : 1.1;
-					const newScale = el.scale * scaleChange;
-					return {
-						...el,
-						scale: Math.max(0.2, Math.min(5, newScale)),
-					};
-				}
-				return el;
-			}),
-		);
-	};
-
-	const handleUpdateElement = (updatedElement) => {
-		setElements((prev) => prev.map((el) => (el.id === updatedElement.id ? updatedElement : el)));
-	};
-
-	const handleDeleteElement = (id) => {
-		setElements((prev) => prev.filter((el) => el.id !== id));
-		setSelectedId(null);
-	};
-
-	const handleScaleStart = (elementId, scaleInfo, event) => {
-		setIsScaling(true);
-		scaleRef.current = {
-			elementId,
-			...scaleInfo,
-		};
+	/**
+	 * Handles tab selection and updates the active canvas
+	 * @param {number} tabId - The ID of the selected canvas tab
+	 */
+	const handleTabChange = (tabId) => {
+		setActiveTab(tabId);
 	};
 
 	return (
 		<div className="relative w-full h-screen">
-			<SidePanel handleAddText={handleAddText} />
+			{/* Tab navigation - positioned in the top-right corner with z-index to stay above canvas */}
+			<div className="absolute top-4 right-4 flex space-x-2 z-10">
+				{canvases.map((canvas) => (
+					<button
+						key={canvas.id}
+						className={`px-4 py-2 rounded-lg transition-colors ${
+							activeTab === canvas.id ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+						}`}
+						onClick={() => handleTabChange(canvas.id)}
+					>
+						{canvas.name}
+					</button>
+				))}
+			</div>
 
-			<div
-				ref={canvasRef}
-				className="w-full h-full bg-white overflow-hidden"
-				onDrop={handleDrop}
-				onDragOver={(e) => e.preventDefault()}
-				onMouseDown={handleMouseDown}
-				onMouseMove={handleMouseMove}
-				onMouseUp={handleMouseUp}
-				onMouseLeave={handleMouseUp}
-				onWheel={handleWheel}
-			>
-				{elements.map((element) => (
-					<CanvasElement
-						key={element.id}
-						element={element}
-						isSelected={selectedId === element.id}
-						onSelect={setSelectedId}
-						onUpdate={handleUpdateElement}
-						onDelete={handleDeleteElement}
-						onScaleStart={handleScaleStart}
-					/>
+			{/* Canvas container - only shows the currently active canvas */}
+			<div className="w-full h-full">
+				{canvases.map((canvas) => (
+					<div key={canvas.id} className={`w-full h-full ${activeTab === canvas.id ? 'block' : 'hidden'}`}>
+						<RenderCanvas canvasId={canvas.id} />
+					</div>
 				))}
 			</div>
 		</div>
 	);
 };
 
-export default CustomCanvas;
+/**
+ * Canvas Component (Main Export)
+ *
+ * This is the main page component that:
+ * - Sets up the initial canvas data (currently 3 canvases with simple names)
+ * - Provides the CanvasDataProvider context to child components
+ * - Renders the CanvasDataContent with appropriate context
+ *
+ * @returns {JSX.Element} The fully contextualized canvas page
+ */
+export default function Canvas() {
+	// Initial canvas configuration with three default canvases
+	const initialCanvases = [
+		{ id: 0, name: '1' },
+		{ id: 1, name: '2' },
+		{ id: 2, name: '3' },
+	];
+
+	return (
+		<CanvasDataProvider initialCanvases={initialCanvases}>
+			<CanvasDataContent />
+		</CanvasDataProvider>
+	);
+}
