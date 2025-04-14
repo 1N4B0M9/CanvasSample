@@ -1,134 +1,108 @@
 /**
- * Shared utilities for connections, arrows, and other connection-like elements
- * Enhanced to properly handle CSS transform scale and rotation
+ * ConnectionUtils.js - Utility functions for calculating connection points between elements
+ *
+ * This version correctly aligns with how CSS transformations (rotate and scale) are applied
+ * in the CanvasElement component, ensuring connection points attach properly to visually
+ * transformed elements.
  */
 
 /**
- * Applies rotation transformation to a point
- *
- * @param {number} x - Original x coordinate
- * @param {number} y - Original y coordinate
- * @param {number} centerX - Rotation center x coordinate
- * @param {number} centerY - Rotation center y coordinate
- * @param {number} angleDeg - Rotation angle in degrees
- * @returns {Object} Rotated {x, y} coordinates
+ * Simple rotation function that rotates a point around a center
  */
 const rotatePoint = (x, y, centerX, centerY, angleDeg) => {
-	// Convert angle to radians
 	const angleRad = (angleDeg * Math.PI) / 180;
+	const dx = x - centerX;
+	const dy = y - centerY;
 
-	// Translate point to origin
-	const translatedX = x - centerX;
-	const translatedY = y - centerY;
-
-	// Rotate point
-	const rotatedX = translatedX * Math.cos(angleRad) - translatedY * Math.sin(angleRad);
-	const rotatedY = translatedX * Math.sin(angleRad) + translatedY * Math.cos(angleRad);
-
-	// Translate point back
 	return {
-		x: rotatedX + centerX,
-		y: rotatedY + centerY,
+		x: centerX + dx * Math.cos(angleRad) - dy * Math.sin(angleRad),
+		y: centerY + dx * Math.sin(angleRad) + dy * Math.cos(angleRad),
 	};
 };
 
 /**
- * Calculate the intersection point of a line with a rectangle's border
- * This accounts for both rotation and CSS scale transforms
- *
- * @param {Object} element - The element with position, dimensions, and rotation/scale
- * @param {number} fromX - Source point x coordinate
- * @param {number} fromY - Source point y coordinate
- * @returns {Object} Intersection point {x, y} on the element border
+ * Calculate the intersection point of a line from the element center to a target point
+ * with the element's border, accounting for both rotation and scaling
  */
-export const calculateElementBorderIntersection = (element, fromX, fromY) => {
-	// With CSS transforms, the base dimensions remain unchanged - the visual size changes
-	const baseWidth = element.width;
-	const baseHeight = element.height;
+export const calculateElementBorderIntersection = (element, targetX, targetY) => {
+	// Get basic element properties
+	const { x, y, width, height, rotation = 0, scale = 1 } = element;
 
-	// Calculate the visual scale - this matches how it's applied in CSS
-	const scale = element.scale || 1;
+	// Calculate center of element (transform origin)
+	const centerX = x + width / 2;
+	const centerY = y + height / 2;
 
-	// Calculate visual width and height after scaling
-	const scaledWidth = baseWidth * scale;
-	const scaledHeight = baseHeight * scale;
+	// Step 1: Inverse-transform the target point to account for element's rotation
+	// This converts the target to the element's local coordinate system before rotation
+	let localTargetX = targetX;
+	let localTargetY = targetY;
 
-	// Important: In CSS transforms, the position (x,y) remains at the top-left,
-	// but the scaling happens from the center
-
-	// Calculate actual center point (accounting for the fact that scaling happens from center)
-	const centerX = element.x + baseWidth / 2;
-	const centerY = element.y + baseHeight / 2;
-
-	// If element has rotation, transform the source point to element's coordinate system
-	let localFromX = fromX;
-	let localFromY = fromY;
-
-	if (element.rotation !== 0) {
-		const rotated = rotatePoint(fromX, fromY, centerX, centerY, -element.rotation);
-		localFromX = rotated.x;
-		localFromY = rotated.y;
+	if (rotation !== 0) {
+		const rotated = rotatePoint(targetX, targetY, centerX, centerY, -rotation);
+		localTargetX = rotated.x;
+		localTargetY = rotated.y;
 	}
 
-	// Calculate vector from center to the source point
-	const dx = localFromX - centerX;
-	const dy = localFromY - centerY;
+	// Step 2: Calculate the vector from center to the inverse-transformed target
+	const dx = localTargetX - centerX;
+	const dy = localTargetY - centerY;
 
-	// Normalize direction vector
-	const length = Math.sqrt(dx * dx + dy * dy);
-	const dirX = length > 0 ? dx / length : 1;
-	const dirY = length > 0 ? dy / length : 0;
+	// Normalize the direction vector
+	const distance = Math.sqrt(dx * dx + dy * dy);
+	const dirX = distance !== 0 ? dx / distance : 1; // Default to right if at center
+	const dirY = distance !== 0 ? dy / distance : 0;
 
-	// Calculate the half dimensions of the scaled element
-	const halfScaledWidth = scaledWidth / 2;
-	const halfScaledHeight = scaledHeight / 2;
+	// Step 3: Calculate the unscaled half-width and half-height
+	const halfWidth = (width * scale) / 2;
+	const halfHeight = (height * scale) / 2;
 
-	// Calculate the intersection with the border
-	// We compute how far along the direction vector we need to go to hit the border
-	const tx = dirX !== 0 ? Math.abs(halfScaledWidth / dirX) : Infinity;
-	const ty = dirY !== 0 ? Math.abs(halfScaledHeight / dirY) : Infinity;
+	// Step 4: Calculate the distance from center to border along the direction vector
 
-	// Take the smaller of tx and ty to get the first intersection
-	const t = Math.min(tx, ty);
+	// For each axis, calculate t values where ray intersects with rectangle borders
+	const tValues = [];
 
-	// Use the sign of the direction to determine which side we're hitting
-	// For x: positive = right border, negative = left border
-	// For y: positive = bottom border, negative = top border
-	const signX = Math.sign(dirX);
-	const signY = Math.sign(dirY);
-
-	// Calculate the intersection point based on whether we're hitting the vertical or horizontal edge
-	let intersectX;
-	let intersectY;
-
-	if (t === tx) {
-		// Hitting left or right edge
-		intersectX = centerX + signX * halfScaledWidth;
-		intersectY = centerY + dirY * t;
-	} else {
-		// Hitting top or bottom edge
-		intersectX = centerX + dirX * t;
-		intersectY = centerY + signY * halfScaledHeight;
+	// Horizontal borders
+	if (dirY !== 0) {
+		tValues.push((halfHeight / Math.abs(dirY)) * (dirY > 0 ? 1 : -1));
+		tValues.push((-halfHeight / Math.abs(dirY)) * (dirY > 0 ? 1 : -1));
 	}
 
-	// If element has rotation, rotate the intersection point back to world coordinates
-	if (element.rotation !== 0) {
-		const rotated = rotatePoint(intersectX, intersectY, centerX, centerY, element.rotation);
+	// Vertical borders
+	if (dirX !== 0) {
+		tValues.push((halfWidth / Math.abs(dirX)) * (dirX > 0 ? 1 : -1));
+		tValues.push((-halfWidth / Math.abs(dirX)) * (dirX > 0 ? 1 : -1));
+	}
+
+	// Find the smallest positive t value (closest intersection in ray direction)
+	let t = Infinity;
+	for (const tVal of tValues) {
+		if (tVal > 0 && tVal < t) {
+			t = tVal;
+		}
+	}
+
+	// If no intersection found (shouldn't happen), use the center
+	if (!isFinite(t)) {
+		return { x: centerX, y: centerY };
+	}
+
+	// Step 5: Calculate the intersection point in unrotated space
+	let intersectX = centerX + dirX * t;
+	let intersectY = centerY + dirY * t;
+
+	// Step 6: Apply rotation to the intersection point to get world coordinates
+	if (rotation !== 0) {
+		const rotated = rotatePoint(intersectX, intersectY, centerX, centerY, rotation);
 		intersectX = rotated.x;
 		intersectY = rotated.y;
 	}
 
+	// Return the final intersection point
 	return { x: intersectX, y: intersectY };
 };
 
 /**
  * Calculate the coordinates for a connection between two elements
- * Improved to handle both rotation and CSS scale transforms
- *
- * @param {Array} elements - Array of all canvas elements
- * @param {string} startId - ID of the starting element
- * @param {string} endId - ID of the ending element
- * @returns {Object|null} Connection points or null if elements not found
  */
 export const calculateConnectionPoints = (elements, startId, endId) => {
 	const startElement = elements.find((el) => el.id === startId);
@@ -142,7 +116,7 @@ export const calculateConnectionPoints = (elements, startId, endId) => {
 	const endCenterX = endElement.x + endElement.width / 2;
 	const endCenterY = endElement.y + endElement.height / 2;
 
-	// Calculate intersection points on element borders
+	// Calculate the intersection points
 	const startPoint = calculateElementBorderIntersection(startElement, endCenterX, endCenterY);
 	const endPoint = calculateElementBorderIntersection(endElement, startCenterX, startCenterY);
 
@@ -162,11 +136,6 @@ export const calculateConnectionPoints = (elements, startId, endId) => {
 
 /**
  * Calculate the coordinates for a temporary connection from an element to the mouse
- *
- * @param {Object} element - The element data
- * @param {number} mouseX - Mouse X position
- * @param {number} mouseY - Mouse Y position
- * @returns {Object|null} Connection points or null if element not found
  */
 export const calculateTempConnectionPoints = (element, mouseX, mouseY) => {
 	if (!element) return null;
@@ -189,12 +158,6 @@ export const calculateTempConnectionPoints = (element, mouseX, mouseY) => {
 
 /**
  * Calculate arrowhead points for directional connections
- *
- * @param {number} endX - Arrow end X coordinate
- * @param {number} endY - Arrow end Y coordinate
- * @param {number} angle - Arrow angle in radians
- * @param {number} size - Arrow size
- * @returns {Object} Arrow points coordinates
  */
 export const calculateArrowHead = (endX, endY, angle, size = 12) => {
 	const arrowAngle = Math.PI / 6; // 30 degrees

@@ -163,6 +163,7 @@ const CanvasElement = ({
 						isEditing={isEditing}
 						setIsEditing={setIsEditing}
 						textRef={textRef}
+						isSelected={isSelected}
 					/>
 				) : (
 					<TextElement
@@ -217,32 +218,6 @@ const CanvasElement = ({
 					>
 						<button
 							className="p-1 bg-white rounded shadow hover:bg-gray-100"
-							onClick={(e) => {
-								e.stopPropagation();
-								onUpdate({
-									...element,
-									rotation: element.rotation - 90,
-								});
-							}}
-						>
-							↺
-						</button>
-
-						<button
-							className="p-1 bg-white rounded shadow hover:bg-gray-100"
-							onClick={(e) => {
-								e.stopPropagation();
-								onUpdate({
-									...element,
-									rotation: element.rotation + 90,
-								});
-							}}
-						>
-							↻
-						</button>
-
-						<button
-							className="p-1 bg-white rounded shadow hover:bg-gray-100"
 							onClick={handleStartConnection}
 							title="Connect to another element"
 						>
@@ -274,3 +249,31 @@ const CanvasElement = ({
 };
 
 export default CanvasElement;
+
+/*
+<button
+							className="p-1 bg-white rounded shadow hover:bg-gray-100"
+							onClick={(e) => {
+								e.stopPropagation();
+								onUpdate({
+									...element,
+									rotation: element.rotation - 90,
+								});
+							}}
+						>
+							↺
+						</button>
+
+						<button
+							className="p-1 bg-white rounded shadow hover:bg-gray-100"
+							onClick={(e) => {
+								e.stopPropagation();
+								onUpdate({
+									...element,
+									rotation: element.rotation + 90,
+								});
+							}}
+						>
+							↻
+						</button>
+						*/

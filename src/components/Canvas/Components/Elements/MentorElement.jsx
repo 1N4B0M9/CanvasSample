@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import ImageElement from './ImageElement';
 
-const MentorElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) => {
+const MentorElement = ({ element, onUpdate, isEditing, setIsEditing, textRef, isSelected }) => {
 	const handleBlur = () => {
 		setIsEditing(false);
 	};
@@ -37,18 +37,22 @@ const MentorElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) 
 					className="hidden"
 					id={`image-upload-${element.id}`}
 				/>
-				<label
-					htmlFor={`image-upload-${element.id}`}
-					className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer shadow"
-				>
-					Select Image
-				</label>
+
+				{/* Only show the Select Image button if there's no image and element is selected */}
+				{(!element.image || isSelected) && (
+					<label
+						htmlFor={`image-upload-${element.id}`}
+						className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer shadow"
+					>
+						Select Image
+					</label>
+				)}
+
 				{element.image && (
-					// <ImageElement element={element.image} />
 					<img
 						src={element.image}
 						alt="Selected"
-						className="max-w-xs rounded shadow w-48 h-48 object-contain"
+						className="max-w-xs rounded  w-48 h-48 object-contain"
 						draggable={false}
 					/>
 				)}
@@ -84,4 +88,5 @@ const MentorElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) 
 		</>
 	);
 };
+
 export default MentorElement;

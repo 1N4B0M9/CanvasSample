@@ -14,7 +14,7 @@ const TextElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) =>
 	};
 
 	return (
-		<div className="min-w-[100px] min-h-[40px] p-2" data-element-id={element.id}>
+		<div className="min-h-[40px] p-2" data-element-id={element.id}>
 			{isEditing ? (
 				<textarea
 					ref={textRef}
