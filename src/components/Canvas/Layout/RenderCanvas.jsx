@@ -1,5 +1,8 @@
 /**
  * Updated RenderCanvas Component with SidePanel Integration
+ *
+ * This version ensures all changes to canvas elements and connections
+ * are correctly saved to Firestore through the CanvasContext integration.
  */
 
 import React, { useEffect } from 'react';
@@ -112,10 +115,6 @@ const CanvasContent = () => {
 		addMentorElement(centerX, centerY);
 	};
 
-	/**
-	 * Updated handleAddImage Function in RenderCanvas
-	 */
-
 	const handleAddImage = (imageData, apiKey) => {
 		if (!canvasRef.current) return;
 
@@ -168,6 +167,16 @@ const CanvasContent = () => {
 	);
 };
 
+/**
+ * RenderCanvas Component
+ *
+ * This component wraps the CanvasContent in a CanvasProvider
+ * to provide the necessary context and connection to Firestore.
+ *
+ * @param {Object} props - Component props
+ * @param {number|string} props.canvasId - ID of the canvas to render
+ * @returns {JSX.Element} - Rendered canvas with context
+ */
 const RenderCanvas = ({ canvasId }) => (
 	<CanvasProvider canvasId={canvasId}>
 		<CanvasContent />

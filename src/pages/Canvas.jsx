@@ -16,9 +16,12 @@
  * multiple canvas instances while maintaining their state within the CanvasDataProvider.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { doc, getDoc, collection } from 'firebase/firestore';
 import RenderCanvas from '../components/Canvas/Layout/RenderCanvas';
 import { CanvasDataProvider, useCanvasData } from '../components/Canvas/Utils/CanvasDataContext';
+import { db } from '../firebase/firebase'; // Ensure this path is correct
+import { useAuth } from '../firebase/AuthContext'; // Import auth context (ensure path is correct)
 
 /**
  * CanvasDataContent Component
@@ -75,22 +78,55 @@ const CanvasDataContent = () => {
  * Canvas Component (Main Export)
  *
  * This is the main page component that:
- * - Sets up the initial canvas data (currently 3 canvases with simple names)
+ * - Sets up the initial canvas data (3 canvases with simple names by default)
+ * - Loads canvas data from Firestore if user is logged in
  * - Provides the CanvasDataProvider context to child components
  * - Renders the CanvasDataContent with appropriate context
  *
  * @returns {JSX.Element} The fully contextualized canvas page
  */
 export default function Canvas() {
-	// Initial canvas configuration with three default canvases
-	const initialCanvases = [
-		{ id: 0, name: '1' },
-		{ id: 1, name: '2' },
-		{ id: 2, name: '3' },
+	// Default initial canvas configuration (used when no user is logged in or no saved data)
+	const defaultCanvases = [
+		{ id: 0, name: '1', data: { elements: [], connections: [] } },
+		{ id: 1, name: '2', data: { elements: [], connections: [] } },
+		{ id: 2, name: '3', data: { elements: [], connections: [] } },
 	];
 
+	const [initialCanvases, setInitialCanvases] = useState(defaultCanvases);
+	const [loading, setLoading] = useState(true);
+	const { currentUser } = useAuth(); // Get current user from auth context
+
+	// Load canvas data from Firestore when component mounts or user changes
+	useEffect(() => {
+		async function loadCanvasData() {
+			setLoading(true);
+
+			if (currentUser) {
+				try {
+					const canvasDocRef = doc(db, 'canvas', currentUser.uid);
+					const canvasDocSnap = await getDoc(canvasDocRef);
+
+					if (canvasDocSnap.exists() && canvasDocSnap.data().canvases) {
+						setInitialCanvases(canvasDocSnap.data().canvases);
+					}
+				} catch (error) {
+					console.error('Error loading canvas data:', error);
+				}
+			}
+
+			setLoading(false);
+		}
+
+		loadCanvasData();
+	}, [currentUser]);
+
+	if (loading) {
+		return <div className="flex justify-center items-center h-screen">Loading...</div>;
+	}
+
 	return (
-		<CanvasDataProvider initialCanvases={initialCanvases}>
+		<CanvasDataProvider initialCanvases={initialCanvases} currentUser={currentUser}>
 			<CanvasDataContent />
 		</CanvasDataProvider>
 	);

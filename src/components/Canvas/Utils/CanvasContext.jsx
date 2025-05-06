@@ -1,8 +1,12 @@
 /**
- * Updated CanvasContext with Mentor Element and Image Support
+ * CanvasContext Integration with CanvasDataContext
+ *
+ * This module updates the CanvasContext to sync data with the parent CanvasDataContext
+ * to ensure elements and connections are saved to Firestore.
  */
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { useCanvasData } from './CanvasDataContext';
 import useElementOperations from './useElementOperations';
 import useConnectionOperations from './useConnectionOperations';
 
@@ -20,6 +24,10 @@ export const useCanvas = () => {
 
 // Canvas provider component
 export const CanvasProvider = ({ children, canvasId }) => {
+	// Get the canvasData context to sync with Firestore
+	const canvasDataContext = useCanvasData();
+	const { updateCanvas } = canvasDataContext;
+
 	// State
 	const [elements, setElements] = useState([]);
 	const [connections, setConnections] = useState([]);
@@ -35,38 +43,92 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 	// Refs
 	const canvasRef = useRef(null);
+	const saveTimeoutRef = useRef(null);
 
-	// Custom hooks for operations
+	// Load canvas data from CanvasDataContext on mount
+	useEffect(() => {
+		const { canvases } = canvasDataContext;
+		const canvas = canvases.find((c) => c.id === canvasId);
+
+		if (canvas && canvas.data) {
+			if (canvas.data.elements) {
+				setElements(canvas.data.elements);
+			}
+
+			if (canvas.data.connections) {
+				setConnections(canvas.data.connections);
+			}
+
+			if (canvas.data.arrows) {
+				setArrows(canvas.data.arrows);
+			}
+		}
+	}, [canvasId, canvasDataContext]);
+
+	// Save to CanvasDataContext whenever elements, connections, or arrows change
+	useEffect(() => {
+		// Clear any existing timeout
+		if (saveTimeoutRef.current) {
+			clearTimeout(saveTimeoutRef.current);
+		}
+
+		// Set a new timeout to debounce saves
+		saveTimeoutRef.current = setTimeout(() => {
+			const canvasData = {
+				elements,
+				connections,
+				arrows,
+			};
+
+			console.log('Saving canvas data:', canvasData);
+			updateCanvas(canvasId, canvasData);
+		}, 500); // 500ms debounce
+
+		// Clean up the timeout on unmount
+		return () => {
+			if (saveTimeoutRef.current) {
+				clearTimeout(saveTimeoutRef.current);
+			}
+		};
+	}, [elements, connections, arrows, canvasId, updateCanvas]);
+
+	// Create enhanced versions of setElements and setConnections that ensure updates are saved
+	const setElementsWithSave = useCallback((newElementsOrFn) => {
+		// Handle both direct value and function updater pattern
+		setElements(newElementsOrFn);
+	}, []);
+
+	const setConnectionsWithSave = useCallback((newConnectionsOrFn) => {
+		// Handle both direct value and function updater pattern
+		setConnections(newConnectionsOrFn);
+	}, []);
+
+	const setArrowsWithSave = useCallback((newArrowsOrFn) => {
+		// Handle both direct value and function updater pattern
+		setArrows(newArrowsOrFn);
+	}, []);
+
+	// Custom hooks for operations with enhanced setters
 	const elementOps = useElementOperations(
 		elements,
-		setElements,
+		setElementsWithSave,
 		selectedId,
 		setSelectedId,
 		connections,
-		setConnections,
+		setConnectionsWithSave,
 	);
 
 	const connectionOps = useConnectionOperations(
 		elements,
 		connections,
-		setConnections,
+		setConnectionsWithSave,
 		selectedConnectionId,
 		setSelectedConnectionId,
 	);
 
 	/**
 	 * Add a local image from file upload
-	 *
-	 * @param {File} file - The image file to add
-	 * @param {number} x - The x position on canvas
-	 * @param {number} y - The y position on canvas
-	 * @returns {string} The ID of the created element
 	 */
-	/**
-	 * Fixed addImageElement function - Guaranteed to work
-	 */
-
-	// Add a local image from file upload - simple and direct implementation
 	const addImageElement = useCallback(
 		(file, x = 100, y = 100) => {
 			if (!file) {
@@ -102,14 +164,14 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			console.log('Created image element:', newElement);
 
 			// Add the element to the canvas immediately with the guaranteed dimensions
-			setElements((prevElements) => [...prevElements, newElement]);
+			setElementsWithSave((prevElements) => [...prevElements, newElement]);
 			setSelectedId(newElement.id);
 			return newElement.id;
 		},
-		[setElements, setSelectedId],
+		[setElementsWithSave, setSelectedId],
 	);
 
-	// For addImageFromSearch in CanvasContext.js:
+	// For addImageFromSearch
 	const addImageFromSearch = useCallback(
 		(imageData, x = 100, y = 100) => {
 			console.log('Adding Unsplash image to canvas:', imageData);
@@ -140,35 +202,38 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			console.log('Created Unsplash image element:', newElement);
 
 			// Add directly to canvas with guaranteed dimensions
-			setElements((prevElements) => [...prevElements, newElement]);
+			setElementsWithSave((prevElements) => [...prevElements, newElement]);
 			setSelectedId(newElement.id);
 			return newElement.id;
 		},
-		[setElements, setSelectedId],
+		[setElementsWithSave, setSelectedId],
 	);
 
 	// Add a new mentor element
-	const addMentorElement = useCallback((x = 100, y = 100) => {
-		const newElement = {
-			id: `mentor-${Date.now()}`,
-			type: 'mentor',
-			content: 'Double-click to edit mentor content',
-			image: null,
-			x,
-			y,
-			width: 200,
-			height: 250,
-			rotation: 0,
-			scale: 1,
-			fontSize: 16,
-			fontFamily: 'Arial',
-			color: '#000000',
-		};
+	const addMentorElement = useCallback(
+		(x = 100, y = 100) => {
+			const newElement = {
+				id: `mentor-${Date.now()}`,
+				type: 'mentor',
+				content: 'Double-click to edit mentor content',
+				image: null,
+				x,
+				y,
+				width: 200,
+				height: 250,
+				rotation: 0,
+				scale: 1,
+				fontSize: 16,
+				fontFamily: 'Arial',
+				color: '#000000',
+			};
 
-		setElements((prevElements) => [...prevElements, newElement]);
-		setSelectedId(newElement.id);
-		return newElement.id;
-	}, []);
+			setElementsWithSave((prevElements) => [...prevElements, newElement]);
+			setSelectedId(newElement.id);
+			return newElement.id;
+		},
+		[setElementsWithSave],
+	);
 
 	// Handle selection
 	const handleSelect = useCallback((id) => {
@@ -327,20 +392,23 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				thickness: 2,
 			};
 
-			setArrows((prev) => [...prev, newArrow]);
+			setArrowsWithSave((prev) => [...prev, newArrow]);
 
 			setIsCreatingArrow(false);
 			setArrowStart(null);
 		},
-		[isCreatingArrow, arrowStart],
+		[isCreatingArrow, arrowStart, setArrowsWithSave],
 	);
 
 	// Delete an arrow
-	const deleteArrow = useCallback((arrowId) => {
-		console.log('Deleting arrow with ID:', arrowId);
-		setArrows((prev) => prev.filter((arrow) => arrow.id !== arrowId));
-		setSelectedArrowId(null);
-	}, []);
+	const deleteArrow = useCallback(
+		(arrowId) => {
+			console.log('Deleting arrow with ID:', arrowId);
+			setArrowsWithSave((prev) => prev.filter((arrow) => arrow.id !== arrowId));
+			setSelectedArrowId(null);
+		},
+		[setArrowsWithSave],
+	);
 
 	// Toggle arrow creation mode
 	const toggleArrowMode = useCallback(() => {
@@ -379,14 +447,20 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	);
 
 	// Update connection data
-	const updateConnectionData = useCallback((connectionId, data) => {
-		setConnections((prev) => prev.map((conn) => (conn.id === connectionId ? { ...conn, data } : conn)));
-	}, []);
+	const updateConnectionData = useCallback(
+		(connectionId, data) => {
+			setConnectionsWithSave((prev) => prev.map((conn) => (conn.id === connectionId ? { ...conn, data } : conn)));
+		},
+		[setConnectionsWithSave],
+	);
 
 	// Update arrow data
-	const updateArrowData = useCallback((arrowId, data) => {
-		setArrows((prev) => prev.map((arrow) => (arrow.id === arrowId ? { ...arrow, data } : arrow)));
-	}, []);
+	const updateArrowData = useCallback(
+		(arrowId, data) => {
+			setArrowsWithSave((prev) => prev.map((arrow) => (arrow.id === arrowId ? { ...arrow, data } : arrow)));
+		},
+		[setArrowsWithSave],
+	);
 
 	// Context value
 	const value = {
