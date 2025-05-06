@@ -16,7 +16,7 @@
  * multiple canvas instances while maintaining their state within the CanvasDataProvider.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, collection } from 'firebase/firestore';
 import RenderCanvas from '../components/Canvas/Layout/RenderCanvas';
 import { CanvasDataProvider, useCanvasData } from '../components/Canvas/Utils/CanvasDataContext';
@@ -36,6 +36,7 @@ import { useAuth } from '../firebase/AuthContext'; // Import auth context (ensur
 const CanvasDataContent = () => {
 	const [activeTab, setActiveTab] = useState(0);
 	const { canvases } = useCanvasData();
+	const contentRef = useRef(null);
 
 	/**
 	 * Handles tab selection and updates the active canvas
@@ -43,10 +44,16 @@ const CanvasDataContent = () => {
 	 */
 	const handleTabChange = (tabId) => {
 		setActiveTab(tabId);
+		// Scroll to top when changing canvas tabs
+		window.scrollTo(0, 0);
+		// Also ensure the content container is scrolled to top
+		if (contentRef.current) {
+			contentRef.current.scrollTop = 0;
+		}
 	};
 
 	return (
-		<div className="relative w-full h-screen">
+		<div className="relative w-full h-screen" ref={contentRef}>
 			{/* Tab navigation - positioned in the top-right corner with z-index to stay above canvas */}
 			<div className="absolute top-4 right-4 flex space-x-2 z-10">
 				{canvases.map((canvas) => (
@@ -97,6 +104,11 @@ export default function Canvas() {
 	const [loading, setLoading] = useState(true);
 	const { currentUser } = useAuth(); // Get current user from auth context
 
+	// Scroll to top when component mounts
+	useEffect(() => {
+		window.scrollTo(0, 0);
+	}, []);
+
 	// Load canvas data from Firestore when component mounts or user changes
 	useEffect(() => {
 		async function loadCanvasData() {
@@ -116,6 +128,9 @@ export default function Canvas() {
 			}
 
 			setLoading(false);
+
+			// Scroll to top when data is loaded
+			window.scrollTo(0, 0);
 		}
 
 		loadCanvasData();

@@ -100,8 +100,9 @@ const CanvasContent = () => {
 		};
 	}, [updateMousePosition]);
 
-	// Handlers for SidePanel actions
+	// Handlers for SidePanel actions - always use center positioning for consistency
 	const handleAddText = () => {
+		if (!canvasRef.current) return;
 		const canvasRect = canvasRef.current.getBoundingClientRect();
 		const centerX = canvasRect.width / 2;
 		const centerY = canvasRect.height / 2;
@@ -109,6 +110,7 @@ const CanvasContent = () => {
 	};
 
 	const handleAddMentor = () => {
+		if (!canvasRef.current) return;
 		const canvasRect = canvasRef.current.getBoundingClientRect();
 		const centerX = canvasRect.width / 2;
 		const centerY = canvasRect.height / 2;
@@ -135,11 +137,12 @@ const CanvasContent = () => {
 			}).catch((err) => console.error('Download trigger error:', err));
 		}
 
+		// Use the center of the canvas - this ensures consistency with other element types
 		const canvasRect = canvasRef.current.getBoundingClientRect();
 		const centerX = canvasRect.width / 2;
 		const centerY = canvasRect.height / 2;
 
-		// Make sure to pass the full imageData object
+		// Make sure to pass the full imageData object with center coordinates
 		addImageFromSearch(imageData, centerX, centerY);
 	};
 

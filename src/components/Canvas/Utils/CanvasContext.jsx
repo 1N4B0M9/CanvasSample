@@ -118,6 +118,30 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		setConnectionsWithSave,
 	);
 
+	// Create an enhanced version of addTextElement that centers elements
+	const addTextElement = useCallback(
+		(x, y) => {
+			// If x and y are not provided, use the center of the canvas
+			if (x === undefined || y === undefined) {
+				if (canvasRef.current) {
+					const canvasRect = canvasRef.current.getBoundingClientRect();
+					x = canvasRect.width / 2;
+					y = canvasRect.height / 2;
+				} else {
+					// Fallback values if canvas ref isn't available
+					x = window.innerWidth / 2;
+					y = window.innerHeight / 2;
+				}
+			}
+
+			if (elementOps && elementOps.addTextElement) {
+				return elementOps.addTextElement(x, y);
+			}
+			return null;
+		},
+		[elementOps, canvasRef],
+	);
+
 	const connectionOps = useConnectionOperations(
 		elements,
 		connections,
@@ -130,13 +154,26 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	 * Add a local image from file upload
 	 */
 	const addImageElement = useCallback(
-		(file, x = 100, y = 100) => {
+		(file, x, y) => {
 			if (!file) {
 				console.error('No file provided to addImageElement');
 				return null;
 			}
 
 			console.log('Adding image from file:', file.name, file.type);
+
+			// If x and y are not provided, use the center of the canvas
+			if (x === undefined || y === undefined) {
+				if (canvasRef.current) {
+					const canvasRect = canvasRef.current.getBoundingClientRect();
+					x = canvasRect.width / 2;
+					y = canvasRect.height / 2;
+				} else {
+					// Fallback values if canvas ref isn't available
+					x = window.innerWidth / 2;
+					y = window.innerHeight / 2;
+				}
+			}
 
 			// Use small fixed dimensions to guarantee images don't overwhelm the canvas
 			const newElement = {
@@ -173,12 +210,25 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 	// For addImageFromSearch
 	const addImageFromSearch = useCallback(
-		(imageData, x = 100, y = 100) => {
+		(imageData, x, y) => {
 			console.log('Adding Unsplash image to canvas:', imageData);
 
 			if (!imageData || !imageData.url) {
 				console.error('Invalid image data received:', imageData);
 				return null;
+			}
+
+			// If x and y are not provided, use the center of the canvas
+			if (x === undefined || y === undefined) {
+				if (canvasRef.current) {
+					const canvasRect = canvasRef.current.getBoundingClientRect();
+					x = canvasRect.width / 2;
+					y = canvasRect.height / 2;
+				} else {
+					// Fallback values if canvas ref isn't available
+					x = window.innerWidth / 2;
+					y = window.innerHeight / 2;
+				}
 			}
 
 			// Create element with guaranteed small dimensions
@@ -480,7 +530,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		canvasRef,
 
 		// Element operations
-		addTextElement: elementOps.addTextElement,
+		addTextElement, // Use our enhanced center-positioned function
 		addImageElement, // Use our updated function
 		updateElement: elementOps.updateElement,
 		updateElementSize: elementOps.updateElementSize,

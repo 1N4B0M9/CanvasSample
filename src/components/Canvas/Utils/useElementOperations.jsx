@@ -7,24 +7,29 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 	const scaleRef = useRef(null);
 
 	// Add a new text element
-	const addTextElement = useCallback(() => {
-		const newText = {
-			id: Date.now().toString(),
-			type: 'text',
-			content: 'Double click to edit',
-			x: 100,
-			y: 100,
-			rotation: 0,
-			scale: 1,
-			fontSize: 16,
-			color: 'black',
-			width: 100,
-			height: 50,
-		};
+	const addTextElement = useCallback(
+		(x, y) => {
+			// Fix: Use the provided x and y instead of hardcoded values
+			const newText = {
+				id: Date.now().toString(),
+				type: 'text',
+				content: 'Double click to edit',
+				x: x || window.innerWidth / 2, // Default to center if not provided
+				y: y || window.innerHeight / 2, // Default to center if not provided
+				rotation: 0,
+				scale: 1,
+				fontSize: 16,
+				color: 'black',
+				width: 100,
+				height: 50,
+			};
 
-		setElements((prev) => [...prev, newText]);
-		setSelectedId(newText.id);
-	}, [setElements, setSelectedId]);
+			setElements((prev) => [...prev, newText]);
+			setSelectedId(newText.id);
+			return newText.id;
+		},
+		[setElements, setSelectedId],
+	);
 
 	// Add a new image element
 	const addImageElement = useCallback(
