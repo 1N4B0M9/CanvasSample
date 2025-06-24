@@ -1,19 +1,8 @@
 /**
- * Canvas Component Module
+ * Canvas.jsx - Fixed to Account for Navbar/Footer Layout
  *
- * This module represents the main Canvas page of the application. It serves as a container
- * for multiple canvas instances that users can switch between using tabs.
- *
- * Architecture Overview:
- * - This component sits at the page level in the application structure
- * - It utilizes the CanvasDataProvider context to manage and share canvas state
- * - The component hierarchy is:
- *   1. Canvas (main export) - Sets up the context provider with initial data
- *   2. CanvasDataContent - Handles tab switching logic and renders the active canvas
- *   3. CustomCanvas - The actual canvas implementation (imported from components/Canvas/Layout)
- *
- * The component implements a tab-based navigation system allowing users to switch between
- * multiple canvas instances while maintaining their state within the CanvasDataProvider.
+ * This version calculates the available height after accounting for navbar
+ * and ensures the canvas fits properly within the layout structure.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -35,8 +24,63 @@ import { useAuth } from '../firebase/AuthContext'; // Import auth context (ensur
  */
 const CanvasDataContent = () => {
 	const [activeTab, setActiveTab] = useState(0);
+	const [availableHeight, setAvailableHeight] = useState('100vh');
 	const { canvases } = useCanvasData();
 	const contentRef = useRef(null);
+	const containerRef = useRef(null);
+
+	/**
+	 * Calculate available height accounting for navbar and any other UI elements
+	 */
+	useEffect(() => {
+		const calculateHeight = () => {
+			// Get the navbar height (AppBar)
+			const navbar =
+				document.querySelector('header[class*="MuiAppBar"]') ||
+				document.querySelector('nav') ||
+				document.querySelector('[class*="navbar"]');
+
+			const navbarHeight = navbar ? navbar.offsetHeight : 64; // Default to 64px if not found
+
+			// Calculate available height minus navbar
+			const windowHeight = window.innerHeight;
+			const calculatedHeight = windowHeight - navbarHeight;
+
+			console.log('Layout calculations:', {
+				windowHeight,
+				navbarHeight,
+				calculatedHeight,
+			});
+
+			setAvailableHeight(`${calculatedHeight}px`);
+		};
+
+		// Calculate on mount
+		calculateHeight();
+
+		// Recalculate on resize
+		const handleResize = () => {
+			setTimeout(calculateHeight, 100); // Small delay to ensure DOM updates
+		};
+
+		window.addEventListener('resize', handleResize);
+
+		// Also recalculate when navbar might change
+		const observer = new MutationObserver(calculateHeight);
+		if (document.body) {
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true,
+				attributes: true,
+				attributeFilter: ['class', 'style'],
+			});
+		}
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			observer.disconnect();
+		};
+	}, []);
 
 	/**
 	 * Handles tab selection and updates the active canvas
@@ -53,14 +97,23 @@ const CanvasDataContent = () => {
 	};
 
 	return (
-		<div className="relative w-full h-screen" ref={contentRef}>
-			{/* Tab navigation - positioned in the top-right corner with z-index to stay above canvas */}
-			<div className="absolute top-4 right-4 flex space-x-2 z-10">
+		<div
+			ref={containerRef}
+			className="relative w-full overflow-hidden"
+			style={{
+				height: availableHeight,
+				minHeight: '400px', // Ensure minimum usable height
+			}}
+		>
+			{/* Tab navigation - positioned with proper z-index and marked for export hiding */}
+			<div className="absolute top-4 right-4 flex space-x-2 z-50" data-ui-element="true" data-export-hide="true">
 				{canvases.map((canvas) => (
 					<button
 						key={canvas.id}
-						className={`px-4 py-2 rounded-lg transition-colors ${
-							activeTab === canvas.id ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+						className={`px-4 py-2 rounded-lg transition-colors shadow-lg ${
+							activeTab === canvas.id
+								? 'bg-blue-500 text-white'
+								: 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
 						}`}
 						onClick={() => handleTabChange(canvas.id)}
 					>
@@ -69,8 +122,8 @@ const CanvasDataContent = () => {
 				))}
 			</div>
 
-			{/* Canvas container - only shows the currently active canvas */}
-			<div className="w-full h-full">
+			{/* Canvas container - fills the calculated available space */}
+			<div ref={contentRef} className="w-full h-full">
 				{canvases.map((canvas) => (
 					<div key={canvas.id} className={`w-full h-full ${activeTab === canvas.id ? 'block' : 'hidden'}`}>
 						<RenderCanvas canvasId={canvas.id} />
@@ -95,9 +148,9 @@ const CanvasDataContent = () => {
 export default function Canvas() {
 	// Default initial canvas configuration (used when no user is logged in or no saved data)
 	const defaultCanvases = [
-		{ id: 0, name: '1', data: { elements: [], connections: [] } },
-		{ id: 1, name: '2', data: { elements: [], connections: [] } },
-		{ id: 2, name: '3', data: { elements: [], connections: [] } },
+		{ id: 0, name: '1', data: { elements: [], connections: [], arrows: [] } },
+		{ id: 1, name: '2', data: { elements: [], connections: [], arrows: [] } },
+		{ id: 2, name: '3', data: { elements: [], connections: [], arrows: [] } },
 	];
 
 	const [initialCanvases, setInitialCanvases] = useState(defaultCanvases);
@@ -137,12 +190,21 @@ export default function Canvas() {
 	}, [currentUser]);
 
 	if (loading) {
-		return <div className="flex justify-center items-center h-screen">Loading...</div>;
+		return (
+			<div className="flex justify-center items-center h-96 bg-gray-100">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4" />
+					<div className="text-gray-600">Loading your vision boards...</div>
+				</div>
+			</div>
+		);
 	}
 
 	return (
-		<CanvasDataProvider initialCanvases={initialCanvases} currentUser={currentUser}>
-			<CanvasDataContent />
-		</CanvasDataProvider>
+		<div className="w-full">
+			<CanvasDataProvider initialCanvases={initialCanvases} currentUser={currentUser}>
+				<CanvasDataContent />
+			</CanvasDataProvider>
+		</div>
 	);
 }

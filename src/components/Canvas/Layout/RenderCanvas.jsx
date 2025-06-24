@@ -1,8 +1,7 @@
 /**
- * Updated RenderCanvas Component with SidePanel Integration
+ * RenderCanvas.jsx - Fixed to Fit Properly Within Available Container Space
  *
- * This version ensures all changes to canvas elements and connections
- * are correctly saved to Firestore through the CanvasContext integration.
+ * This version ensures the canvas uses only the available space and exports correctly
  */
 
 import React, { useEffect } from 'react';
@@ -14,6 +13,12 @@ import SidePanel from '../Components/Elements/SidePanel';
 const CanvasContent = () => {
 	const {
 		canvasRef,
+		backgroundImage,
+		backgroundScale,
+		updateBackgroundImage,
+		removeBackgroundImage,
+		updateBackgroundScale,
+		exportCanvas,
 		updateMousePosition,
 		resetSelection,
 		handleElementMouseDown,
@@ -100,7 +105,7 @@ const CanvasContent = () => {
 		};
 	}, [updateMousePosition]);
 
-	// Handlers for SidePanel actions - always use center positioning for consistency
+	// Handlers for SidePanel actions
 	const handleAddText = () => {
 		if (!canvasRef.current) return;
 		const canvasRect = canvasRef.current.getBoundingClientRect();
@@ -120,9 +125,8 @@ const CanvasContent = () => {
 	const handleAddImage = (imageData, apiKey) => {
 		if (!canvasRef.current) return;
 
-		console.log('Handling image add with data:', imageData); // Debug log
+		console.log('Handling image add with data:', imageData);
 
-		// Ensure the imageData has all the necessary properties
 		if (!imageData || !imageData.url) {
 			console.error('Invalid image data received');
 			return;
@@ -137,24 +141,105 @@ const CanvasContent = () => {
 			}).catch((err) => console.error('Download trigger error:', err));
 		}
 
-		// Use the center of the canvas - this ensures consistency with other element types
 		const canvasRect = canvasRef.current.getBoundingClientRect();
 		const centerX = canvasRect.width / 2;
 		const centerY = canvasRect.height / 2;
 
-		// Make sure to pass the full imageData object with center coordinates
 		addImageFromSearch(imageData, centerX, centerY);
 	};
 
-	return (
-		<div className="relative w-full h-screen ">
-			{/* Side panel with integrated handlers */}
-			<SidePanel handleAddText={handleAddText} handleAddMentor={handleAddMentor} addImage={handleAddImage} />
+	// Handle background image upload
+	const handleBackgroundUpload = (file) => {
+		if (!file || !file.type.startsWith('image/')) {
+			console.error('Invalid file type for background');
+			return;
+		}
 
-			{/* Main canvas drawing area */}
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			updateBackgroundImage({
+				url: e.target.result,
+				name: file.name,
+				type: 'upload',
+			});
+		};
+		reader.readAsDataURL(file);
+	};
+
+	// Handle background image from search
+	const handleBackgroundFromSearch = (imageData, apiKey) => {
+		if (!imageData || !imageData.url) {
+			console.error('Invalid image data for background');
+			return;
+		}
+
+		// Trigger Unsplash download API
+		if (apiKey && imageData.downloadLink) {
+			fetch(imageData.downloadLink, {
+				headers: {
+					Authorization: `Client-ID ${apiKey}`,
+				},
+			}).catch((err) => console.error('Download trigger error:', err));
+		}
+
+		updateBackgroundImage({
+			url: imageData.url,
+			name: imageData.title || 'Background Image',
+			type: 'search',
+			attribution: {
+				photographer: imageData.photographer,
+				photographerUrl: imageData.photographerUrl,
+			},
+		});
+	};
+
+	// Handle canvas export
+	const handleExport = () => {
+		const fileName = `vision-board-${new Date().toISOString().split('T')[0]}.png`;
+		exportCanvas(fileName);
+	};
+
+	// Calculate background style with scale
+	const getBackgroundStyle = () => {
+		if (!backgroundImage) return {};
+
+		const scaleDecimal = backgroundScale / 100;
+
+		return {
+			backgroundImage: `url(${backgroundImage.url})`,
+			backgroundSize: `${100 * scaleDecimal}% ${100 * scaleDecimal}%`,
+			backgroundPosition: 'center',
+			backgroundRepeat: 'no-repeat',
+		};
+	};
+
+	return (
+		<div className="relative w-full h-full overflow-hidden">
+			{/* Side panel with integrated handlers */}
+			<SidePanel
+				handleAddText={handleAddText}
+				handleAddMentor={handleAddMentor}
+				addImage={handleAddImage}
+				handleBackgroundUpload={handleBackgroundUpload}
+				handleBackgroundFromSearch={handleBackgroundFromSearch}
+				removeBackgroundImage={removeBackgroundImage}
+				backgroundImage={backgroundImage}
+				updateBackgroundScale={updateBackgroundScale}
+				handleExport={handleExport}
+			/>
+
+			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
 			<div
 				ref={canvasRef}
-				className="w-full h-full bg-white overflow-hidden"
+				className="w-full h-full relative"
+				style={{
+					backgroundColor: backgroundImage ? 'transparent' : '#ffffff', // white background
+					border: '1px solid #d1d5db', // gray-300
+					boxSizing: 'border-box',
+
+					// Apply background image styling
+					...getBackgroundStyle(),
+				}}
 				onDrop={handleDrop}
 				onDragOver={(e) => e.preventDefault()}
 				onMouseDown={handleMouseDown}
@@ -163,6 +248,11 @@ const CanvasContent = () => {
 				onMouseLeave={handleElementMouseUp}
 				onWheel={handleElementWheel}
 			>
+				{/* Semi-transparent overlay when background is present to improve element visibility */}
+				{backgroundImage && (
+					<div className="absolute inset-0 bg-white bg-opacity-5 pointer-events-none" style={{ zIndex: -1 }} />
+				)}
+
 				<RenderConnections />
 				<RenderElements />
 			</div>

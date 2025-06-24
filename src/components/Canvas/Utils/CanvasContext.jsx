@@ -1,8 +1,8 @@
 /**
- * CanvasContext Integration with CanvasDataContext
+ * CanvasContext.js - Programmatic Canvas Export
  *
- * This module updates the CanvasContext to sync data with the parent CanvasDataContext
- * to ensure elements and connections are saved to Firestore.
+ * This version creates a canvas programmatically by drawing elements directly,
+ * avoiding screen capture issues entirely.
  */
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
@@ -32,6 +32,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const [elements, setElements] = useState([]);
 	const [connections, setConnections] = useState([]);
 	const [arrows, setArrows] = useState([]);
+	const [backgroundImage, setBackgroundImage] = useState(null);
+	const [backgroundScale, setBackgroundScale] = useState(100);
 	const [selectedId, setSelectedId] = useState(null);
 	const [selectedConnectionId, setSelectedConnectionId] = useState(null);
 	const [selectedArrowId, setSelectedArrowId] = useState(null);
@@ -62,10 +64,18 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			if (canvas.data.arrows) {
 				setArrows(canvas.data.arrows);
 			}
+
+			if (canvas.data.backgroundImage) {
+				setBackgroundImage(canvas.data.backgroundImage);
+			}
+
+			if (canvas.data.backgroundScale !== undefined) {
+				setBackgroundScale(canvas.data.backgroundScale);
+			}
 		}
 	}, [canvasId, canvasDataContext]);
 
-	// Save to CanvasDataContext whenever elements, connections, or arrows change
+	// Save to CanvasDataContext whenever data changes
 	useEffect(() => {
 		// Clear any existing timeout
 		if (saveTimeoutRef.current) {
@@ -78,6 +88,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				elements,
 				connections,
 				arrows,
+				backgroundImage,
+				backgroundScale,
 			};
 
 			console.log('Saving canvas data:', canvasData);
@@ -90,22 +102,35 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				clearTimeout(saveTimeoutRef.current);
 			}
 		};
-	}, [elements, connections, arrows, canvasId, updateCanvas]);
+	}, [elements, connections, arrows, backgroundImage, backgroundScale, canvasId, updateCanvas]);
 
-	// Create enhanced versions of setElements and setConnections that ensure updates are saved
+	// Create enhanced versions of setters that ensure updates are saved
 	const setElementsWithSave = useCallback((newElementsOrFn) => {
-		// Handle both direct value and function updater pattern
 		setElements(newElementsOrFn);
 	}, []);
 
 	const setConnectionsWithSave = useCallback((newConnectionsOrFn) => {
-		// Handle both direct value and function updater pattern
 		setConnections(newConnectionsOrFn);
 	}, []);
 
 	const setArrowsWithSave = useCallback((newArrowsOrFn) => {
-		// Handle both direct value and function updater pattern
 		setArrows(newArrowsOrFn);
+	}, []);
+
+	// Background image operations
+	const updateBackgroundImage = useCallback((imageData) => {
+		setBackgroundImage(imageData);
+		// Reset scale when new background is set
+		setBackgroundScale(100);
+	}, []);
+
+	const removeBackgroundImage = useCallback(() => {
+		setBackgroundImage(null);
+		setBackgroundScale(100);
+	}, []);
+
+	const updateBackgroundScale = useCallback((scale) => {
+		setBackgroundScale(scale);
 	}, []);
 
 	// Custom hooks for operations with enhanced setters
@@ -151,7 +176,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	);
 
 	/**
-	 * Add a local image from file upload
+	 * Add a local image from file upload with screen-fitting dimensions
 	 */
 	const addImageElement = useCallback(
 		(file, x, y) => {
@@ -175,7 +200,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				}
 			}
 
-			// Use small fixed dimensions to guarantee images don't overwhelm the canvas
+			// Calculate screen-fitting dimensions
+			const maxWidth = window.innerWidth * 0.3; // 30% of screen width
+			const maxHeight = window.innerHeight * 0.3; // 30% of screen height
+
 			const newElement = {
 				id: `image-${Date.now()}`,
 				type: 'image',
@@ -183,8 +211,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				alt: file.name || 'Uploaded image',
 				x,
 				y,
-				width: 250, // Smaller fixed width
-				height: 150, // Smaller fixed height
+				width: Math.min(300, maxWidth), // Responsive width
+				height: Math.min(200, maxHeight), // Responsive height
 				rotation: 0,
 				scale: 1,
 			};
@@ -200,7 +228,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			console.log('Created image element:', newElement);
 
-			// Add the element to the canvas immediately with the guaranteed dimensions
+			// Add the element to the canvas immediately with the responsive dimensions
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
 			setSelectedId(newElement.id);
 			return newElement.id;
@@ -208,7 +236,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[setElementsWithSave, setSelectedId],
 	);
 
-	// For addImageFromSearch
+	// For addImageFromSearch with screen-fitting dimensions
 	const addImageFromSearch = useCallback(
 		(imageData, x, y) => {
 			console.log('Adding Unsplash image to canvas:', imageData);
@@ -231,7 +259,11 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				}
 			}
 
-			// Create element with guaranteed small dimensions
+			// Calculate screen-fitting dimensions
+			const maxWidth = window.innerWidth * 0.3; // 30% of screen width
+			const maxHeight = window.innerHeight * 0.3; // 30% of screen height
+
+			// Create element with responsive dimensions
 			const newElement = {
 				id: `image-${Date.now()}`,
 				type: 'image',
@@ -243,15 +275,15 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				},
 				x,
 				y,
-				width: 250, // Smaller fixed width
-				height: 150, // Smaller fixed height
+				width: Math.min(300, maxWidth), // Responsive width
+				height: Math.min(200, maxHeight), // Responsive height
 				rotation: 0,
 				scale: 1,
 			};
 
 			console.log('Created Unsplash image element:', newElement);
 
-			// Add directly to canvas with guaranteed dimensions
+			// Add directly to canvas with responsive dimensions
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
 			setSelectedId(newElement.id);
 			return newElement.id;
@@ -262,6 +294,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	// Add a new mentor element
 	const addMentorElement = useCallback(
 		(x = 100, y = 100) => {
+			// Calculate responsive dimensions for mentor elements
+			const maxWidth = window.innerWidth * 0.25; // 25% of screen width
+			const maxHeight = window.innerHeight * 0.35; // 35% of screen height
+
 			const newElement = {
 				id: `mentor-${Date.now()}`,
 				type: 'mentor',
@@ -269,8 +305,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				image: null,
 				x,
 				y,
-				width: 200,
-				height: 250,
+				width: Math.min(200, maxWidth),
+				height: Math.min(250, maxHeight),
 				rotation: 0,
 				scale: 1,
 				fontSize: 16,
@@ -512,6 +548,291 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[setArrowsWithSave],
 	);
 
+	// Helper function to calculate element center for connections
+	const getElementCenter = useCallback((element) => {
+		const finalScale = element.scale || 1;
+		const actualWidth = (element.width || 100) * finalScale;
+		const actualHeight = (element.height || 100) * finalScale;
+
+		return {
+			x: element.x + actualWidth / 2,
+			y: element.y + actualHeight / 2,
+		};
+	}, []);
+
+	// Helper function to load image
+	const loadImage = useCallback(
+		(src) =>
+			new Promise((resolve, reject) => {
+				const img = new Image();
+				img.crossOrigin = 'anonymous';
+				img.onload = () => resolve(img);
+				img.onerror = reject;
+				img.src = src;
+			}),
+		[],
+	);
+
+	// PROGRAMMATIC CANVAS EXPORT - DRAWS ELEMENTS DIRECTLY
+	const exportCanvas = useCallback(
+		async (fileName = 'vision-board.png') => {
+			if (!canvasRef.current) {
+				console.error('Canvas ref not available');
+				return;
+			}
+
+			try {
+				console.log('Starting programmatic canvas export...');
+
+				// Get canvas dimensions
+				const canvasRect = canvasRef.current.getBoundingClientRect();
+				const exportWidth = Math.floor(canvasRect.width);
+				const exportHeight = Math.floor(canvasRect.height);
+
+				console.log('Export dimensions:', exportWidth, 'x', exportHeight);
+
+				// Create export canvas
+				const exportCanvas = document.createElement('canvas');
+				const ctx = exportCanvas.getContext('2d');
+
+				// Set high resolution
+				const scale = 2;
+				exportCanvas.width = exportWidth * scale;
+				exportCanvas.height = exportHeight * scale;
+				ctx.scale(scale, scale);
+
+				// Always start with white background
+				ctx.fillStyle = '#ffffff';
+				ctx.fillRect(0, 0, exportWidth, exportHeight);
+
+				// Set background image on top if exists
+				if (backgroundImage) {
+					try {
+						console.log('Loading background image...');
+						const bgImg = await loadImage(backgroundImage.url);
+
+						// Calculate background size with scale
+						const scaleDecimal = backgroundScale / 100;
+						const bgWidth = exportWidth * scaleDecimal;
+						const bgHeight = exportHeight * scaleDecimal;
+						const bgX = (exportWidth - bgWidth) / 2;
+						const bgY = (exportHeight - bgHeight) / 2;
+
+						ctx.drawImage(bgImg, bgX, bgY, bgWidth, bgHeight);
+						console.log('Background image drawn over white background');
+					} catch (error) {
+						console.warn('Failed to load background image:', error);
+						// White background is already set above
+					}
+				}
+
+				// Draw connections first (so they appear behind elements)
+				console.log('Drawing connections...');
+				for (const connection of connections) {
+					const startElement = elements.find((el) => el.id === connection.startId);
+					const endElement = elements.find((el) => el.id === connection.endId);
+
+					if (startElement && endElement) {
+						const startCenter = getElementCenter(startElement);
+						const endCenter = getElementCenter(endElement);
+
+						ctx.strokeStyle = connection.color || '#000000';
+						ctx.lineWidth = connection.thickness || 2;
+						ctx.beginPath();
+						ctx.moveTo(startCenter.x, startCenter.y);
+						ctx.lineTo(endCenter.x, endCenter.y);
+						ctx.stroke();
+
+						// Draw connection endpoints
+						ctx.fillStyle = connection.color || '#000000';
+						ctx.beginPath();
+						ctx.arc(startCenter.x, startCenter.y, 3, 0, 2 * Math.PI);
+						ctx.fill();
+						ctx.beginPath();
+						ctx.arc(endCenter.x, endCenter.y, 3, 0, 2 * Math.PI);
+						ctx.fill();
+					}
+				}
+
+				// Draw arrows
+				console.log('Drawing arrows...');
+				for (const arrow of arrows) {
+					const startElement = elements.find((el) => el.id === arrow.startId);
+					const endElement = elements.find((el) => el.id === arrow.endId);
+
+					if (startElement && endElement) {
+						const startCenter = getElementCenter(startElement);
+						const endCenter = getElementCenter(endElement);
+
+						// Draw arrow line
+						ctx.strokeStyle = arrow.color || '#000000';
+						ctx.lineWidth = arrow.thickness || 2;
+						ctx.beginPath();
+						ctx.moveTo(startCenter.x, startCenter.y);
+						ctx.lineTo(endCenter.x, endCenter.y);
+						ctx.stroke();
+
+						// Draw arrowhead
+						const angle = Math.atan2(endCenter.y - startCenter.y, endCenter.x - startCenter.x);
+						const arrowLength = 14;
+						const arrowAngle = Math.PI / 6;
+
+						ctx.fillStyle = arrow.color || '#000000';
+						ctx.beginPath();
+						ctx.moveTo(endCenter.x, endCenter.y);
+						ctx.lineTo(
+							endCenter.x - arrowLength * Math.cos(angle - arrowAngle),
+							endCenter.y - arrowLength * Math.sin(angle - arrowAngle),
+						);
+						ctx.lineTo(
+							endCenter.x - arrowLength * Math.cos(angle + arrowAngle),
+							endCenter.y - arrowLength * Math.sin(angle + arrowAngle),
+						);
+						ctx.closePath();
+						ctx.fill();
+					}
+				}
+
+				// Draw elements
+				console.log('Drawing elements...');
+				for (const element of elements) {
+					const finalScale = element.scale || 1;
+					const rotation = ((element.rotation || 0) * Math.PI) / 180;
+
+					ctx.save();
+
+					// Apply transformations
+					const centerX = element.x + (element.width * finalScale) / 2;
+					const centerY = element.y + (element.height * finalScale) / 2;
+
+					ctx.translate(centerX, centerY);
+					ctx.rotate(rotation);
+					ctx.scale(finalScale, finalScale);
+					ctx.translate(-element.width / 2, -element.height / 2);
+
+					if (element.type === 'text') {
+						// Draw text element
+						ctx.fillStyle = element.color || '#000000';
+						ctx.font = `${element.fontSize || 16}px ${element.fontFamily || 'Arial'}`;
+
+						// Handle multi-line text
+						const lines = (element.content || 'Text').split('\n');
+						const lineHeight = (element.fontSize || 16) * 1.2;
+
+						lines.forEach((line, index) => {
+							ctx.fillText(line, 8, 24 + index * lineHeight);
+						});
+					} else if (element.type === 'image') {
+						// Draw image element
+						try {
+							const imageSrc = element.fileUrl || element.src;
+							if (imageSrc) {
+								const img = await loadImage(imageSrc);
+								ctx.drawImage(img, 0, 0, element.width, element.height);
+							}
+						} catch (error) {
+							console.warn('Failed to load element image:', error);
+							// Draw placeholder
+							ctx.fillStyle = '#f0f0f0';
+							ctx.fillRect(0, 0, element.width, element.height);
+							ctx.strokeStyle = '#ccc';
+							ctx.strokeRect(0, 0, element.width, element.height);
+							ctx.fillStyle = '#666';
+							ctx.font = '14px Arial';
+							ctx.fillText('Image', 8, element.height / 2);
+						}
+					} else if (element.type === 'mentor') {
+						// Draw mentor element background
+						ctx.fillStyle = '#ffffff';
+						ctx.fillRect(0, 0, element.width, element.height);
+						ctx.strokeStyle = '#e0e0e0';
+						ctx.strokeRect(0, 0, element.width, element.height);
+
+						// Draw mentor image if exists
+						if (element.image) {
+							try {
+								const img = await loadImage(element.image);
+								const imgHeight = element.height * 0.6;
+								ctx.drawImage(img, 8, 8, element.width - 16, imgHeight);
+							} catch (error) {
+								console.warn('Failed to load mentor image:', error);
+							}
+						}
+
+						// Draw mentor text
+						ctx.fillStyle = element.color || '#000000';
+						ctx.font = `${element.fontSize || 16}px ${element.fontFamily || 'Arial'}`;
+
+						const textY = element.image ? element.height * 0.7 : 24;
+						const lines = (element.content || 'Mentor').split('\n');
+						const lineHeight = (element.fontSize || 16) * 1.2;
+
+						lines.forEach((line, index) => {
+							ctx.fillText(line, 8, textY + index * lineHeight);
+						});
+					}
+
+					ctx.restore();
+				}
+
+				console.log('Canvas drawing completed');
+
+				// Create download
+				const link = document.createElement('a');
+				link.download = fileName;
+				link.href = exportCanvas.toDataURL('image/png', 1.0);
+
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+
+				console.log('Export completed successfully:', fileName);
+			} catch (error) {
+				console.error('Programmatic export failed:', error);
+
+				// Simple fallback
+				try {
+					const rect = canvasRef.current.getBoundingClientRect();
+					const fallbackCanvas = document.createElement('canvas');
+					const ctx = fallbackCanvas.getContext('2d');
+
+					fallbackCanvas.width = Math.max(rect.width, 800);
+					fallbackCanvas.height = Math.max(rect.height, 600);
+
+					ctx.fillStyle = '#ffffff';
+					ctx.fillRect(0, 0, fallbackCanvas.width, fallbackCanvas.height);
+
+					ctx.fillStyle = '#000000';
+					ctx.font = '24px Arial';
+					ctx.textAlign = 'center';
+					ctx.fillText('Vision Board Export', fallbackCanvas.width / 2, fallbackCanvas.height / 2 - 20);
+					ctx.font = '16px Arial';
+					ctx.fillText(
+						'Programmatic export failed - basic version',
+						fallbackCanvas.width / 2,
+						fallbackCanvas.height / 2 + 10,
+					);
+					ctx.fillText(
+						`Elements: ${elements.length}, Connections: ${connections.length}`,
+						fallbackCanvas.width / 2,
+						fallbackCanvas.height / 2 + 40,
+					);
+
+					const link = document.createElement('a');
+					link.download = fileName;
+					link.href = fallbackCanvas.toDataURL('image/png');
+					document.body.appendChild(link);
+					link.click();
+					document.body.removeChild(link);
+				} catch (fallbackError) {
+					console.error('All export methods failed:', fallbackError);
+					alert('Export failed. Please check console for details.');
+				}
+			}
+		},
+		[backgroundImage, backgroundScale, elements, connections, arrows, getElementCenter, loadImage],
+	);
+
 	// Context value
 	const value = {
 		// State
@@ -519,6 +840,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		elements,
 		connections,
 		arrows,
+		backgroundImage,
+		backgroundScale,
 		selectedId,
 		selectedConnectionId,
 		selectedArrowId,
@@ -530,24 +853,32 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		canvasRef,
 
 		// Element operations
-		addTextElement, // Use our enhanced center-positioned function
-		addImageElement, // Use our updated function
-		updateElement: elementOps.updateElement,
-		updateElementSize: elementOps.updateElementSize,
-		deleteElement: elementOps.deleteElement,
-		handleScaleStart: elementOps.handleScaleStart,
-		handleElementMouseDown: elementOps.handleElementMouseDown,
-		handleElementMouseMove: elementOps.handleElementMouseMove,
-		handleElementMouseUp: elementOps.handleElementMouseUp,
-		handleElementWheel: elementOps.handleElementWheel,
+		addTextElement,
+		addImageElement,
+		updateElement: elementOps?.updateElement,
+		updateElementSize: elementOps?.updateElementSize,
+		deleteElement: elementOps?.deleteElement,
+		handleScaleStart: elementOps?.handleScaleStart,
+		handleElementMouseDown: elementOps?.handleElementMouseDown,
+		handleElementMouseMove: elementOps?.handleElementMouseMove,
+		handleElementMouseUp: elementOps?.handleElementMouseUp,
+		handleElementWheel: elementOps?.handleElementWheel,
 
 		// New mentor and image search operations
 		addMentorElement,
 		addImageFromSearch,
 
+		// Background operations
+		updateBackgroundImage,
+		removeBackgroundImage,
+		updateBackgroundScale,
+
+		// Export operations
+		exportCanvas,
+
 		// Connection operations
-		createConnection: connectionOps.createConnection,
-		deleteConnection: connectionOps.deleteConnection,
+		createConnection: connectionOps?.createConnection,
+		deleteConnection: connectionOps?.deleteConnection,
 		updateConnectionData,
 
 		// Arrow operations
