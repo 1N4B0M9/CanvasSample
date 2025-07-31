@@ -1,11 +1,18 @@
 /**
- * SidePanel.jsx - Updated with Scrollable Content
+ * Handle image load error
+ */
+/**
+ * SidePanel.jsx - Enhanced with Vision Board Image Extraction
  *
  * Path: src/components/Canvas/Components/Elements/SidePanel.jsx
  */
 
 import React, { useState, useRef } from 'react';
 import ImageSearch from './ImageSearch';
+
+const handleImageError = (imagePath) => {
+	setImageLoadErrors((prev) => new Set(prev).add(imagePath));
+};
 
 const SidePanel = ({
 	handleAddText,
@@ -17,12 +24,21 @@ const SidePanel = ({
 	backgroundImage,
 	updateBackgroundScale,
 	handleExport,
+	apiBaseUrl = 'https://extract-boxes-endpoint.onrender.com', // Add API base URL prop
 }) => {
-	// State to track panel visibility
+	// Existing state
 	const [isOpen, setIsOpen] = useState(true);
-	const [activeTab, setActiveTab] = useState('elements'); // 'elements', 'background', 'export'
-	const [backgroundScale, setBackgroundScale] = useState(100); // Background scale percentage
+	const [activeTab, setActiveTab] = useState('elements');
+	const [backgroundScale, setBackgroundScale] = useState(100);
 	const backgroundUploadRef = useRef(null);
+
+	// New state for vision board extraction
+	const [extractionResults, setExtractionResults] = useState(null);
+	const [extractionLoading, setExtractionLoading] = useState(false);
+	const [extractionError, setExtractionError] = useState(null);
+	const [selectedFile, setSelectedFile] = useState(null);
+	const [imageLoadErrors, setImageLoadErrors] = useState(new Set());
+	const extractionUploadRef = useRef(null);
 
 	/**
 	 * Toggle panel visibility
@@ -39,7 +55,6 @@ const SidePanel = ({
 		if (file) {
 			handleBackgroundUpload(file);
 		}
-		// Reset input value to allow re-uploading the same file
 		e.target.value = '';
 	};
 
@@ -81,6 +96,135 @@ const SidePanel = ({
 		}
 	};
 
+	// ===== VISION BOARD EXTRACTION FUNCTIONS =====
+
+	/**
+	 * Handle vision board file selection
+	 */
+	const handleExtractionFileChange = (e) => {
+		const file = e.target.files[0];
+		if (file) {
+			setSelectedFile(file);
+			setExtractionError(null);
+		}
+		e.target.value = '';
+	};
+
+	/**
+	 * Trigger vision board file upload
+	 */
+	const triggerExtractionUpload = () => {
+		extractionUploadRef.current?.click();
+	};
+
+	/**
+	 * Convert file to base64
+	 */
+	const fileToBase64 = (file) =>
+		new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => {
+				// Return the full data URI (including data:image/jpeg;base64,)
+				resolve(reader.result);
+			};
+			reader.onerror = (error) => reject(error);
+		});
+
+	/**
+	 * Upload and process vision board image
+	 */
+	const handleVisionBoardUpload = async () => {
+		if (!selectedFile) {
+			setExtractionError('Please select a file first');
+			return;
+		}
+
+		setExtractionLoading(true);
+		setExtractionError(null);
+
+		try {
+			// Convert file to base64 data URI
+			const base64DataUri = await fileToBase64(selectedFile);
+
+			const response = await fetch(`${apiBaseUrl}/extract-base64`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify({
+					image_base64: base64DataUri,
+					filename: selectedFile.name,
+				}),
+				cache: 'no-cache',
+				mode: 'cors',
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text().catch(() => '');
+				let errorData = {};
+				try {
+					errorData = JSON.parse(errorText);
+				} catch (e) {
+					throw new Error(errorText || `HTTP ${response.status}: ${response.statusText}`);
+				}
+				throw new Error(errorData.detail || errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const result = await response.json();
+
+			// Set the results directly (no need for separate fetch)
+			setExtractionResults(result);
+			setImageLoadErrors(new Set());
+
+			// Clear the selected file
+			setSelectedFile(null);
+		} catch (error) {
+			console.error('Vision board upload error:', error);
+			setExtractionError(error instanceof Error ? error.message : 'Upload failed');
+		} finally {
+			setExtractionLoading(false);
+		}
+	};
+
+	/**
+	 * Get full image URL (now handles base64 data URIs)
+	 */
+	const getFullImageUrl = (imagePath) => {
+		// If it's already a data URI (base64), return as-is
+		if (imagePath.startsWith('data:')) {
+			return imagePath;
+		}
+		// Otherwise, construct URL (fallback for other image sources)
+		return `${apiBaseUrl}${imagePath}`;
+	};
+
+	/**
+	 * Add extracted image to canvas
+	 */
+	const handleAddExtractedImage = (box) => {
+		const imageUrl = getFullImageUrl(box.image);
+
+		// Create image object similar to other image sources
+		const imageData = {
+			url: imageUrl,
+			alt: `Extracted box ${box.id}`,
+			source: 'extraction',
+		};
+
+		addImage(imageData);
+	};
+
+	/**
+	 * Clear extraction results
+	 */
+	const clearExtractionResults = () => {
+		setExtractionResults(null);
+		setExtractionError(null);
+		setSelectedFile(null);
+	};
+
 	return (
 		<>
 			{/* Toggle button - visible when panel is collapsed */}
@@ -109,7 +253,7 @@ const SidePanel = ({
 				}`}
 				style={{
 					width: '320px',
-					height: 'calc(100vh - 96px)', // Subtract top offset (64px + 32px)
+					height: 'calc(100vh - 96px)',
 					maxHeight: 'calc(100vh - 96px)',
 				}}
 				data-ui-element="true"
@@ -139,15 +283,23 @@ const SidePanel = ({
 					<div className="flex-shrink-0 flex border-b border-gray-700">
 						<button
 							onClick={() => setActiveTab('elements')}
-							className={`flex-1 px-4 py-2 text-sm font-medium ${
+							className={`flex-1 px-2 py-2 text-xs font-medium ${
 								activeTab === 'elements' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
 							}`}
 						>
 							Elements
 						</button>
 						<button
+							onClick={() => setActiveTab('extract')}
+							className={`flex-1 px-2 py-2 text-xs font-medium ${
+								activeTab === 'extract' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+							}`}
+						>
+							Extract
+						</button>
+						<button
 							onClick={() => setActiveTab('background')}
-							className={`flex-1 px-4 py-2 text-sm font-medium ${
+							className={`flex-1 px-2 py-2 text-xs font-medium ${
 								activeTab === 'background'
 									? 'bg-blue-600 text-white'
 									: 'text-gray-300 hover:text-white hover:bg-gray-700'
@@ -157,7 +309,7 @@ const SidePanel = ({
 						</button>
 						<button
 							onClick={() => setActiveTab('export')}
-							className={`flex-1 px-4 py-2 text-sm font-medium ${
+							className={`flex-1 px-2 py-2 text-xs font-medium ${
 								activeTab === 'export' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
 							}`}
 						>
@@ -210,7 +362,7 @@ const SidePanel = ({
 														strokeLinecap="round"
 														strokeLinejoin="round"
 														strokeWidth={2}
-														d="M3 5h12M9 3v4m1 7h6m2 3H2a1 1 0 01-1-1V6a1 1 0 011-1h18a1 1 0 011 1v11a1 1 0 01-1 1z"
+														d="M3 5h12M9 3v4m1 7h6m2 3H2a1 1 0 01-1-1V6a1 1 0 011 1h18a1 1 0 011 1v11a1 1 0 01-1 1z"
 													/>
 												</svg>
 												Add Attribute
@@ -221,6 +373,150 @@ const SidePanel = ({
 									{/* Image search */}
 									<ImageSearch addImage={addImage} />
 								</>
+							)}
+
+							{/* Vision Board Extraction Tab */}
+							{activeTab === 'extract' && (
+								<div className="mb-6">
+									<h3 className="text-lg font-semibold mb-3">Extract from Vision Board</h3>
+
+									{/* Upload section */}
+									<div className="mb-4 p-3 bg-gray-700 rounded">
+										<div className="space-y-3">
+											{selectedFile && (
+												<div className="text-sm text-gray-300">
+													Selected: {selectedFile.name}
+													<br />
+													<span className="text-xs text-gray-400">
+														({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+													</span>
+												</div>
+											)}
+
+											{extractionError && (
+												<div className="p-2 bg-red-600 bg-opacity-30 border border-red-500 rounded text-sm text-red-200">
+													{extractionError}
+												</div>
+											)}
+
+											<div className="flex gap-2">
+												<button
+													onClick={triggerExtractionUpload}
+													className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm flex items-center justify-center"
+												>
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														className="h-4 w-4 mr-1"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke="currentColor"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															strokeWidth={2}
+															d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+														/>
+													</svg>
+													Choose Image
+												</button>
+
+												<button
+													onClick={handleVisionBoardUpload}
+													disabled={!selectedFile || extractionLoading}
+													className={`flex-1 px-3 py-2 rounded text-sm font-medium ${
+														!selectedFile || extractionLoading
+															? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+															: 'bg-green-600 hover:bg-green-700 text-white'
+													}`}
+												>
+													{extractionLoading ? 'Processing...' : 'Extract'}
+												</button>
+											</div>
+
+											<input
+												ref={extractionUploadRef}
+												type="file"
+												accept="image/*"
+												onChange={handleExtractionFileChange}
+												className="hidden"
+											/>
+										</div>
+									</div>
+
+									{/* Loading indicator */}
+									{extractionLoading && (
+										<div className="flex items-center justify-center p-4">
+											<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
+											<span className="ml-2 text-sm text-gray-300">Extracting images...</span>
+										</div>
+									)}
+
+									{/* Results section */}
+									{extractionResults && (
+										<div>
+											<div className="flex items-center justify-between mb-3">
+												<h4 className="text-md font-medium">Extracted Images ({extractionResults.num_boxes_found})</h4>
+												<button
+													onClick={clearExtractionResults}
+													className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+												>
+													Clear
+												</button>
+											</div>
+
+											{extractionResults.boxes.length === 0 ? (
+												<div className="p-3 bg-gray-700 rounded text-center text-gray-400 text-sm">
+													No images were extracted from the vision board.
+												</div>
+											) : (
+												<div className="grid grid-cols-2 gap-2">
+													{extractionResults.boxes.map((box) => {
+														const fullImageUrl = getFullImageUrl(box.image);
+														const hasError = imageLoadErrors.has(box.image);
+
+														return (
+															<div key={box.id} className="bg-gray-700 rounded overflow-hidden">
+																<div className="aspect-square bg-gray-600 relative">
+																	{hasError ? (
+																		<div className="flex items-center justify-center h-full text-gray-400">
+																			<svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+																				<path
+																					fillRule="evenodd"
+																					d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+																					clipRule="evenodd"
+																				/>
+																			</svg>
+																		</div>
+																	) : (
+																		<img
+																			src={fullImageUrl}
+																			alt={`Box ${box.id}`}
+																			className="w-full h-full object-cover cursor-pointer hover:opacity-80"
+																			onError={() => handleImageError(box.image)}
+																			onClick={() => handleAddExtractedImage(box)}
+																			loading="lazy"
+																		/>
+																	)}
+																</div>
+																<div className="p-2">
+																	<div className="text-xs text-gray-300 text-center">Box {box.id}</div>
+																	<button
+																		onClick={() => handleAddExtractedImage(box)}
+																		className="w-full mt-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+																		disabled={hasError}
+																	>
+																		Add to Canvas
+																	</button>
+																</div>
+															</div>
+														);
+													})}
+												</div>
+											)}
+										</div>
+									)}
+								</div>
 							)}
 
 							{/* Background Tab */}
