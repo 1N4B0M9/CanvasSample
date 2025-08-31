@@ -24,7 +24,7 @@ const SidePanel = ({
 	backgroundImage,
 	updateBackgroundScale,
 	handleExport,
-	apiBaseUrl = 'https://extract-boxes-endpoint.onrender.com', // Add API base URL prop
+	apiBaseUrl = 'https://vision-board-api-v2.onrender.com', // Updated API base URL
 }) => {
 	// Existing state
 	const [isOpen, setIsOpen] = useState(true);
@@ -118,21 +118,7 @@ const SidePanel = ({
 	};
 
 	/**
-	 * Convert file to base64
-	 */
-	const fileToBase64 = (file) =>
-		new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.readAsDataURL(file);
-			reader.onload = () => {
-				// Return the full data URI (including data:image/jpeg;base64,)
-				resolve(reader.result);
-			};
-			reader.onerror = (error) => reject(error);
-		});
-
-	/**
-	 * Upload and process vision board image
+	 * Upload and process vision board image using form-data
 	 */
 	const handleVisionBoardUpload = async () => {
 		if (!selectedFile) {
@@ -144,19 +130,13 @@ const SidePanel = ({
 		setExtractionError(null);
 
 		try {
-			// Convert file to base64 data URI
-			const base64DataUri = await fileToBase64(selectedFile);
+			// Create FormData for file upload
+			const formData = new FormData();
+			formData.append('image', selectedFile);
 
-			const response = await fetch(`${apiBaseUrl}/extract-base64`, {
+			const response = await fetch(`${apiBaseUrl}/extract-boxes`, {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify({
-					image_base64: base64DataUri,
-					filename: selectedFile.name,
-				}),
+				body: formData,
 				cache: 'no-cache',
 				mode: 'cors',
 			});
@@ -174,7 +154,7 @@ const SidePanel = ({
 
 			const result = await response.json();
 
-			// Set the results directly (no need for separate fetch)
+			// Set the results directly
 			setExtractionResults(result);
 			setImageLoadErrors(new Set());
 
@@ -189,14 +169,18 @@ const SidePanel = ({
 	};
 
 	/**
-	 * Get full image URL (now handles base64 data URIs)
+	 * Get full image URL (handles base64 data URIs and API paths)
 	 */
 	const getFullImageUrl = (imagePath) => {
 		// If it's already a data URI (base64), return as-is
 		if (imagePath.startsWith('data:')) {
 			return imagePath;
 		}
-		// Otherwise, construct URL (fallback for other image sources)
+		// If it starts with http/https, return as-is
+		if (imagePath.startsWith('http')) {
+			return imagePath;
+		}
+		// Otherwise, construct URL from API base
 		return `${apiBaseUrl}${imagePath}`;
 	};
 
@@ -379,6 +363,11 @@ const SidePanel = ({
 							{activeTab === 'extract' && (
 								<div className="mb-6">
 									<h3 className="text-lg font-semibold mb-3">Extract from Vision Board</h3>
+									<div className="mb-2 p-2 bg-blue-600 bg-opacity-20 rounded">
+										<div className="text-xs text-blue-200">
+											Upload a vision board image to automatically extract individual elements
+										</div>
+									</div>
 
 									{/* Upload section */}
 									<div className="mb-4 p-3 bg-gray-700 rounded">
@@ -396,6 +385,11 @@ const SidePanel = ({
 											{extractionError && (
 												<div className="p-2 bg-red-600 bg-opacity-30 border border-red-500 rounded text-sm text-red-200">
 													{extractionError}
+													{extractionError.includes('HTTP 500') && (
+														<div className="mt-1 text-xs">
+															Try using a different image or check your internet connection.
+														</div>
+													)}
 												</div>
 											)}
 
@@ -430,7 +424,14 @@ const SidePanel = ({
 															: 'bg-green-600 hover:bg-green-700 text-white'
 													}`}
 												>
-													{extractionLoading ? 'Processing...' : 'Extract'}
+													{extractionLoading ? (
+														<span className="flex items-center justify-center">
+															<div className="animate-spin rounded-full h-3 w-3 border-b border-white mr-1" />
+															Processing...
+														</span>
+													) : (
+														'Extract'
+													)}
 												</button>
 											</div>
 
@@ -448,7 +449,7 @@ const SidePanel = ({
 									{extractionLoading && (
 										<div className="flex items-center justify-center p-4">
 											<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
-											<span className="ml-2 text-sm text-gray-300">Extracting images...</span>
+											<span className="ml-2 text-sm text-gray-300">Extracting images from vision board...</span>
 										</div>
 									)}
 
@@ -456,7 +457,9 @@ const SidePanel = ({
 									{extractionResults && (
 										<div>
 											<div className="flex items-center justify-between mb-3">
-												<h4 className="text-md font-medium">Extracted Images ({extractionResults.num_boxes_found})</h4>
+												<h4 className="text-md font-medium">
+													Extracted Images ({extractionResults.num_boxes_found || extractionResults.boxes?.length || 0})
+												</h4>
 												<button
 													onClick={clearExtractionResults}
 													className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
@@ -465,18 +468,20 @@ const SidePanel = ({
 												</button>
 											</div>
 
-											{extractionResults.boxes.length === 0 ? (
+											{!extractionResults.boxes || extractionResults.boxes.length === 0 ? (
 												<div className="p-3 bg-gray-700 rounded text-center text-gray-400 text-sm">
-													No images were extracted from the vision board.
+													No images were extracted from the vision board. Try using a different image with clearer
+													separated elements.
 												</div>
 											) : (
 												<div className="grid grid-cols-2 gap-2">
-													{extractionResults.boxes.map((box) => {
+													{extractionResults.boxes.map((box, index) => {
+														const boxId = box.id || index;
 														const fullImageUrl = getFullImageUrl(box.image);
 														const hasError = imageLoadErrors.has(box.image);
 
 														return (
-															<div key={box.id} className="bg-gray-700 rounded overflow-hidden">
+															<div key={boxId} className="bg-gray-700 rounded overflow-hidden">
 																<div className="aspect-square bg-gray-600 relative">
 																	{hasError ? (
 																		<div className="flex items-center justify-center h-full text-gray-400">
@@ -491,7 +496,7 @@ const SidePanel = ({
 																	) : (
 																		<img
 																			src={fullImageUrl}
-																			alt={`Box ${box.id}`}
+																			alt={`Box ${boxId}`}
 																			className="w-full h-full object-cover cursor-pointer hover:opacity-80"
 																			onError={() => handleImageError(box.image)}
 																			onClick={() => handleAddExtractedImage(box)}
@@ -500,7 +505,7 @@ const SidePanel = ({
 																	)}
 																</div>
 																<div className="p-2">
-																	<div className="text-xs text-gray-300 text-center">Box {box.id}</div>
+																	<div className="text-xs text-gray-300 text-center">Box {boxId}</div>
 																	<button
 																		onClick={() => handleAddExtractedImage(box)}
 																		className="w-full mt-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
