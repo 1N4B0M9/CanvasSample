@@ -39,8 +39,8 @@ const cardData = [
 	},
 	{
 		image: cardImage7,
-		heading: 'FutureEnvisioning',
-		subItems: ['Job Search', 'Identify Your Skills', 'Resume Builder'],
+		heading: 'Future Envisioning Tool',
+		subItems: ['Goal Setting', 'Identify Your Skills', 'Planning'],
 		href: PATHS.futureEnvisioning,
 	},
 ];
