@@ -1,12 +1,6 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback } from 'react';
 
-const useConnectionOperations = (
-	elements,
-	connections,
-	setConnections,
-	selectedConnectionId,
-	setSelectedConnectionId,
-) => {
+const useConnectionOperations = (connections, setConnections, setSelectedConnectionId) => {
 	// Create a new connection between elements
 	const createConnection = useCallback(
 		(startId, endId) => {

@@ -41,7 +41,7 @@ const components = {
 	updateVideo: UpdateVideo,
 	helpManager: HelpManager,
 	addQuizQuestions: AddQuizQuestions,
-	canvas: Canvas,
+	futureEnvisioning: Canvas,
 };
 
 export default components;

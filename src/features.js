@@ -39,9 +39,9 @@ const cardData = [
 	},
 	{
 		image: cardImage7,
-		heading: 'Canvas',
+		heading: 'FutureEnvisioning',
 		subItems: ['Job Search', 'Identify Your Skills', 'Resume Builder'],
-		href: PATHS.canvas,
+		href: PATHS.futureEnvisioning,
 	},
 ];
 
