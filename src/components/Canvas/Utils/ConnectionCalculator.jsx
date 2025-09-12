@@ -1,8 +1,8 @@
 /**
- * ConnectionManager utility class to handle canvas element connections
+ * ConnectionCalculator utility class to handle canvas element connections
  * This abstracts all connection-related logic
  */
-class ConnectionManager {
+class ConnectionCalculator {
 	constructor(elements) {
 		this.elements = elements;
 		this.connectionPoints = new Map(); // Store connection points for each element
@@ -207,4 +207,4 @@ class ConnectionManager {
 	}
 }
 
-export default ConnectionManager;
+export default ConnectionCalculator;
