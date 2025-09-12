@@ -517,21 +517,6 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		}
 	}, [isConnecting]);
 
-	// Safely get connection coordinates
-	const getConnectionCoordinates = useCallback(
-		(connection) => {
-			try {
-				if (connectionOps && typeof connectionOps.getConnectionCoordinates === 'function') {
-					return connectionOps.getConnectionCoordinates(connection);
-				}
-			} catch (error) {
-				console.error('Error getting connection coordinates:', error);
-			}
-			return null;
-		},
-		[connectionOps],
-	);
-
 	// Update connection data
 	const updateConnectionData = useCallback(
 		(connectionId, data) => {

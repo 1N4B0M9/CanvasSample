@@ -1,5 +1,4 @@
 import { useCallback, useRef, useEffect } from 'react';
-import ConnectionCalculator from './ConnectionCalculator';
 
 const useConnectionOperations = (
 	elements,
@@ -8,14 +7,6 @@ const useConnectionOperations = (
 	selectedConnectionId,
 	setSelectedConnectionId,
 ) => {
-	// Reference to connectionOperationsRef instance
-	const connectionCalculatorRef = useRef(new ConnectionCalculator(elements));
-
-	// Update connection manager when elements change
-	useEffect(() => {
-		connectionCalculatorRef.current = new ConnectionCalculator(elements);
-	}, [elements]);
-
 	// Create a new connection between elements
 	const createConnection = useCallback(
 		(startId, endId) => {
@@ -50,24 +41,9 @@ const useConnectionOperations = (
 		[setConnections, setSelectedConnectionId],
 	);
 
-	// Get connection coordinates
-	const getConnectionCoordinates = useCallback(
-		(connection) => connectionCalculatorRef.current.getConnectionCoordinates(connection),
-		[],
-	);
-
-	// Get temporary connection coordinates when drawing
-	const getTempConnectionCoordinates = useCallback(
-		(element, mouseX, mouseY) => connectionCalculatorRef.current.getTempConnectionCoordinates(element, mouseX, mouseY),
-		[],
-	);
-
 	return {
 		createConnection,
 		deleteConnection,
-		getConnectionCoordinates,
-		getTempConnectionCoordinates,
-		connectionOperationsRef: connectionCalculatorRef.current,
 	};
 };
 
