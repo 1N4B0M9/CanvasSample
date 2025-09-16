@@ -39,7 +39,7 @@
 	},
 	"scripts": {
 		"dev": "react-scripts start",
-		"errorfreedev": "DISABLE_ESLINT_PLUGIN=true react-scripts start",
+		"errorfreedev": "cross-env DISABLE_ESLINT_PLUGIN=true react-scripts start",
 		"start": "react-scripts start",
 		"build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
 		"test": "react-scripts test",
@@ -62,6 +62,7 @@
 		]
 	},
 	"devDependencies": {
+		"cross-env": "^10.0.0",
 		"eslint": "^8.52.0",
 		"eslint-config-airbnb": "^19.0.4",
 		"eslint-config-prettier": "^9.0.0",
