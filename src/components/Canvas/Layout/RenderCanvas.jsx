@@ -9,6 +9,7 @@ import { CanvasProvider, useCanvas } from '../Utils/CanvasContext';
 import RenderElements from './RenderElements';
 import RenderConnections from './RenderConnections';
 import SidePanel from '../Components/Elements/SidePanel';
+import ToolBar from '../Components/Elements/ToolBar';
 
 const CanvasContent = () => {
 	const {
@@ -215,8 +216,9 @@ const CanvasContent = () => {
 
 	return (
 		<div className="relative w-full h-full overflow-hidden">
+			{/* <p>Hi there</p> */}
 			{/* Side panel with integrated handlers */}
-			<SidePanel
+			{/* <SidePanel
 				handleAddText={handleAddText}
 				handleAddMentor={handleAddMentor}
 				addImage={handleAddImage}
@@ -226,7 +228,8 @@ const CanvasContent = () => {
 				backgroundImage={backgroundImage}
 				updateBackgroundScale={updateBackgroundScale}
 				handleExport={handleExport}
-			/>
+			/> */}
+			<ToolBar />
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
 			<div
