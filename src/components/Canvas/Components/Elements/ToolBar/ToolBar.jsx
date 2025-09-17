@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FaImages, FaShapes } from 'react-icons/fa6';
-import ImageSearch from './ImageSearch';
+import ImageSearch from '../ImageSearch';
 import { IoImage, IoLayers } from 'react-icons/io5';
 import { PiSelectionBackgroundBold } from 'react-icons/pi';
 import { TbFileExport } from 'react-icons/tb';
@@ -203,6 +203,8 @@ const ToolBar = ({
 		setExtractionError(null);
 		setSelectedFile(null);
 	};
+
+	// Main tool registary array
 
 	return (
 		<div className="px-2 py-1 rounded-xl absolute left-4 top-18 mt-4 z-50 border border-1 border-gray-300 bg-white shadow flex flex-row">

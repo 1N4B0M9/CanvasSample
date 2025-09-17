@@ -9,7 +9,7 @@ import { CanvasProvider, useCanvas } from '../Utils/CanvasContext';
 import RenderElements from './RenderElements';
 import RenderConnections from './RenderConnections';
 import SidePanel from '../Components/Elements/SidePanel';
-import ToolBar from '../Components/Elements/ToolBar';
+import ToolBar from '../Components/Elements/ToolBar/ToolBar';
 
 const CanvasContent = () => {
 	const {
