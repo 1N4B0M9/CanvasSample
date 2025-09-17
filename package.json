@@ -24,6 +24,7 @@
 		"react-dom": "^18.2.0",
 		"react-firebase-hooks": "^5.1.1",
 		"react-ga4": "^2.1.0",
+		"react-icons": "^5.5.0",
 		"react-konva": "^18.2.10",
 		"react-player": "^2.16.0",
 		"react-query": "^3.39.3",
