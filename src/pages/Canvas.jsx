@@ -97,14 +97,7 @@ const CanvasDataContent = () => {
 	};
 
 	return (
-		<div
-			ref={containerRef}
-			className="relative w-full overflow-hidden"
-			style={{
-				height: availableHeight,
-				minHeight: '400px', // Ensure minimum usable height
-			}}
-		>
+		<div ref={containerRef} className="flex flex-col w-full h-screen min-h-0">
 			{/* Tab navigation - positioned with proper z-index and marked for export hiding */}
 			<div className="absolute top-4 right-4 flex space-x-2 z-50" data-ui-element="true" data-export-hide="true">
 				{canvases.map((canvas) => (

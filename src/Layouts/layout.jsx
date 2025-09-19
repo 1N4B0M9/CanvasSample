@@ -13,7 +13,7 @@ const Layout = ({ children }) => {
 			{pathname === '/FutureEnvisioning' ? <></> : <Navbar />}
 			{/* Controlling padding via pathname removed mt-36 on index.css */}
 			<div className={`px-5 md:px-0 ${pathname !== '/FutureEnvisioning' ? 'mt-36' : ''}`}>{children}</div>
-			<Footer />
+			{pathname === '/FutureEnvisioning' ? <></> : <Footer />}
 		</>
 	);
 };
