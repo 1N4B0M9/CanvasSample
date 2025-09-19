@@ -4,10 +4,7 @@ import { BsInfoCircle } from 'react-icons/bs';
 
 const ExportPanel = ({ handleExport, onClose }) => {
 	return (
-		<div
-			className="fixed left-1/2 transform -translate-x-1/2 top-32 z-40 bg-white rounded-lg shadow-xl border border-gray-200"
-			style={{ width: '380px' }}
-		>
+		<div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-40 transform transition-transform duration-300 ease-in-out translate-x-0">
 			{/* Panel Header */}
 			<div className="flex items-center justify-between p-4 border-b border-gray-200">
 				<h3 className="text-lg font-semibold text-gray-800">Export Vision Board</h3>
