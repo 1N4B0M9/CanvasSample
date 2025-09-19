@@ -8,6 +8,10 @@ import { LuUserRound, LuUserRoundPlus } from 'react-icons/lu';
 import { BsFileEarmarkFont } from 'react-icons/bs';
 import { GrRedo, GrUndo } from 'react-icons/gr';
 import { RiDeleteBin5Line } from 'react-icons/ri';
+import ImagePanel from './Panels/ImagePanel';
+import BackgroundPanel from './Panels/BackgroundPanel';
+import ExportPanel from './Panels/ExportPanel';
+import ExtractPanel from './Panels/ExtractPanel';
 
 const ToolBar = ({
 	handleAddText,
@@ -29,6 +33,21 @@ const ToolBar = ({
 		setBackgroundScale(newScale);
 		if (updateBackgroundScale) {
 			updateBackgroundScale(newScale);
+		}
+	};
+
+	// Close panel function
+	const closePanel = () => {
+		setActivePanel(null);
+	};
+
+	// Handle tool click, basically takes the tool action with the handler to process it
+	const handleToolClick = (tool) => {
+		if (tool.action === 'direct' && tool.handler) {
+			tool.handler();
+		} else if (tool.action === 'panel') {
+			// Toggle panel - close if same panel is clicked, otherwise open new panel
+			setActivePanel(activePanel === tool.panelType ? null : tool.panelType);
 		}
 	};
 
@@ -78,69 +97,107 @@ const ToolBar = ({
 			Icon: GrUndo,
 			label: 'Undo Action',
 			action: 'direct',
-			handler: handleUndo,
-			disabled: !handleUndo,
+			handler: () => {},
+			disabled: () => {},
 		},
 		{
 			Icon: GrRedo,
 			label: 'Redo Action',
 			action: 'direct',
-			handler: handleRedo,
-			disabled: !handleRedo,
+			handler: () => {},
+			disabled: () => {},
 		},
 		{
 			Icon: RiDeleteBin5Line,
 			label: 'Delete Element',
 			action: 'direct',
-			handler: handleDelete,
+			handler: () => {},
+			disabled: () => {},
 			isDelete: true,
-			disabled: !handleDelete,
 		},
 	];
 
 	return (
-		<div className="px-2 py-1 rounded-xl absolute left-4 top-18 mt-4 z-50 border border-1 border-gray-300 bg-white shadow flex flex-row">
-			{/* Base Tool Row*/}
-			<div className="flex flex-row gap-1 items-center">
-				{BaseToolRegistry.map(({ Icon, label }, idx) => (
-					<div
-						key={label}
-						className="group relative rounded-md p-2 transition-colors duration-150 cursor-pointer hover:bg-blue-100"
-						title={label}
-					>
-						<Icon className="text-xl" />
-						{/* Tooltip */}
-						<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-							{label}
-						</span>
-					</div>
-				))}
+		<>
+			<div className="px-2 py-1 rounded-xl absolute left-4 top-18 mt-4 z-50 border border-1 border-gray-300 bg-white shadow flex flex-row">
+				{/* Base Tool Row*/}
+				<div className="flex flex-row gap-1 items-center">
+					{BaseToolRegistry.map((tool, idx) => {
+						const { Icon, label } = tool;
+						const isActive = activePanel === tool.panelType;
+
+						return (
+							<div
+								key={label}
+								className={`group relative rounded-md p-2 transition-colors duration-150 cursor-pointer ${
+									isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'
+								}`}
+								title={label}
+								onClick={() => handleToolClick(tool)}
+							>
+								<Icon className={`text-xl ${isActive ? 'text-blue-700' : ''}`} />
+								{/* Tooltip */}
+								<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+									{label}
+								</span>
+							</div>
+						);
+					})}
+				</div>
+				<div className="mx-2 border-l border-gray-300 h-8 self-center" />
+				<div className="flex flex-row items-center">
+					{/* Additional Tool Row */}
+					{UtilToolRegistry.map((tool, idx) => {
+						const { Icon, label, isDelete, disabled } = tool;
+
+						return (
+							<div
+								key={label}
+								className={`group relative rounded-md p-2 transition-colors duration-150 cursor-pointer ${
+									disabled
+										? 'opacity-50 cursor-not-allowed'
+										: isDelete
+											? 'bg-white hover:bg-red-100'
+											: 'hover:bg-blue-100'
+								}`}
+								title={label}
+								onClick={() => !disabled && handleToolClick(tool)}
+							>
+								<Icon
+									className={
+										isDelete
+											? 'text-xl text-red-300 group-hover:text-red-600 transition-colors duration-150'
+											: 'text-xl'
+									}
+								/>
+								{/* Tooltip */}
+								<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+									{label}
+								</span>
+							</div>
+						);
+					})}
+				</div>
 			</div>
-			<div className="mx-2 border-l border-gray-300 h-8 self-center" />
-			<div className="flex flex-row items-center">
-				{/* Additional Tool Row */}
-				{UtilToolRegistry.map(({ Icon, label, isDelete }, idx) => (
-					<div
-						key={label}
-						className={
-							'group relative rounded-md p-2 transition-colors duration-150 cursor-pointer ' +
-							(isDelete ? 'bg-white hover:bg-red-100' : 'hover:bg-blue-100')
-						}
-						title={label}
-					>
-						<Icon
-							className={
-								isDelete ? 'text-xl text-red-300 group-hover:text-red-600 transition-colors duration-150' : 'text-xl'
-							}
-						/>
-						{/* Tooltip */}
-						<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-							{label}
-						</span>
-					</div>
-				))}
-			</div>
-		</div>
+
+			{activePanel === 'image' && <ImagePanel addImage={addImage} onClose={closePanel} />}
+
+			{activePanel === 'background' && (
+				<BackgroundPanel
+					handleBackgroundUpload={handleBackgroundUpload}
+					handleBackgroundFromSearch={handleBackgroundFromSearch}
+					removeBackgroundImage={removeBackgroundImage}
+					backgroundImage={backgroundImage}
+					backgroundScale={backgroundScale}
+					onScaleChange={handleScaleChange}
+					onClose={closePanel}
+				/>
+			)}
+
+			{activePanel === 'export' && <ExportPanel handleExport={handleExport} onClose={closePanel} />}
+
+			{activePanel === 'extract' && <ExtractPanel addImage={addImage} apiBaseUrl={apiBaseUrl} onClose={closePanel} />}
+		</>
 	);
 };
 

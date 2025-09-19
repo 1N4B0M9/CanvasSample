@@ -1,6 +1,6 @@
 import React from 'react';
 import { IoClose } from 'react-icons/io5';
-import ImageSearch from '../ImageSearch';
+import ImageSearch from '../../ImageSearch';
 
 const ImagePanel = ({ addImage, onClose }) => {
 	return (

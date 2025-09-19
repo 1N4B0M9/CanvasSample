@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { IoClose, IoCloudUpload } from 'react-icons/io5';
 import { RiDeleteBin5Line } from 'react-icons/ri';
-import ImageSearch from '../ImageSearch';
+import ImageSearch from '../../ImageSearch';
 
 const BackgroundPanel = ({
 	handleBackgroundUpload,

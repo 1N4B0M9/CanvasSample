@@ -229,7 +229,17 @@ const CanvasContent = () => {
 				updateBackgroundScale={updateBackgroundScale}
 				handleExport={handleExport}
 			/> */}
-			<ToolBar />
+			<ToolBar
+				handleAddText={handleAddText}
+				handleAddMentor={handleAddMentor}
+				addImage={handleAddImage}
+				handleBackgroundUpload={handleBackgroundUpload}
+				handleBackgroundFromSearch={handleBackgroundFromSearch}
+				removeBackgroundImage={removeBackgroundImage}
+				backgroundImage={backgroundImage}
+				updateBackgroundScale={updateBackgroundScale}
+				handleExport={handleExport}
+			/>
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
 			<div
