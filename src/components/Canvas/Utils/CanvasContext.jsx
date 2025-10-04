@@ -5,6 +5,8 @@
  * avoiding screen capture issues entirely.
  */
 
+// Saving canvas feature will be added here. 
+
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useCanvasData } from './CanvasDataContext';
 import useElementOperations from './useElementOperations';
