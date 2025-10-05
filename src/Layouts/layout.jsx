@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
+import { useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { useLocation } from 'react-router-dom';
 
 const Layout = ({ children }) => {
 	// Checking current pathname to make sure layout disappears for canvas page
 	const location = useLocation();
-	const pathname = location.pathname;
+	const {pathname} = location;
 
 	return (
 		<>

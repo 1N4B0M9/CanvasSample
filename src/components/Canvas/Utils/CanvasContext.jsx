@@ -5,7 +5,13 @@
  * avoiding screen capture issues entirely.
  */
 
-// Saving canvas feature will be added here. 
+/**
+ * Canvas Save/Load Feature
+ *
+ * This file includes functions to save the canvas state as JSON and load it back.
+ * The JSON format preserves all element properties, connections, arrows, and background settings
+ * so that the canvas can be fully restored with all elements still draggable and editable.
+ */ 
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useCanvasData } from './CanvasDataContext';
@@ -560,6 +566,379 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[],
 	);
 
+	/**
+	 * Helper function to convert a blob URL or file to base64 data URL
+	 *
+	 * @param {string} url - The blob URL or object URL to convert
+	 * @returns {Promise<string>} - Promise that resolves to base64 data URL
+	 *
+	 * Why we need this:
+	 * - Object URLs (blob:https://...) are temporary and only exist in the current browser session
+	 * - When we save the canvas, we need to convert these to base64 so they can be stored
+	 * - Base64 data URLs are self-contained and can be saved in JSON files
+	 */
+	const convertBlobUrlToBase64 = useCallback((url) => new Promise((resolve, reject) => {
+			// Fetch the blob from the object URL
+			fetch(url)
+				.then((response) => response.blob())
+				.then((blob) => {
+					// Use FileReader to convert blob to base64
+					const reader = new FileReader();
+					reader.onloadend = () => {
+						resolve(reader.result); // This will be a base64 data URL
+					};
+					reader.onerror = reject;
+					reader.readAsDataURL(blob);
+				})
+				.catch(reject);
+		}), []);
+
+	/**
+	 * Export canvas as JSON file
+	 *
+	 * This function creates a complete JSON representation of the canvas that can be
+	 * saved to disk and later imported to restore the exact canvas state.
+	 *
+	 * @param {string} fileName - The name for the downloaded JSON file
+	 *
+	 * What gets saved:
+	 * - All elements (text, images, mentors) with their positions, sizes, rotations
+	 * - All connections between elements
+	 * - All arrows between elements
+	 * - Background image and scale
+	 * - Metadata (version, export date)
+	 *
+	 * Image handling:
+	 * - Uploaded images (blob URLs) are converted to base64 for portability
+	 * - Unsplash images keep their original URLs (more efficient, no conversion needed)
+	 */
+	const exportCanvasAsJSON = useCallback(
+		async (fileName = 'canvas-export.json') => {
+			try {
+				console.log('Starting JSON export...');
+
+				// Process elements: convert blob URLs to base64 for uploaded images
+				const processedElements = await Promise.all(
+					elements.map(async (element) => {
+						// Create a clean copy of the element with only necessary properties
+						const cleanElement = {
+							id: element.id,
+							type: element.type,
+							x: element.x,
+							y: element.y,
+							width: element.width,
+							height: element.height,
+							rotation: element.rotation,
+							scale: element.scale,
+						};
+
+						// Handle different element types
+						if (element.type === 'text') {
+							// For text elements, save content and styling
+							cleanElement.content = element.content;
+							cleanElement.fontSize = element.fontSize;
+							cleanElement.fontFamily = element.fontFamily;
+							cleanElement.color = element.color;
+						} else if (element.type === 'image') {
+							// For image elements, we need to handle the image source
+							cleanElement.alt = element.alt;
+
+							// Check if it's an uploaded image (has fileUrl - blob URL)
+							if (element.fileUrl && element.fileUrl.startsWith('blob:')) {
+								// Convert blob URL to base64 so it can be saved
+								console.log('Converting blob URL to base64 for element:', element.id);
+								try {
+									cleanElement.dataUrl = await convertBlobUrlToBase64(element.fileUrl);
+									console.log('Successfully converted to base64');
+								} catch (error) {
+									console.error('Failed to convert blob URL to base64:', error);
+									// If conversion fails, try to use the file object if available
+									if (element.file) {
+										cleanElement.fileName = element.file.name;
+									}
+								}
+							}
+							// Check if it's an Unsplash image (has src URL)
+							else if (element.src) {
+								// Keep Unsplash URLs as-is (they're already permanent URLs)
+								cleanElement.src = element.src;
+								// Also save attribution info if available
+								if (element.attribution) {
+									cleanElement.attribution = element.attribution;
+								}
+							}
+							// Check if it already has a dataUrl
+							else if (element.dataUrl) {
+								cleanElement.dataUrl = element.dataUrl;
+							}
+						} else if (element.type === 'mentor') {
+							// For mentor elements, save content and styling
+							cleanElement.content = element.content;
+							cleanElement.fontSize = element.fontSize;
+							cleanElement.fontFamily = element.fontFamily;
+							cleanElement.color = element.color;
+
+							// If mentor has an image, convert it to base64 if needed
+							if (element.image) {
+								if (element.image.startsWith('blob:')) {
+									try {
+										cleanElement.image = await convertBlobUrlToBase64(element.image);
+									} catch (error) {
+										console.error('Failed to convert mentor image:', error);
+									}
+								} else {
+									// If it's already a data URL or regular URL, keep it as-is
+									cleanElement.image = element.image;
+								}
+							}
+						}
+
+						return cleanElement;
+					}),
+				);
+
+				// Process background image if it exists
+				let processedBackgroundImage = null;
+				if (backgroundImage) {
+					processedBackgroundImage = {
+						name: backgroundImage.name,
+						type: backgroundImage.type,
+					};
+
+					// Convert background image URL to base64 if it's an uploaded image
+					if (backgroundImage.url) {
+						if (backgroundImage.url.startsWith('blob:') || backgroundImage.url.startsWith('data:')) {
+							// If it's a blob URL, convert to base64
+							if (backgroundImage.url.startsWith('blob:')) {
+								try {
+									processedBackgroundImage.url = await convertBlobUrlToBase64(backgroundImage.url);
+								} catch (error) {
+									console.error('Failed to convert background image:', error);
+									processedBackgroundImage.url = backgroundImage.url;
+								}
+							} else {
+								// Already a data URL
+								processedBackgroundImage.url = backgroundImage.url;
+							}
+						} else {
+							// It's a regular URL (like Unsplash), keep as-is
+							processedBackgroundImage.url = backgroundImage.url;
+						}
+					}
+
+					// Preserve attribution if it exists (for Unsplash images)
+					if (backgroundImage.attribution) {
+						processedBackgroundImage.attribution = backgroundImage.attribution;
+					}
+				}
+
+				// Create the complete canvas data object
+				const canvasData = {
+					// Metadata
+					version: '1.0', // Version number for future compatibility
+					exportDate: new Date().toISOString(), // When this export was created
+
+					// Canvas content
+					elements: processedElements,
+					connections, // Connections already have simple structure
+					arrows, // Arrows already have simple structure
+
+					// Background settings
+					backgroundImage: processedBackgroundImage,
+					backgroundScale,
+				};
+
+				// Convert to JSON string with pretty formatting (2-space indent)
+				const jsonString = JSON.stringify(canvasData, null, 2);
+
+				// Create a Blob from the JSON string
+				const blob = new Blob([jsonString], { type: 'application/json' });
+
+				// Create a download link and trigger download
+				const link = document.createElement('a');
+				link.href = URL.createObjectURL(blob);
+				link.download = fileName;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+
+				// Clean up the object URL
+				URL.revokeObjectURL(link.href);
+
+				console.log('Canvas exported as JSON successfully');
+				return true;
+			} catch (error) {
+				console.error('Failed to export canvas as JSON:', error);
+				alert('Failed to export canvas. Please check the console for details.');
+				return false;
+			}
+		},
+		[elements, connections, arrows, backgroundImage, backgroundScale, convertBlobUrlToBase64],
+	);
+
+	/**
+	 * Import canvas from JSON file
+	 *
+	 * This function loads a previously exported canvas JSON file and restores
+	 * the complete canvas state, making all elements draggable and editable again.
+	 *
+	 * @param {File} file - The JSON file to import
+	 * @returns {Promise<boolean>} - Success status
+	 *
+	 * What gets restored:
+	 * - All elements with their exact positions and properties
+	 * - All connections and arrows
+	 * - Background image and scale
+	 *
+	 * Image handling:
+	 * - Base64 data URLs are converted back to blob URLs for better performance
+	 * - Regular URLs (Unsplash) are used as-is
+	 */
+	const importCanvasFromJSON = useCallback(
+		async (file) => {
+			try {
+				console.log('Starting JSON import...');
+
+				// Read the file as text
+				const fileText = await new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload = (e) => resolve(e.target.result);
+					reader.onerror = reject;
+					reader.readAsText(file);
+				});
+
+				// Parse JSON
+				const canvasData = JSON.parse(fileText);
+
+				// Validate the JSON structure
+				if (!canvasData.version) {
+					throw new Error('Invalid canvas file: missing version');
+				}
+
+				if (!Array.isArray(canvasData.elements)) {
+					throw new Error('Invalid canvas file: elements must be an array');
+				}
+
+				console.log('Loaded canvas data:', canvasData);
+				console.log(`Canvas version: ${canvasData.version}, exported on: ${canvasData.exportDate}`);
+
+				// Process elements: convert base64 back to blob URLs for better performance
+				const processedElements = await Promise.all(
+					canvasData.elements.map(async (element) => {
+						const restoredElement = { ...element };
+
+						if (element.type === 'image') {
+							// If the image has a base64 dataUrl, convert it to a blob URL
+							// This is more memory-efficient for the browser
+							if (element.dataUrl && element.dataUrl.startsWith('data:')) {
+								try {
+									// Convert base64 to blob
+									const response = await fetch(element.dataUrl);
+									const blob = await response.blob();
+									// Create object URL from blob
+									const blobUrl = URL.createObjectURL(blob);
+
+									restoredElement.fileUrl = blobUrl;
+									// Keep dataUrl as backup
+									restoredElement.dataUrl = element.dataUrl;
+
+									console.log('Converted base64 to blob URL for element:', element.id);
+								} catch (error) {
+									console.error('Failed to convert base64 to blob:', error);
+									// If conversion fails, use dataUrl directly
+									restoredElement.src = element.dataUrl;
+								}
+							}
+							// If it has a regular src URL (Unsplash), keep it as-is
+							else if (element.src) {
+								restoredElement.src = element.src;
+							}
+
+							// Restore attribution if it exists
+							if (element.attribution) {
+								restoredElement.attribution = element.attribution;
+							}
+
+							// Recreate alt text
+							if (element.alt) {
+								restoredElement.alt = element.alt;
+							}
+						} else if (element.type === 'mentor' && element.image) {
+							// Convert mentor image from base64 to blob URL if needed
+							if (element.image.startsWith('data:')) {
+								try {
+									const response = await fetch(element.image);
+									const blob = await response.blob();
+									restoredElement.image = URL.createObjectURL(blob);
+								} catch (error) {
+									console.error('Failed to convert mentor image:', error);
+									restoredElement.image = element.image; // Use as-is
+								}
+							} else {
+								restoredElement.image = element.image;
+							}
+						}
+
+						return restoredElement;
+					}),
+				);
+
+				// Restore background image if it exists
+				let restoredBackgroundImage = null;
+				if (canvasData.backgroundImage) {
+					restoredBackgroundImage = {
+						name: canvasData.backgroundImage.name || 'Background',
+						type: canvasData.backgroundImage.type || 'upload',
+					};
+
+					// Convert base64 to blob URL if needed
+					if (canvasData.backgroundImage.url) {
+						if (canvasData.backgroundImage.url.startsWith('data:')) {
+							try {
+								const response = await fetch(canvasData.backgroundImage.url);
+								const blob = await response.blob();
+								restoredBackgroundImage.url = URL.createObjectURL(blob);
+							} catch (error) {
+								console.error('Failed to convert background image:', error);
+								restoredBackgroundImage.url = canvasData.backgroundImage.url;
+							}
+						} else {
+							// Regular URL, use as-is
+							restoredBackgroundImage.url = canvasData.backgroundImage.url;
+						}
+					}
+
+					// Restore attribution if it exists
+					if (canvasData.backgroundImage.attribution) {
+						restoredBackgroundImage.attribution = canvasData.backgroundImage.attribution;
+					}
+				}
+
+				// Update all state with restored data
+				setElements(processedElements);
+				setConnections(canvasData.connections || []);
+				setArrows(canvasData.arrows || []);
+				setBackgroundImage(restoredBackgroundImage);
+				setBackgroundScale(canvasData.backgroundScale || 100);
+
+				// Clear any selections
+				setSelectedId(null);
+				setSelectedConnectionId(null);
+				setSelectedArrowId(null);
+
+				console.log('Canvas imported successfully');
+				console.log(`Restored ${processedElements.length} elements, ${canvasData.connections?.length || 0} connections, ${canvasData.arrows?.length || 0} arrows`);
+
+				return true;
+			} catch (error) {
+				console.error('Failed to import canvas:', error);
+				alert(`Failed to import canvas: ${error.message}`);
+				return false;
+			}
+		},
+		[],
+	);
+
 	// PROGRAMMATIC CANVAS EXPORT - DRAWS ELEMENTS DIRECTLY
 	const exportCanvas = useCallback(
 		async (fileName = 'vision-board.png') => {
@@ -862,6 +1241,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 		// Export operations
 		exportCanvas,
+		exportCanvasAsJSON,
+		importCanvasFromJSON,
 
 		// Connection operations
 		createConnection: connectionOps?.createConnection,

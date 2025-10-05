@@ -20,6 +20,8 @@ const CanvasContent = () => {
 		removeBackgroundImage,
 		updateBackgroundScale,
 		exportCanvas,
+		exportCanvasAsJSON,
+		importCanvasFromJSON,
 		updateMousePosition,
 		resetSelection,
 		handleElementMouseDown,
@@ -194,10 +196,47 @@ const CanvasContent = () => {
 		});
 	};
 
-	// Handle canvas export
+	// Handle canvas export as PNG
 	const handleExport = () => {
 		const fileName = `vision-board-${new Date().toISOString().split('T')[0]}.png`;
 		exportCanvas(fileName);
+	};
+
+	/**
+	 * Handle canvas export as JSON
+	 *
+	 * Exports the canvas in JSON format with all elements preserved
+	 * so it can be imported later for continued editing
+	 */
+	const handleExportJSON = () => {
+		const fileName = `canvas-${new Date().toISOString().split('T')[0]}.json`;
+		exportCanvasAsJSON(fileName);
+	};
+
+	/**
+	 * Handle canvas import from JSON file
+	 *
+	 * Imports a previously exported canvas JSON file and restores
+	 * all elements, connections, and settings
+	 *
+	 * @param {File} file - The JSON file to import
+	 */
+	const handleImport = async (file) => {
+		// Show confirmation dialog since import will replace current canvas
+		const confirmed = window.confirm(
+			'Importing will replace your current canvas. Make sure you have saved your work. Continue?',
+		);
+
+		if (!confirmed) {
+			return;
+		}
+
+		// Call the import function from context
+		const success = await importCanvasFromJSON(file);
+
+		if (success) {
+			alert('Canvas imported successfully! All elements have been restored.');
+		}
 	};
 
 	// Calculate background style with scale
@@ -239,6 +278,8 @@ const CanvasContent = () => {
 				backgroundImage={backgroundImage}
 				updateBackgroundScale={updateBackgroundScale}
 				handleExport={handleExport}
+				handleExportJSON={handleExportJSON}
+				handleImport={handleImport}
 			/>
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
