@@ -11,12 +11,15 @@ import { logout } from '../../firebase/firebase';
 import { useAuth } from '../../firebase/AuthContext';
 import PATHS from '../../paths';
 
-const ProfileMenu = ({ isMobile }) => {
+// isCanvas indicator is for handling display of login module on Canvas Side
+const ProfileMenu = ({ isMobile, isCanvas }) => {
 	const [settings, setSettings] = useState([]);
 	const { currentUser } = useAuth();
 	const [anchorEl, setAnchorEl] = useState(null);
 	const isMenuOpen = Boolean(anchorEl);
 	const [notification, setNotification] = useState('');
+
+	console.log({ currentUser });
 
 	const showMenu = (event) => {
 		setAnchorEl(event.currentTarget);
@@ -67,7 +70,15 @@ const ProfileMenu = ({ isMobile }) => {
 
 	return (
 		<>
-			{isMobile ? (
+			{isCanvas ? (
+				<div
+					onClick={showMenu}
+					className="flex items-center space-x-2 px-3 py-2 cursor-pointer hover:bg-gray-100 border border-gray-300 bg-white shadow rounded-lg"
+				>
+					<AccountCircle />
+					{currentUser?.email && <span className="text-sm text-gray-700 font-medium">{currentUser.email}</span>}
+				</div>
+			) : isMobile ? (
 				<ListItemButton
 					size="large"
 					edge="end"
@@ -80,7 +91,7 @@ const ProfileMenu = ({ isMobile }) => {
 					<ListItemIcon>
 						<AccountCircle />
 					</ListItemIcon>
-					{isMobile && <ListItemText primary="Profile" />}
+					<ListItemText primary="Profile" />
 				</ListItemButton>
 			) : (
 				<IconButton
@@ -113,7 +124,7 @@ const ProfileMenu = ({ isMobile }) => {
 				{settings.map((option) => (
 					<MenuItem
 						key={option.name}
-						component={Link}
+						component={option.href ? Link : 'button'}
 						to={option.href}
 						onClick={() => {
 							if (option.onClick) option.onClick();

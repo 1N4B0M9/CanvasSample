@@ -10,6 +10,7 @@ import RenderElements from './RenderElements';
 import RenderConnections from './RenderConnections';
 import SidePanel from '../Components/Elements/SidePanel';
 import ToolBar from '../Components/Elements/ToolBar/ToolBar';
+import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
 
 const CanvasContent = () => {
 	const {
@@ -268,6 +269,9 @@ const CanvasContent = () => {
 				updateBackgroundScale={updateBackgroundScale}
 				handleExport={handleExport}
 			/> */}
+			<div className=" rounded-xl absolute left-4 top-4  z-50  bg-white shadow flex flex-row">
+				<ProfileMenu isCanvas={true} />
+			</div>
 			<ToolBar
 				handleAddText={handleAddText}
 				handleAddMentor={handleAddMentor}

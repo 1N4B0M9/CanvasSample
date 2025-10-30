@@ -128,7 +128,7 @@ const ToolBar = ({
 
 	return (
 		<>
-			<div className="px-2 py-1 rounded-xl absolute left-4 top-18 mt-4 z-50 border border-1 border-gray-300 bg-white shadow flex flex-row">
+			<div className="px-2 py-1 rounded-xl absolute left-1/2 top-4 -translate-x-1/2 z-50 border border-gray-300 bg-white shadow flex flex-row">
 				{/* Base Tool Row */}
 				<div className="flex flex-row gap-1 items-center">
 					{BaseToolRegistry.map((tool, idx) => {
@@ -153,9 +153,9 @@ const ToolBar = ({
 						);
 					})}
 				</div>
-				<div className="mx-2 border-l border-gray-300 h-8 self-center" />
-				<div className="flex flex-row items-center">
-					{/* Additional Tool Row */}
+				{/* Will Bring back additional util tools in the future if needed */}
+				{/* <div className="mx-2 border-l border-gray-300 h-8 self-center" /> */}
+				{/* <div className="flex flex-row items-center">
 					{UtilToolRegistry.map((tool, idx) => {
 						const { Icon, label, isDelete, disabled } = tool;
 
@@ -179,14 +179,13 @@ const ToolBar = ({
 											: 'text-xl'
 									}
 								/>
-								{/* Tooltip */}
 								<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
 									{label}
 								</span>
 							</div>
 						);
 					})}
-				</div>
+				</div> */}
 			</div>
 
 			{activePanel === 'image' && <ImagePanel addImage={addImage} onClose={closePanel} />}
