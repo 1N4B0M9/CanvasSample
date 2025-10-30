@@ -45,20 +45,22 @@ const BackgroundPanel = ({
 	};
 
 	return (
-		<div
-			className="fixed left-1/2 transform -translate-x-1/2 top-32 z-40 bg-white rounded-lg shadow-xl border border-gray-200"
-			style={{ width: '420px', maxHeight: '600px' }}
-		>
+		<div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-40 transform transition-transform duration-300 ease-in-out translate-x-0">
 			{/* Panel Header */}
 			<div className="flex items-center justify-between p-4 border-b border-gray-200">
 				<h3 className="text-lg font-semibold text-gray-800">Background Settings</h3>
-				<button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors" title="Close">
+				<button
+					onClick={onClose}
+					className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+					title="Close"
+					type="button"
+				>
 					<IoClose className="text-xl text-gray-600" />
 				</button>
 			</div>
 
 			{/* Panel Content */}
-			<div className="p-4" style={{ maxHeight: '520px', overflowY: 'auto' }}>
+			<div className="p-4 overflow-y-auto" style={{ height: 'calc(100% - 65px)' }}>
 				{/* Current Background Display */}
 				{backgroundImage && (
 					<div className="mb-4 p-3 bg-gray-50 rounded-lg border">
@@ -68,6 +70,7 @@ const BackgroundPanel = ({
 								onClick={removeBackgroundImage}
 								className="p-1 rounded-full hover:bg-red-100 text-red-600 transition-colors"
 								title="Remove Background"
+								type="button"
 							>
 								<RiDeleteBin5Line className="text-sm" />
 							</button>
@@ -95,12 +98,14 @@ const BackgroundPanel = ({
 								<button
 									onClick={resetToFitScreen}
 									className="flex-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs font-medium transition-colors"
+									type="button"
 								>
 									Fit Screen
 								</button>
 								<button
 									onClick={setToFillScreen}
 									className="flex-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs font-medium transition-colors"
+									type="button"
 								>
 									Fill Screen
 								</button>
@@ -124,11 +129,11 @@ const BackgroundPanel = ({
 				)}
 
 				{/* Upload Background Section */}
-				<div className="mb-4">
-					<h4 className="text-sm font-medium text-gray-700 mb-2">Upload Background</h4>
+				<div className="my-2">
 					<button
 						onClick={triggerBackgroundUpload}
 						className="w-full px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors flex items-center justify-center font-medium"
+						type="button"
 					>
 						<IoCloudUpload className="text-lg mr-2" />
 						Upload Background Image
@@ -144,7 +149,7 @@ const BackgroundPanel = ({
 
 				{/* Search Background Section */}
 				<div>
-					<h4 className="text-sm font-medium text-gray-700 mb-2">Search Background Images</h4>
+					<h4 className="text-lg mb-2 mt-4">Search Background Images</h4>
 					<ImageSearch addImage={handleBackgroundFromSearch} isBackgroundMode title="" />
 				</div>
 			</div>

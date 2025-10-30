@@ -137,8 +137,8 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 	};
 
 	return (
-		<div className="mt-4">
-			<h3 className="text-lg font-semibold mb-2">{title}</h3>
+		<div className="mt-2">
+			<h3 className="text-lg mb-2">{title}</h3>
 
 			{/* Quick search suggestions */}
 			<div className="mb-3">
