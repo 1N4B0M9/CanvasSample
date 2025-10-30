@@ -153,7 +153,7 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 									setSearchTerm(suggestion);
 									searchImages(suggestion);
 								}}
-								className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs rounded transition-colors"
+								className="px-2 py-1 bg-gray-700 hover:bg-gray-600 hover:text-white text-xs text-gray-300 rounded transition-colors"
 							>
 								{suggestion}
 							</button>
@@ -169,13 +169,13 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						placeholder={getPlaceholderText()}
-						className="p-2 rounded bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className="p-2 rounded border border-gray-400 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
 					/>
 					<button
 						type="submit"
 						disabled={isLoading || !searchTerm.trim()}
 						className={`p-2 rounded flex items-center justify-center ${
-							isLoading || !searchTerm.trim() ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+							isLoading || !searchTerm.trim() ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-500 hover:bg-purple-600'
 						} text-white`}
 					>
 						{isLoading ? (
