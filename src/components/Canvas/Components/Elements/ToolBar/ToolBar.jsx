@@ -1,17 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { FaImages, FaShapes } from 'react-icons/fa6';
-import ImageSearch from '../ImageSearch';
-import { IoImage, IoLayers } from 'react-icons/io5';
+import { IoImage, IoLayers, IoCloudUpload } from 'react-icons/io5';
 import { PiSelectionBackgroundBold } from 'react-icons/pi';
 import { TbFileExport } from 'react-icons/tb';
 import { LuUserRound, LuUserRoundPlus } from 'react-icons/lu';
 import { BsFileEarmarkFont } from 'react-icons/bs';
 import { GrRedo, GrUndo } from 'react-icons/gr';
 import { RiDeleteBin5Line } from 'react-icons/ri';
+import ImageSearch from '../ImageSearch';
 import ImagePanel from './Panels/ImagePanel';
 import BackgroundPanel from './Panels/BackgroundPanel';
 import ExportPanel from './Panels/ExportPanel';
 import ExtractPanel from './Panels/ExtractPanel';
+import ImportPanel from './Panels/ImportPanel';
 
 const ToolBar = ({
 	handleAddText,
@@ -23,6 +24,8 @@ const ToolBar = ({
 	backgroundImage,
 	updateBackgroundScale,
 	handleExport,
+	handleExportJSON,
+	handleImport,
 	apiBaseUrl = 'https://vision-board-api-v2.onrender.com', // Updated API base URL
 }) => {
 	const [activePanel, setActivePanel] = useState(null);
@@ -84,8 +87,14 @@ const ToolBar = ({
 			panelType: 'background',
 		},
 		{
+			Icon: IoCloudUpload,
+			label: 'Import Canvas',
+			action: 'panel',
+			panelType: 'import',
+		},
+		{
 			Icon: TbFileExport,
-			label: 'Export',
+			label: 'Export Canvas',
 			action: 'panel',
 			panelType: 'export',
 		},
@@ -120,7 +129,7 @@ const ToolBar = ({
 	return (
 		<>
 			<div className="px-2 py-1 rounded-xl absolute left-4 top-18 mt-4 z-50 border border-1 border-gray-300 bg-white shadow flex flex-row">
-				{/* Base Tool Row*/}
+				{/* Base Tool Row */}
 				<div className="flex flex-row gap-1 items-center">
 					{BaseToolRegistry.map((tool, idx) => {
 						const { Icon, label } = tool;
@@ -194,7 +203,11 @@ const ToolBar = ({
 				/>
 			)}
 
-			{activePanel === 'export' && <ExportPanel handleExport={handleExport} onClose={closePanel} />}
+			{activePanel === 'import' && <ImportPanel handleImport={handleImport} onClose={closePanel} />}
+
+			{activePanel === 'export' && (
+				<ExportPanel handleExport={handleExport} handleExportJSON={handleExportJSON} onClose={closePanel} />
+			)}
 
 			{activePanel === 'extract' && <ExtractPanel addImage={addImage} apiBaseUrl={apiBaseUrl} onClose={closePanel} />}
 		</>

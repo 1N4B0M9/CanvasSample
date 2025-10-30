@@ -16,7 +16,7 @@ export default function AnswerResult({ result, setResult }) {
 	let wrongArr = [];
 	if (result) {
 		wrongArr = result?.filter((v, i) => {
-			let bol = !v.isCorrect;
+			const bol = !v.isCorrect;
 			v.index = i;
 			return bol;
 		});
@@ -62,8 +62,7 @@ export default function AnswerResult({ result, setResult }) {
 					{result?.length - wrongArr.length}/{result?.length}
 				</Typography>
 			</Box>
-			{wrongArr?.map((v) => {
-				return (
+			{wrongArr?.map((v) => (
 					<Box
 						sx={{
 							marginBottom: 2,
@@ -82,8 +81,7 @@ export default function AnswerResult({ result, setResult }) {
 						)}
 
 						<div className={sty.imgBox}>
-							{v?.question?.images?.map((imgItem) => {
-								return (
+							{v?.question?.images?.map((imgItem) => (
 									<div
 										onClick={() => {
 											document.body.style.overflow = 'hidden';
@@ -96,11 +94,9 @@ export default function AnswerResult({ result, setResult }) {
 									>
 										<img className={sty.img} src={imgItem} />
 									</div>
-								);
-							})}
+								))}
 						</div>
-						{v?.question?.videos?.map((url) => {
-							return (
+						{v?.question?.videos?.map((url) => (
 								<Box
 									sx={{
 										marginBottom: 1,
@@ -112,13 +108,11 @@ export default function AnswerResult({ result, setResult }) {
 										}}
 										src={url}
 										controls
-									></video>
+									 />
 								</Box>
-							);
-						})}
+							))}
 					</Box>
-				);
-			})}
+				))}
 			<Box sx={{}}>
 				<Button
 					sx={{

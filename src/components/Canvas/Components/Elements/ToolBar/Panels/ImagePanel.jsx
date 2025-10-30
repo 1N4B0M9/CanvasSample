@@ -2,8 +2,7 @@ import React from 'react';
 import { IoClose } from 'react-icons/io5';
 import ImageSearch from '../../ImageSearch';
 
-const ImagePanel = ({ addImage, onClose }) => {
-	return (
+const ImagePanel = ({ addImage, onClose }) => (
 		<div
 			className="fixed left-1/2 transform -translate-x-1/2 top-32 z-40 bg-white rounded-lg shadow-xl border border-gray-200"
 			style={{ width: '420px', maxHeight: '500px' }}
@@ -22,6 +21,5 @@ const ImagePanel = ({ addImage, onClose }) => {
 			</div>
 		</div>
 	);
-};
 
 export default ImagePanel;
