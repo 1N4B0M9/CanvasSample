@@ -33,6 +33,8 @@ const ToolBar = ({
 }) => {
 	const [activePanel, setActivePanel] = useState(null);
 	const [backgroundScale, setBackgroundScale] = useState(100);
+	// Persist element bank state so it doesn't get cleared when panel closes
+	const [magazineElementBank, setMagazineElementBank] = useState([]);
 
 	// Handle background scale change
 	const handleScaleChange = (newScale) => {
@@ -218,7 +220,14 @@ const ToolBar = ({
 
 			{activePanel === 'extract' && <ExtractPanel addImage={addImage} apiBaseUrl={apiBaseUrl} onClose={closePanel} />}
 
-			{activePanel === 'magazine' && <MagazinePanel addImageElement={addImageElement} onClose={closePanel} />}
+			{activePanel === 'magazine' && (
+				<MagazinePanel
+					addImageElement={addImageElement}
+					onClose={closePanel}
+					elementBank={magazineElementBank}
+					setElementBank={setMagazineElementBank}
+				/>
+			)}
 		</>
 	);
 };

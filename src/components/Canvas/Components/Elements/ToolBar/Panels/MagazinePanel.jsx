@@ -53,14 +53,14 @@ const VB_MAGAZINE_IMAGES = [
 	'48.jpeg',
 ];
 
-const MagazinePanel = ({ addImageElement, onClose }) => {
+const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }) => {
 	const [pages, setPages] = useState([]);
 	const [currentPage, setCurrentPage] = useState(0);
 	const [detectedImages, setDetectedImages] = useState([]);
 	const [selectedImage, setSelectedImage] = useState(null);
 	const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 	const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
-	const [elementBank, setElementBank] = useState([]); // Store extracted images
+	// elementBank and setElementBank are now passed as props to persist state
 	const canvasRef = useRef(null);
 	const imageRef = useRef(null);
 	const containerRef = useRef(null);
