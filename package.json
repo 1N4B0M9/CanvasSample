@@ -13,6 +13,7 @@
 		"elasticlunr": "^0.9.5",
 		"express": "^4.18.2",
 		"firebase": "^9.23.0",
+		"html2canvas": "^1.4.1",
 		"konva": "^9.3.15",
 		"lodash": "^4.17.21",
 		"moment": "^2.29.4",
@@ -23,6 +24,7 @@
 		"react-dom": "^18.2.0",
 		"react-firebase-hooks": "^5.1.1",
 		"react-ga4": "^2.1.0",
+		"react-icons": "^5.5.0",
 		"react-konva": "^18.2.10",
 		"react-player": "^2.16.0",
 		"react-query": "^3.39.3",
@@ -38,6 +40,7 @@
 	},
 	"scripts": {
 		"dev": "react-scripts start",
+		"errorfreedev": "cross-env DISABLE_ESLINT_PLUGIN=true react-scripts start",
 		"start": "react-scripts start",
 		"build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
 		"test": "react-scripts test",
@@ -60,6 +63,7 @@
 		]
 	},
 	"devDependencies": {
+		"cross-env": "^10.0.0",
 		"eslint": "^8.52.0",
 		"eslint-config-airbnb": "^19.0.4",
 		"eslint-config-prettier": "^9.0.0",

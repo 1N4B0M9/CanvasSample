@@ -29,7 +29,7 @@ export default function AnswerQuiz({ questions, setResult }) {
 	};
 
 	const getRandomQuestion = (difficulty, answeredQues) => {
-		let needAnsweredQues = answeredQues || answeredQuestions;
+		const needAnsweredQues = answeredQues || answeredQuestions;
 		console.log('needAnsweredQues = ', needAnsweredQues);
 		const availableQuestions = questions[difficulty].filter((q) => !needAnsweredQues[difficulty].includes(q.id));
 		if (availableQuestions.length === 0) return null;
@@ -43,21 +43,19 @@ export default function AnswerQuiz({ questions, setResult }) {
 			return;
 		}
 
-		let answer = currentQuestion.options.filter((v) => {
-			return v.isCorrect;
-		})[0].label;
+		const answer = currentQuestion.options.filter((v) => v.isCorrect)[0].label;
 		// console.log('currentQuestion = ', currentQuestion);
 		// console.log('checked = ', checked);
-		let isCorrect = answer == checked;
+		const isCorrect = answer == checked;
 
-		let deepAnswerRecords = [...answerRecords];
+		const deepAnswerRecords = [...answerRecords];
 		deepAnswerRecords.push({
 			isCorrect,
 			question: currentQuestion,
 		});
 		setAnswerRecords(deepAnswerRecords);
 
-		let deepNewAnsweredQuestions = {
+		const deepNewAnsweredQuestions = {
 			...answeredQuestions,
 			[difficulty]: [...answeredQuestions[difficulty], currentQuestion.id],
 		};
@@ -77,15 +75,13 @@ export default function AnswerQuiz({ questions, setResult }) {
 			} else if (difficulty === 'hard') {
 				nextDifficulty = 'hard';
 			}
-		} else {
-			if (difficulty === 'moderate') {
+		} else if (difficulty === 'moderate') {
 				nextDifficulty = 'easy';
 			} else if (difficulty === 'hard') {
 				nextDifficulty = 'moderate';
 			} else if (difficulty === 'easy') {
 				nextDifficulty = 'easy';
 			}
-		}
 		setDifficulty(nextDifficulty);
 		const nextQuestion = getRandomQuestion(nextDifficulty, deepNewAnsweredQuestions);
 		console.log('currentQuestion2 = ', currentQuestion);
@@ -118,13 +114,11 @@ export default function AnswerQuiz({ questions, setResult }) {
 			<div>
 				<FormControl>
 					<RadioGroup value={checked} onChange={handleChange}>
-						{currentQuestion?.options?.map((v, i) => {
-							return (
+						{currentQuestion?.options?.map((v, i) => (
 								<div>
 									<FormControlLabel key={i} value={v.label} control={<Radio />} label={v.label} />
 									<div className={sty.imgBox}>
-										{v.image.map((imgItem) => {
-											return (
+										{v.image.map((imgItem) => (
 												<div
 													onClick={() => {
 														document.body.style.overflow = 'hidden';
@@ -138,12 +132,10 @@ export default function AnswerQuiz({ questions, setResult }) {
 												>
 													<img className={sty.img} src={imgItem} />
 												</div>
-											);
-										})}
+											))}
 									</div>
 								</div>
-							);
-						})}
+							))}
 					</RadioGroup>
 				</FormControl>
 			</div>

@@ -1,244 +1,203 @@
-import React, { useState, useRef } from 'react';
-import CanvasElement from '../components/Canvas/CanvasElement';
-import SidePanel from '../components/Canvas/SidePanel';
+/**
+ * Canvas.jsx - Fixed to Account for Navbar/Footer Layout
+ *
+ * This version calculates the available height after accounting for navbar
+ * and ensures the canvas fits properly within the layout structure.
+ */
 
-const CustomCanvas = () => {
-	const [elements, setElements] = useState([]);
-	const [selectedId, setSelectedId] = useState(null);
-	const [isDragging, setIsDragging] = useState(false);
-	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-	const [isScaling, setIsScaling] = useState(false);
-	const canvasRef = useRef(null);
-	const scaleRef = useRef(null);
+import React, { useState, useEffect, useRef } from 'react';
+import { doc, getDoc, collection } from 'firebase/firestore';
+import RenderCanvas from '../components/Canvas/Layout/RenderCanvas';
+import { CanvasDataProvider, useCanvasData } from '../components/Canvas/Utils/CanvasDataContext';
+import { db } from '../firebase/firebase'; // Ensure this path is correct
+import { useAuth } from '../firebase/AuthContext'; // Import auth context (ensure path is correct)
 
-	const handleAddText = () => {
-		const newText = {
-			id: Date.now().toString(),
-			type: 'text',
-			content: 'Double click to edit',
-			x: 400,
-			y: 100,
-			rotation: 0,
-			scale: 1,
-			fontSize: 16,
-			color: 'black',
+/**
+ * CanvasDataContent Component
+ *
+ * This component consumes the canvas data from context and manages:
+ * - Tab navigation UI for switching between canvases
+ * - Active canvas display logic
+ * - State for tracking which canvas is currently active
+ *
+ * @returns {JSX.Element} The rendered canvas interface with tabs and active canvas
+ */
+const CanvasDataContent = () => {
+	const [activeTab, setActiveTab] = useState(0);
+	const [availableHeight, setAvailableHeight] = useState('100vh');
+	const { canvases } = useCanvasData();
+	const contentRef = useRef(null);
+	const containerRef = useRef(null);
+
+	/**
+	 * Calculate available height accounting for navbar and any other UI elements
+	 */
+	useEffect(() => {
+		const calculateHeight = () => {
+			// Get the navbar height (AppBar)
+			const navbar =
+				document.querySelector('header[class*="MuiAppBar"]') ||
+				document.querySelector('nav') ||
+				document.querySelector('[class*="navbar"]');
+
+			const navbarHeight = navbar ? navbar.offsetHeight : 64; // Default to 64px if not found
+
+			// Calculate available height minus navbar
+			const windowHeight = window.innerHeight;
+			const calculatedHeight = windowHeight - navbarHeight;
+
+			console.log('Layout calculations:', {
+				windowHeight,
+				navbarHeight,
+				calculatedHeight,
+			});
+
+			setAvailableHeight(`${calculatedHeight}px`);
 		};
-		setElements((prev) => [...prev, newText]);
-		setSelectedId(newText.id);
-	};
-	const handleAddMentor = () => {
-		const newMentor = {
-			id: Date.now().toString(),
-			type: 'mentor',
-			content: 'Mentor Name',
-			image: null,
-			x: 400,
-			y: 100,
-			rotation: 0,
-			scale: 1,
-			fontSize: 16,
-			color: 'black',
+
+		// Calculate on mount
+		calculateHeight();
+
+		// Recalculate on resize
+		const handleResize = () => {
+			setTimeout(calculateHeight, 100); // Small delay to ensure DOM updates
 		};
 
-		setElements((prev) => [...prev, newMentor]);
+		window.addEventListener('resize', handleResize);
 
-	};
-	const addImage = async (image, key) => {
-		try {
-			await fetch(`${image.downloadLink}?client_id=${key}`);
-
-		} catch (err) {
-			console.error('Error triggering download:', err);
-		}
-		console.log(key)
-
-		const img = new window.Image();
-		img.crossOrigin = 'anonymous';
-		img.src = image.url;
-
-		img.onload = () => {
-			const newImage = {
-				id: Date.now().toString(),
-				type: 'image',
-				content: img.src,
-				x: 500,
-				y: 100,
-				rotation: 0,
-				scale: 1,
-			};
-			setElements((prev) => [...prev, newImage]);
-
-		};
-	};
-
-
-
-	const handleDrop = (e) => {
-		e.preventDefault();
-		const file = e.dataTransfer.files[0];
-		if (!file || !file.type.startsWith('image/')) return;
-
-		const rect = canvasRef.current.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
-
-		const reader = new FileReader();
-		reader.onload = (event) => {
-			const newImage = {
-				id: Date.now().toString(),
-				type: 'image',
-				content: event.target.result,
-				x,
-				y,
-				rotation: 0,
-				scale: 1,
-			};
-			setElements((prev) => [...prev, newImage]);
-		};
-		reader.readAsDataURL(file);
-	};
-
-	const handleMouseDown = (e) => {
-		if (e.target === canvasRef.current) {
-			setSelectedId(null);
-			return;
-		}
-
-		if (!isScaling) {
-			const rect = canvasRef.current.getBoundingClientRect();
-			setIsDragging(true);
-			setDragStart({
-				x: e.clientX - rect.left,
-				y: e.clientY - rect.top,
+		// Also recalculate when navbar might change
+		const observer = new MutationObserver(calculateHeight);
+		if (document.body) {
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true,
+				attributes: true,
+				attributeFilter: ['class', 'style'],
 			});
 		}
-	};
 
-	const handleMouseMove = (e) => {
-		if (!canvasRef.current) return;
-		const rect = canvasRef.current.getBoundingClientRect();
-
-		if (isDragging && selectedId) {
-			const x = e.clientX - rect.left;
-			const y = e.clientY - rect.top;
-
-			setElements((prev) =>
-				prev.map((el) =>
-					el.id === selectedId
-						? {
-							...el,
-							x: el.x + (x - dragStart.x),
-							y: el.y + (y - dragStart.y),
-						}
-						: el,
-				),
-			);
-			setDragStart({ x, y });
-		} else if (isScaling && scaleRef.current) {
-			const { elementId, corner, centerX, centerY, initialScale, initialWidth, initialHeight } = scaleRef.current;
-
-			const currentX = e.clientX;
-			const currentY = e.clientY;
-
-			// Calculate distance from center to current mouse position
-			const dx = currentX - centerX;
-			const dy = currentY - centerY;
-			const distance = Math.sqrt(dx * dx + dy * dy);
-
-			// Calculate initial distance from center to corner
-			const initialDx = corner.includes('e') ? initialWidth / 2 : -initialWidth / 2;
-			const initialDy = corner.includes('s') ? initialHeight / 2 : -initialHeight / 2;
-			const initialDistance = Math.sqrt(initialDx * initialDx + initialDy * initialDy);
-
-			// Calculate scale factor
-			const scaleFactor = distance / initialDistance;
-			const newScale = initialScale * scaleFactor;
-
-			// Update element scale with limits
-			setElements((prev) =>
-				prev.map((el) =>
-					el.id === elementId
-						? {
-							...el,
-							scale: Math.max(0.2, Math.min(5, newScale)),
-						}
-						: el,
-				),
-			);
-		}
-	};
-
-	const handleMouseUp = () => {
-		setIsDragging(false);
-		setIsScaling(false);
-		scaleRef.current = null;
-	};
-
-	const handleWheel = (e) => {
-		if (!selectedId) return;
-		e.preventDefault();
-
-		setElements((prev) =>
-			prev.map((el) => {
-				if (el.id === selectedId) {
-					const scaleChange = e.deltaY > 0 ? 0.9 : 1.1;
-					const newScale = el.scale * scaleChange;
-					return {
-						...el,
-						scale: Math.max(0.2, Math.min(5, newScale)),
-					};
-				}
-				return el;
-			}),
-		);
-	};
-
-	const handleUpdateElement = (updatedElement) => {
-		setElements((prev) => prev.map((el) => (el.id === updatedElement.id ? updatedElement : el)));
-	};
-
-	const handleDeleteElement = (id) => {
-		setElements((prev) => prev.filter((el) => el.id !== id));
-		setSelectedId(null);
-	};
-
-	const handleScaleStart = (elementId, scaleInfo, event) => {
-		setIsScaling(true);
-		scaleRef.current = {
-			elementId,
-			...scaleInfo,
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			observer.disconnect();
 		};
+	}, []);
+
+	/**
+	 * Handles tab selection and updates the active canvas
+	 * @param {number} tabId - The ID of the selected canvas tab
+	 */
+	const handleTabChange = (tabId) => {
+		setActiveTab(tabId);
+		// Scroll to top when changing canvas tabs
+		window.scrollTo(0, 0);
+		// Also ensure the content container is scrolled to top
+		if (contentRef.current) {
+			contentRef.current.scrollTop = 0;
+		}
 	};
 
 	return (
-		<div className="relative w-full h-screen">
-			<SidePanel handleAddText={handleAddText} handleAddMentor={handleAddMentor} addImage={addImage} />
+		<div ref={containerRef} className="flex flex-col w-full h-screen min-h-0">
+			{/* Tab navigation - positioned with proper z-index and marked for export hiding */}
+			<div className="absolute top-4 right-4 flex space-x-2 z-40" data-ui-element="true" data-export-hide="true">
+				{canvases.map((canvas) => (
+					<button
+						key={canvas.id}
+						className={`px-4 py-2 rounded-lg transition-colors shadow-lg ${
+							activeTab === canvas.id
+								? 'bg-blue-500 text-white'
+								: 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+						}`}
+						onClick={() => handleTabChange(canvas.id)}
+					>
+						{canvas.name}
+					</button>
+				))}
+			</div>
 
-			<div
-				ref={canvasRef}
-				className="w-full h-full bg-white overflow-hidden"
-				onDrop={handleDrop}
-				onDragOver={(e) => e.preventDefault()}
-				onMouseDown={handleMouseDown}
-				onMouseMove={handleMouseMove}
-				onMouseUp={handleMouseUp}
-				onMouseLeave={handleMouseUp}
-				onWheel={handleWheel}
-			>
-				{elements.map((element) => (
-					<CanvasElement
-						key={element.id}
-						element={element}
-						isSelected={selectedId === element.id}
-						onSelect={setSelectedId}
-						onUpdate={handleUpdateElement}
-						onDelete={handleDeleteElement}
-						onScaleStart={handleScaleStart}
-					/>
+			{/* Canvas container - fills the calculated available space */}
+			<div ref={contentRef} className="w-full h-full">
+				{canvases.map((canvas) => (
+					<div key={canvas.id} className={`w-full h-full ${activeTab === canvas.id ? 'block' : 'hidden'}`}>
+						<RenderCanvas canvasId={canvas.id} />
+					</div>
 				))}
 			</div>
 		</div>
 	);
 };
 
-export default CustomCanvas;
+/**
+ * Canvas Component (Main Export)
+ *
+ * This is the main page component that:
+ * - Sets up the initial canvas data (3 canvases with simple names by default)
+ * - Loads canvas data from Firestore if user is logged in
+ * - Provides the CanvasDataProvider context to child components
+ * - Renders the CanvasDataContent with appropriate context
+ *
+ * @returns {JSX.Element} The fully contextualized canvas page
+ */
+export default function Canvas() {
+	// Default initial canvas configuration (used when no user is logged in or no saved data)
+	const defaultCanvases = [
+		{ id: 0, name: '1', data: { elements: [], connections: [], arrows: [] } },
+		{ id: 1, name: '2', data: { elements: [], connections: [], arrows: [] } },
+		{ id: 2, name: '3', data: { elements: [], connections: [], arrows: [] } },
+	];
+
+	const [initialCanvases, setInitialCanvases] = useState(defaultCanvases);
+	const [loading, setLoading] = useState(true);
+	const { currentUser } = useAuth(); // Get current user from auth context
+
+	// Scroll to top when component mounts
+	useEffect(() => {
+		window.scrollTo(0, 0);
+	}, []);
+
+	// Load canvas data from Firestore when component mounts or user changes
+	useEffect(() => {
+		async function loadCanvasData() {
+			setLoading(true);
+
+			if (currentUser) {
+				try {
+					const canvasDocRef = doc(db, 'canvas', currentUser.uid);
+					const canvasDocSnap = await getDoc(canvasDocRef);
+
+					if (canvasDocSnap.exists() && canvasDocSnap.data().canvases) {
+						setInitialCanvases(canvasDocSnap.data().canvases);
+					}
+				} catch (error) {
+					console.error('Error loading canvas data:', error);
+				}
+			}
+
+			setLoading(false);
+
+			// Scroll to top when data is loaded
+			window.scrollTo(0, 0);
+		}
+
+		loadCanvasData();
+	}, [currentUser]);
+
+	if (loading) {
+		return (
+			<div className="flex justify-center items-center h-96 bg-gray-100">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4" />
+					<div className="text-gray-600">Loading your vision boards...</div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="w-full">
+			<CanvasDataProvider initialCanvases={initialCanvases} currentUser={currentUser}>
+				<CanvasDataContent />
+			</CanvasDataProvider>
+		</div>
+	);
+}

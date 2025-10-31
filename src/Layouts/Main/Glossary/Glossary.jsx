@@ -93,7 +93,7 @@ const Glossary = () => {
 						{id}
 					</h1>
 
-					{glossaryTerms['terms']
+					{glossaryTerms.terms
 						.filter((term) => term.word.startsWith(id))
 						.map((term) => (
 							<Card className="flex items-center justify-center" sx={{ minWidth: 275 }} key={term.word}>

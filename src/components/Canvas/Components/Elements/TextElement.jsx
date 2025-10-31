@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import SidePanel from './SidePanel';
 
 const TextElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) => {
 	const handleBlur = () => {
@@ -13,8 +14,7 @@ const TextElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) =>
 	};
 
 	return (
-		// Added return statement here
-		<div className="min-w-[100px] min-h-[40px] p-2">
+		<div className="min-h-[40px] p-2" data-element-id={element.id}>
 			{isEditing ? (
 				<textarea
 					ref={textRef}
@@ -27,6 +27,7 @@ const TextElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) =>
 						fontFamily: element.fontFamily || 'inherit',
 						color: element.color || 'black',
 					}}
+					data-element-id={element.id}
 				/>
 			) : (
 				<div
@@ -36,6 +37,7 @@ const TextElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) =>
 						color: element.color || 'black',
 						whiteSpace: 'pre-wrap',
 					}}
+					data-element-id={element.id}
 				>
 					{element.content}
 				</div>
