@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FaImages, FaShapes } from 'react-icons/fa6';
-import { IoImage, IoLayers, IoCloudUpload } from 'react-icons/io5';
+import { IoImage, IoLayers, IoCloudUpload, IoMic } from 'react-icons/io5';
 import { PiSelectionBackgroundBold } from 'react-icons/pi';
 import { TbFileExport } from 'react-icons/tb';
 import { LuUserRound, LuUserRoundPlus } from 'react-icons/lu';
@@ -13,6 +13,8 @@ import BackgroundPanel from './Panels/BackgroundPanel';
 import ExportPanel from './Panels/ExportPanel';
 import ExtractPanel from './Panels/ExtractPanel';
 import ImportPanel from './Panels/ImportPanel';
+import RecordingPanel from './Panels/RecordingPanel';
+import { useAuth } from '../../../../../firebase/AuthContext';
 
 const ToolBar = ({
 	handleAddText,
@@ -28,6 +30,7 @@ const ToolBar = ({
 	handleImport,
 	apiBaseUrl = 'https://vision-board-api-v2.onrender.com', // Updated API base URL
 }) => {
+	const { currentUser } = useAuth();
 	const [activePanel, setActivePanel] = useState(null);
 	const [backgroundScale, setBackgroundScale] = useState(100);
 
@@ -87,6 +90,13 @@ const ToolBar = ({
 			panelType: 'background',
 		},
 		{
+			Icon: IoMic,
+			label: 'Recording',
+			action: 'panel',
+			panelType: 'recording',
+			disabled: !currentUser,
+		},
+		{
 			Icon: IoCloudUpload,
 			label: 'Import Canvas',
 			action: 'panel',
@@ -132,22 +142,25 @@ const ToolBar = ({
 				{/* Base Tool Row */}
 				<div className="flex flex-row gap-1 items-center">
 					{BaseToolRegistry.map((tool, idx) => {
-						const { Icon, label } = tool;
+						const { Icon, label, disabled } = tool;
 						const isActive = activePanel === tool.panelType;
+						const isDisabled = disabled === true;
 
 						return (
 							<div
 								key={label}
-								className={`group relative rounded-md p-2 transition-colors duration-150 cursor-pointer ${
-									isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'
+								className={`group relative rounded-md p-2 transition-colors duration-150 ${
+									isDisabled
+										? 'opacity-50 cursor-not-allowed'
+										: `cursor-pointer ${isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'}`
 								}`}
-								title={label}
-								onClick={() => handleToolClick(tool)}
+								title={isDisabled ? `${label} (Login required)` : label}
+								onClick={() => !isDisabled && handleToolClick(tool)}
 							>
 								<Icon className={`text-xl ${isActive ? 'text-blue-700' : ''}`} />
 								{/* Tooltip */}
 								<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-									{label}
+									{isDisabled ? `${label} (Login required)` : label}
 								</span>
 							</div>
 						);
@@ -209,6 +222,8 @@ const ToolBar = ({
 			)}
 
 			{activePanel === 'extract' && <ExtractPanel addImage={addImage} apiBaseUrl={apiBaseUrl} onClose={closePanel} />}
+
+			{activePanel === 'recording' && <RecordingPanel onClose={closePanel} />}
 		</>
 	);
 };
