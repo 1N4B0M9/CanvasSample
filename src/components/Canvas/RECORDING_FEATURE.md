@@ -43,10 +43,18 @@ The Canvas system now includes an **Audio Recording** feature that allows authen
 - ✅ **File size validation (10MB max)**
 
 **Key Functions**:
-- `startRecording()` - Requests microphone access and starts recording
-- `stopRecording()` - Stops recording and creates audio blob
-- `uploadToFirebase()` - Uploads audio to Firebase Storage
-- `discardRecording()` - Clears current recording
+- `startRecording()` - Requests microphone access and starts recording (RecordingPanel.jsx:43-103)
+- `stopRecording()` - Stops recording and creates audio blob (RecordingPanel.jsx:106-117)
+- `uploadToFirebase()` - Uploads audio to Firebase Storage (RecordingPanel.jsx:120-165)
+- `discardRecording()` - Clears current recording (RecordingPanel.jsx:168-173)
+- `formatTime()` - Formats seconds to MM:SS display (RecordingPanel.jsx:36-40)
+
+**Code Quality**:
+- ✅ PropTypes validation added (RecordingPanel.jsx:314-316)
+- ✅ All ESLint warnings fixed
+- ✅ Button types explicitly defined
+- ✅ Self-closing JSX tags
+- ✅ HTML entities properly escaped (&quot;)
 
 **Storage Structure**:
 ```
@@ -64,12 +72,16 @@ Example: `canvas-recordings/abc123/2025-10-31T12-30-45.webm`
 
 **Changes Made**:
 
-#### Imports Added (Lines 3, 16-17):
+#### Imports Added (Lines 2-4, 16-17):
 ```javascript
+import PropTypes from 'prop-types';
 import { IoMic } from 'react-icons/io5';
+import { ref, uploadBytes, getStorage } from 'firebase/storage';
 import RecordingPanel from './Panels/RecordingPanel';
 import { useAuth } from '../../../../../firebase/AuthContext';
 ```
+
+**Import Order Fixed**: External packages (firebase/storage) before internal modules (AuthContext) to comply with ESLint rules
 
 #### Authentication Hook Added (Line 33):
 ```javascript
@@ -144,7 +156,10 @@ className={`group relative rounded-md p-2 transition-colors duration-150 ${
 ### Firebase Storage:
 - Initialized using `getStorage()` from `firebase/storage`
 - Uses `uploadBytes()` to upload audio blob
-- Uses `getDownloadURL()` to get the uploaded file URL
+- **Note**: `getDownloadURL()` is NOT used (removed for security)
+  - With minimal Firebase rules (write-only), getting download URL would fail
+  - Upload succeeds and file is stored successfully
+  - Download URL only needed when implementing playback feature
 - Storage path: `canvas-recordings/{userId}/{timestamp}.webm`
 
 ### File Naming:
@@ -154,9 +169,20 @@ className={`group relative rounded-md p-2 transition-colors duration-150 ${
 
 ### Error Handling:
 - Microphone access denied → Shows error message
-- Upload failure → Shows error with details
-- No user authenticated → Shows warning banner
+- Upload failure → Shows error with details (RecordingPanel.jsx:160-163)
+- No user authenticated → Shows warning banner (RecordingPanel.jsx:191-194)
+- File too large → Upload blocked with size error (RecordingPanel.jsx:127-130)
+- Max duration reached → Auto-stop with error message (RecordingPanel.jsx:83-95)
 - All errors are logged to console for debugging
+
+### Timer Implementation:
+- Fixed timer update issue (RecordingPanel.jsx:25-33)
+  - useEffect cleanup with empty dependency array `[]`
+  - Prevents re-running cleanup on every state change
+  - Timer interval updates state correctly every second
+- Variable shadowing fix (RecordingPanel.jsx:66)
+  - Renamed `audioBlob` to `recordedBlob` in event listener
+  - Prevents ESLint `no-shadow` warning
 
 ---
 
@@ -289,6 +315,13 @@ Potential improvements for the recording feature:
 - Verify AuthContext is wrapping the Canvas component
 - Check browser console for authentication errors
 
+### Issue: Permission error but file uploads successfully
+**Description**: Error message "Firebase Storage: User does not have permission to access..." appears, but the file is saved successfully in Firebase Storage.
+
+**Root Cause**: Code attempted to call `getDownloadURL()` after upload, which requires read permission. With minimal Firebase rules (write-only), this fails even though the upload succeeded.
+
+**Solution**: This issue has been fixed. The code no longer calls `getDownloadURL()` after upload (RecordingPanel.jsx:147-151). If you see this error, ensure you're using the latest version of RecordingPanel.jsx without the `getDownloadURL()` call.
+
 ---
 
 ## Code References
@@ -298,16 +331,28 @@ Potential improvements for the recording feature:
 - ToolBar.jsx:145-166 (Button rendering with disabled state)
 
 ### Recording Panel Component:
-- RecordingPanel.jsx:1-272 (Complete component)
+- RecordingPanel.jsx:1-319 (Complete component)
 
 ### Firebase Upload Logic:
-- RecordingPanel.jsx:96-144 (uploadToFirebase function)
+- RecordingPanel.jsx:120-165 (uploadToFirebase function)
 
 ### Authentication Check:
 - ToolBar.jsx:33 (useAuth hook)
 - ToolBar.jsx:97 (disabled: !currentUser)
-- RecordingPanel.jsx:7 (useAuth import)
-- RecordingPanel.jsx:11 (currentUser usage)
+- RecordingPanel.jsx:5 (useAuth import)
+- RecordingPanel.jsx:8 (currentUser usage)
+
+### Timer and Cleanup:
+- RecordingPanel.jsx:25-33 (useEffect cleanup on unmount)
+- RecordingPanel.jsx:79-98 (Timer interval with auto-stop)
+- RecordingPanel.jsx:36-40 (formatTime function)
+
+### ESLint Fixes:
+- RecordingPanel.jsx:2 (PropTypes import)
+- RecordingPanel.jsx:314-316 (PropTypes validation)
+- RecordingPanel.jsx:66 (Variable shadowing fix - recordedBlob)
+- RecordingPanel.jsx:180-290 (Button type attributes)
+- RecordingPanel.jsx:303-305 (Escaped HTML entities)
 
 ---
 
@@ -324,10 +369,10 @@ Potential improvements for the recording feature:
    - Validates before upload
    - Shows error with actual file size if exceeded
 
-3. **Authentication Required** (RecordingPanel.jsx:123)
+3. **Authentication Required** (RecordingPanel.jsx:121)
    - Recording button disabled when not logged in
-   - Upload function checks for currentUser
-   - Warning displayed in panel if user not authenticated
+   - Upload function checks for currentUser (line 121)
+   - Warning displayed in panel if user not authenticated (RecordingPanel.jsx:191-194)
 
 ### Server-Side Protection (Firebase Storage Rules):
 4. **User Isolation**

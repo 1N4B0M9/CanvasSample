@@ -33,7 +33,7 @@ const CanvasElement = ({ element, isSelected, onSelect, onUpdate, onDelete, onSc
 	const renderElement = () => {
 		if (element.type === 'image') {
 			return <ImageElement element={element} />;
-		} else if (element.type === 'text') {
+		} if (element.type === 'text') {
 			return (
 				<TextElement
 					element={element}
@@ -43,7 +43,7 @@ const CanvasElement = ({ element, isSelected, onSelect, onUpdate, onDelete, onSc
 					textRef={textRef}
 				/>
 			);
-		} else if (element.type === 'mentor') {
+		} if (element.type === 'mentor') {
 			return (
 				<MentorElement
 					element={element}
@@ -53,9 +53,9 @@ const CanvasElement = ({ element, isSelected, onSelect, onUpdate, onDelete, onSc
 					textRef={textRef}
 				/>
 			);
-		} else {
+		} 
 			return null;
-		}
+		
 	};
 
 	return (

@@ -29,10 +29,10 @@ service firebase.storage {
         let maxSize = 10 * 1024 * 1024;
 
         // Check file type (only audio files)
-        let allowedTypes = ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg'];
+        let allowedTypes = ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/mp4', 'audio/ogg'];
 
-        // Check filename format (must end with .webm, .wav, .mp3, or .ogg)
-        let validExtensions = fileName.matches('.*\\.(webm|wav|mp3|ogg)$');
+        // Check filename format (must end with .webm, .wav, .mp3, .mp4, or .ogg)
+        let validExtensions = fileName.matches('.*\\.(webm|wav|mp3|mp4|ogg)$');
 
         return request.resource.size <= maxSize
                && request.resource.contentType in allowedTypes

@@ -16,10 +16,29 @@ const RecordingPanel = ({ onClose }) => {
 	const mediaRecorderRef = useRef(null);
 	const audioChunksRef = useRef([]);
 	const timerRef = useRef(null);
+	const mimeTypeRef = useRef(null); // Store the MIME type used for recording
 
 	// Security settings
 	const MAX_RECORDING_DURATION = 300; // 5 minutes in seconds
 	const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB in bytes
+
+	// Detect supported audio MIME type for cross-browser compatibility
+	const getSupportedMimeType = () => {
+		// Preferred MIME types in order (WebM for most browsers, MP4 for Safari/iOS)
+		const types = [
+			'audio/webm',
+			'audio/webm;codecs=opus',
+			'audio/mp4',
+			'audio/ogg;codecs=opus',
+			'audio/ogg',
+		];
+
+		// Find the first supported MIME type
+		const supportedType = types.find((type) => MediaRecorder.isTypeSupported(type));
+
+		// Return supported type or fallback to default
+		return supportedType || 'audio/webm';
+	};
 
 	// Clean up on unmount
 	useEffect(() => () => {
@@ -49,8 +68,13 @@ const RecordingPanel = ({ onClose }) => {
 			// Request microphone access
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-			// Create MediaRecorder instance
-			const mediaRecorder = new MediaRecorder(stream);
+			// Detect supported MIME type for this browser
+			const mimeType = getSupportedMimeType();
+			mimeTypeRef.current = mimeType;
+			console.log('Using MIME type:', mimeType);
+
+			// Create MediaRecorder instance with detected MIME type
+			const mediaRecorder = new MediaRecorder(stream, { mimeType });
 			mediaRecorderRef.current = mediaRecorder;
 			audioChunksRef.current = [];
 
@@ -63,7 +87,8 @@ const RecordingPanel = ({ onClose }) => {
 
 			// Handle recording stop
 			mediaRecorder.addEventListener('stop', () => {
-				const recordedBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+				// Use the same MIME type that was used for recording
+				const recordedBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
 				setAudioBlob(recordedBlob);
 
 				// Stop all tracks to release microphone
@@ -136,9 +161,13 @@ const RecordingPanel = ({ onClose }) => {
 			// Initialize Firebase Storage
 			const storage = getStorage();
 
-			// Create a unique filename
+			// Determine file extension from MIME type
+			const mimeType = mimeTypeRef.current || 'audio/webm';
+			const fileExtension = mimeType.split('/')[1].split(';')[0]; // Extract 'webm', 'mp4', 'ogg', etc.
+
+			// Create a unique filename with correct extension
 			const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-			const fileName = `canvas-recordings/${currentUser.uid}/${timestamp}.webm`;
+			const fileName = `canvas-recordings/${currentUser.uid}/${timestamp}.${fileExtension}`;
 
 			// Create storage reference
 			const storageRef = ref(storage, fileName);
@@ -175,8 +204,8 @@ const RecordingPanel = ({ onClose }) => {
 	return (
 		<div className="absolute left-1/2 top-20 -translate-x-1/2 z-50 bg-white border border-gray-300 rounded-xl shadow-lg p-6 w-96">
 			{/* Header */}
-			<div className="flex justify-between items-center mb-4">
-				<h3 className="text-lg font-semibold text-gray-800">Audio Recording</h3>
+			<div className="flex justify-between items-center mb-3">
+				<h3 className="text-lg font-semibold text-gray-800">Story Telling</h3>
 				<button
 					type="button"
 					onClick={onClose}
@@ -185,6 +214,13 @@ const RecordingPanel = ({ onClose }) => {
 				>
 					<IoClose className="text-xl" />
 				</button>
+			</div>
+
+			{/* Descriptive Text */}
+			<div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+				<p className="text-sm text-gray-700 text-center">
+					Share your stories and ideas when creating this vision board with us.
+				</p>
 			</div>
 
 			{/* User Authentication Check */}

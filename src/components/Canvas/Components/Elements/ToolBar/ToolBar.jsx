@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { FaImages, FaShapes } from 'react-icons/fa6';
 import { IoImage, IoLayers, IoCloudUpload, IoMic } from 'react-icons/io5';
 import { PiSelectionBackgroundBold } from 'react-icons/pi';
@@ -91,7 +92,7 @@ const ToolBar = ({
 		},
 		{
 			Icon: IoMic,
-			label: 'Recording',
+			label: 'Story Telling',
 			action: 'panel',
 			panelType: 'recording',
 			disabled: !currentUser,
@@ -155,7 +156,15 @@ const ToolBar = ({
 										: `cursor-pointer ${isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'}`
 								}`}
 								title={isDisabled ? `${label} (Login required)` : label}
+								role="button"
+								tabIndex={isDisabled ? -1 : 0}
 								onClick={() => !isDisabled && handleToolClick(tool)}
+								onKeyDown={(e) => {
+									if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
+										e.preventDefault();
+										handleToolClick(tool);
+									}
+								}}
 							>
 								<Icon className={`text-xl ${isActive ? 'text-blue-700' : ''}`} />
 								{/* Tooltip */}
@@ -226,6 +235,31 @@ const ToolBar = ({
 			{activePanel === 'recording' && <RecordingPanel onClose={closePanel} />}
 		</>
 	);
+};
+
+ToolBar.propTypes = {
+	handleAddText: PropTypes.func.isRequired,
+	handleAddMentor: PropTypes.func.isRequired,
+	addImage: PropTypes.func.isRequired,
+	handleBackgroundUpload: PropTypes.func.isRequired,
+	handleBackgroundFromSearch: PropTypes.func.isRequired,
+	removeBackgroundImage: PropTypes.func.isRequired,
+	backgroundImage: PropTypes.shape({
+		url: PropTypes.string,
+		name: PropTypes.string,
+		type: PropTypes.string,
+	}),
+	updateBackgroundScale: PropTypes.func,
+	handleExport: PropTypes.func.isRequired,
+	handleExportJSON: PropTypes.func.isRequired,
+	handleImport: PropTypes.func.isRequired,
+	apiBaseUrl: PropTypes.string,
+};
+
+ToolBar.defaultProps = {
+	backgroundImage: null,
+	updateBackgroundScale: null,
+	apiBaseUrl: 'https://vision-board-api-v2.onrender.com',
 };
 
 export default ToolBar;
