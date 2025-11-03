@@ -29,7 +29,7 @@ const ToolBar = ({
 	handleExport,
 	handleExportJSON,
 	handleImport,
-	apiBaseUrl = 'https://vision-board-api-v2.onrender.com', // Updated API base URL
+	apiBaseUrl = process.env.REACT_APP_API_BASE_URL, // Updated API base URL
 }) => {
 	const { currentUser } = useAuth();
 	const [activePanel, setActivePanel] = useState(null);
@@ -259,7 +259,7 @@ ToolBar.propTypes = {
 ToolBar.defaultProps = {
 	backgroundImage: null,
 	updateBackgroundScale: null,
-	apiBaseUrl: 'https://vision-board-api-v2.onrender.com',
+	apiBaseUrl: process.env.REACT_APP_API_BASE_URL,
 };
 
 export default ToolBar;
