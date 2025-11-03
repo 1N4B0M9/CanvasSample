@@ -23,8 +23,6 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 	const isMenuOpen = Boolean(anchorEl);
 	const [notification, setNotification] = useState('');
 
-	console.log({ currentUser });
-
 	const showMenu = (event) => {
 		setAnchorEl(event.currentTarget);
 	};
