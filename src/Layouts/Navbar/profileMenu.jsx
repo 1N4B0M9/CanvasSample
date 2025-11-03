@@ -10,10 +10,14 @@ import { ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { logout } from '../../firebase/firebase';
 import { useAuth } from '../../firebase/AuthContext';
 import PATHS from '../../paths';
+import getUserData from '../../components/getUserData';
 
 // isCanvas indicator is for handling display of login module on Canvas Side
 const ProfileMenu = ({ isMobile, isCanvas }) => {
+	const [isLoading, setIsLoading] = useState(false);
+	const [dataDisplayErrorMsg, setDataDisplayErrorMsg] = useState('');
 	const [settings, setSettings] = useState([]);
+	const [userData, setUserData] = useState(null);
 	const { currentUser } = useAuth();
 	const [anchorEl, setAnchorEl] = useState(null);
 	const isMenuOpen = Boolean(anchorEl);
@@ -31,11 +35,27 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 
 	const handleLogout = () => {
 		logout();
+		// reload page on logout
+		window.location.reload();
 		setNotification('You have been logged out');
 	};
 
 	useEffect(() => {
+		const handleIncomingUserData = async (uid, email) => {
+			try {
+				setIsLoading(true);
+				const userData = await getUserData(uid);
+				setUserData(userData);
+				setIsLoading(false);
+			} catch (err) {
+				setIsLoading(false);
+				setDataDisplayErrorMsg('Error While fetching data');
+				console.log(`Error Fetching user document data for UID & Email : [${uid}, ${email}]`);
+			}
+		};
+
 		if (currentUser) {
+			handleIncomingUserData(currentUser.uid, currentUser.email);
 			if (currentUser.uid === process.env.REACT_APP_ADMIN_UID) {
 				setSettings([
 					{
@@ -75,8 +95,18 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 					onClick={showMenu}
 					className="flex items-center space-x-2 px-3 py-2 cursor-pointer hover:bg-gray-100 border border-gray-300 bg-white shadow rounded-lg"
 				>
-					<AccountCircle />
-					{currentUser?.email && <span className="text-sm text-gray-700 font-medium">{currentUser.email}</span>}
+					{isLoading ? (
+						<p>Fetching data...</p>
+					) : dataDisplayErrorMsg ? (
+						<p className="text-red-500 text-sm">{dataDisplayErrorMsg}</p>
+					) : (
+						<>
+							<AccountCircle />
+							{currentUser?.email && (
+								<span className="text-sm text-gray-700 font-medium">{userData?.name || currentUser.email}</span>
+							)}
+						</>
+					)}
 				</div>
 			) : isMobile ? (
 				<ListItemButton
@@ -91,7 +121,17 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 					<ListItemIcon>
 						<AccountCircle />
 					</ListItemIcon>
-					<ListItemText primary="Profile" />
+					<ListItemText
+						primary={
+							isLoading ? (
+								'Loading...'
+							) : dataDisplayErrorMsg ? (
+								<span className="text-red-500 text-sm">{dataDisplayErrorMsg}</span>
+							) : (
+								userData?.name || 'Profile'
+							)
+						}
+					/>
 				</ListItemButton>
 			) : (
 				<IconButton
@@ -104,8 +144,23 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 					color="inherit"
 				>
 					<AccountCircle />
+					{/* 👇 name beside profile on all non-canvas pages */}
+					{!isCanvas && currentUser && (
+						<span
+							style={{
+								marginLeft: '8px',
+								fontSize: '0.9rem',
+								color: '#333',
+								fontWeight: 500,
+							}}
+						>
+							{isLoading ? 'Loading...' : dataDisplayErrorMsg ? 'Error' : userData?.name || currentUser.email}
+						</span>
+					)}
 				</IconButton>
 			)}
+
+			{/* menu + snackbar remain unchanged */}
 			<Menu
 				id="menu-appbar"
 				anchorEl={anchorEl}
