@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import ImageSearch from "./ImageSearch";
+
 const SidePanel = ({ handleAddText, handleAddMentor, addImage }) => {
 
 	const [isOpen, setIsOpen] = useState(true);

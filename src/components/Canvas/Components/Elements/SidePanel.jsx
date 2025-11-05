@@ -24,7 +24,7 @@ const SidePanel = ({
 	backgroundImage,
 	updateBackgroundScale,
 	handleExport,
-	apiBaseUrl = 'https://vision-board-api-v2.onrender.com', // Updated API base URL
+	apiBaseUrl = process.env.REACT_APP_API_BASE_URL, // Updated API base URL
 }) => {
 	// Existing state
 	const [isOpen, setIsOpen] = useState(true);

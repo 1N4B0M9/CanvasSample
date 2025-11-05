@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import ImageElement from './ImageElement';
+
 const MentorElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) => {
 	const handleBlur = () => {
 		setIsEditing(false);
@@ -40,7 +41,7 @@ const MentorElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) 
 					Select Image
 				</label>
 				{element.image && (
-					//<ImageElement element={element.image} />
+					// <ImageElement element={element.image} />
 					<img
 						src={element.image}
 						alt="Selected"
