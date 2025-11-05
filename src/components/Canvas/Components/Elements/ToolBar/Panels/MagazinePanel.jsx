@@ -48,9 +48,6 @@ const VB_MAGAZINE_IMAGES = [
 	'43.jpeg',
 	'44.jpeg',
 	'45.jpeg',
-	'46.jpeg',
-	'47.jpeg',
-	'48.jpeg',
 ];
 
 const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }) => {

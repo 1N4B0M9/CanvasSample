@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { CanvasProvider, useCanvas } from '../Utils/CanvasContext';
 import RenderElements from './RenderElements';
 import RenderConnections from './RenderConnections';
@@ -286,7 +287,7 @@ const CanvasContent = () => {
 				handleExport={handleExport}
 			/> */}
 			<div className=" rounded-xl absolute left-4 top-4  z-50  bg-white shadow flex flex-row">
-				<ProfileMenu isCanvas={true} />
+				<ProfileMenu isCanvas />
 			</div>
 			<ToolBar
 				handleAddText={handleAddText}
@@ -304,6 +305,7 @@ const CanvasContent = () => {
 			/>
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
+			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
 			<div
 				ref={canvasRef}
 				className="w-full h-full relative"
@@ -350,5 +352,9 @@ const RenderCanvas = ({ canvasId }) => (
 		<CanvasContent />
 	</CanvasProvider>
 );
+
+RenderCanvas.propTypes = {
+	canvasId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+};
 
 export default RenderCanvas;
