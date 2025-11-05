@@ -14,13 +14,17 @@ export function AuthProvider({ children }) {
 	useEffect(() => {
 		const unsubscribe = auth.onAuthStateChanged((user) => {
 			// passing through only safe user data
-			const currUserData = {
-				uid: user.uid,
-				email: user.email,
-				displayName: user.displayName,
-				photoURL: user.photoURL,
-			};
-			setCurrentUser(currUserData);
+			if (user) {
+				const currUserData = {
+					uid: user.uid,
+					email: user.email,
+					displayName: user.displayName,
+					photoURL: user.photoURL,
+				};
+				setCurrentUser(currUserData);
+			} else {
+				setCurrentUser(null);
+			}
 			setLoading(false);
 		});
 		return unsubscribe;
