@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import PropTypes from 'prop-types';
 import { IoMic, IoStop, IoCheckmark, IoClose } from 'react-icons/io5';
-import { ref, uploadBytes, getStorage } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getStorage } from 'firebase/storage';
 import { useAuth } from '../../../../../../firebase/AuthContext';
 
-const RecordingPanel = ({ onClose }) => {
+const RecordingPanel = forwardRef(({ onClose, onRecordingStart, onRecordingStop, onRecordingTimeUpdate }, ref) => {
 	const { currentUser } = useAuth();
 	const [isRecording, setIsRecording] = useState(false);
 	const [recordingTime, setRecordingTime] = useState(0);
@@ -100,10 +100,19 @@ const RecordingPanel = ({ onClose }) => {
 			setIsRecording(true);
 			setRecordingTime(0);
 
+			// Notify parent that recording has started
+			if (onRecordingStart) {
+				onRecordingStart();
+			}
+
 			// Start timer
 			timerRef.current = setInterval(() => {
 				setRecordingTime((prev) => {
 					const newTime = prev + 1;
+					// Notify parent of time update
+					if (onRecordingTimeUpdate) {
+						onRecordingTimeUpdate(newTime);
+					}
 					// Auto-stop recording when max duration is reached
 					if (newTime >= MAX_RECORDING_DURATION) {
 						setTimeout(() => {
@@ -115,6 +124,10 @@ const RecordingPanel = ({ onClose }) => {
 									timerRef.current = null;
 								}
 								setError(`Recording auto-stopped: Maximum duration of ${MAX_RECORDING_DURATION / 60} minutes reached.`);
+								// Notify parent that recording has stopped
+								if (onRecordingStop) {
+									onRecordingStop();
+								}
 							}
 						}, 0);
 					}
@@ -138,8 +151,19 @@ const RecordingPanel = ({ onClose }) => {
 				clearInterval(timerRef.current);
 				timerRef.current = null;
 			}
+
+			// Notify parent that recording has stopped
+			if (onRecordingStop) {
+				onRecordingStop();
+			}
 		}
 	};
+
+	// Expose stopRecording function to parent component
+	useImperativeHandle(ref, () => ({
+		stopRecording,
+		recordingTime,
+	}));
 
 	// Upload to Firebase Storage
 	const uploadToFirebase = async () => {
@@ -170,11 +194,11 @@ const RecordingPanel = ({ onClose }) => {
 			const fileName = `canvas-recordings/${currentUser.uid}/${timestamp}.${fileExtension}`;
 
 			// Create storage reference
-			const storageRef = ref(storage, fileName);
+			const fileRef = storageRef(storage, fileName);
 
 			// Upload the audio blob
 			console.log('Uploading audio to Firebase Storage...');
-			await uploadBytes(storageRef, audioBlob);
+			await uploadBytes(fileRef, audioBlob);
 
 			console.log('Audio uploaded successfully!');
 			console.log('File path:', fileName);
@@ -200,6 +224,11 @@ const RecordingPanel = ({ onClose }) => {
 		setUploadSuccess(false);
 		setError('');
 	};
+
+	// Don't render the panel when recording is active
+	if (isRecording) {
+		return null;
+	}
 
 	return (
 		<div className="absolute left-1/2 top-20 -translate-x-1/2 z-50 bg-white border border-gray-300 rounded-xl shadow-lg p-6 w-96">
@@ -345,10 +374,21 @@ const RecordingPanel = ({ onClose }) => {
 			</div>
 		</div>
 	);
-};
+});
+
+RecordingPanel.displayName = 'RecordingPanel';
 
 RecordingPanel.propTypes = {
 	onClose: PropTypes.func.isRequired,
+	onRecordingStart: PropTypes.func,
+	onRecordingStop: PropTypes.func,
+	onRecordingTimeUpdate: PropTypes.func,
+};
+
+RecordingPanel.defaultProps = {
+	onRecordingStart: null,
+	onRecordingStop: null,
+	onRecordingTimeUpdate: null,
 };
 
 export default RecordingPanel;
