@@ -14,13 +14,16 @@ export function AuthProvider({ children }) {
 	useEffect(() => {
 		const unsubscribe = auth.onAuthStateChanged((user) => {
 			// passing through only safe user data
-			const currUserData = {
-				uid: user.uid,
-				email: user.email,
-				displayName: user.displayName,
-				photoURL: user.photoURL,
-			};
-			setCurrentUser(currUserData);
+			setCurrentUser(
+				user
+					? {
+							uid: user.uid ?? null,
+							email: user.email ?? null,
+							displayName: user.displayName ?? null,
+							photoURL: user.photoURL ?? null,
+						}
+					: null,
+			);
 			setLoading(false);
 		});
 		return unsubscribe;
@@ -28,6 +31,7 @@ export function AuthProvider({ children }) {
 
 	const value = {
 		currentUser,
+		loading,
 	};
 
 	return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;

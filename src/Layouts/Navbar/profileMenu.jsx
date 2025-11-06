@@ -18,7 +18,7 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 	const [dataDisplayErrorMsg, setDataDisplayErrorMsg] = useState('');
 	const [settings, setSettings] = useState([]);
 	const [userData, setUserData] = useState(null);
-	const { currentUser } = useAuth();
+	const { currentUser, loading } = useAuth();
 	const [anchorEl, setAnchorEl] = useState(null);
 	const isMenuOpen = Boolean(anchorEl);
 	const [notification, setNotification] = useState('');
@@ -39,6 +39,7 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 	};
 
 	useEffect(() => {
+		// preventing immature function triggers
 		const handleIncomingUserData = async (uid, email) => {
 			try {
 				setIsLoading(true);
@@ -84,7 +85,7 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 				},
 			]);
 		}
-	}, [currentUser]);
+	}, [currentUser, loading]);
 
 	return (
 		<>
