@@ -146,8 +146,6 @@ export default function Canvas() {
 		{ id: 2, name: '3', data: { elements: [], connections: [], arrows: [] } },
 	];
 
-	const [initialCanvases, setInitialCanvases] = useState(defaultCanvases);
-	const [loading, setLoading] = useState(true);
 	const { currentUser } = useAuth(); // Get current user from auth context
 
 	// Scroll to top when component mounts
@@ -155,47 +153,9 @@ export default function Canvas() {
 		window.scrollTo(0, 0);
 	}, []);
 
-	// Load canvas data from Firestore when component mounts or user changes
-	useEffect(() => {
-		async function loadCanvasData() {
-			setLoading(true);
-
-			if (currentUser) {
-				try {
-					const canvasDocRef = doc(db, 'canvas', currentUser.uid);
-					const canvasDocSnap = await getDoc(canvasDocRef);
-
-					if (canvasDocSnap.exists() && canvasDocSnap.data().canvases) {
-						setInitialCanvases(canvasDocSnap.data().canvases);
-					}
-				} catch (error) {
-					console.error('Error loading canvas data:', error);
-				}
-			}
-
-			setLoading(false);
-
-			// Scroll to top when data is loaded
-			window.scrollTo(0, 0);
-		}
-
-		loadCanvasData();
-	}, [currentUser]);
-
-	if (loading) {
-		return (
-			<div className="flex justify-center items-center h-96 bg-gray-100">
-				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4" />
-					<div className="text-gray-600">Loading your vision boards...</div>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div className="w-full">
-			<CanvasDataProvider initialCanvases={initialCanvases} currentUser={currentUser}>
+			<CanvasDataProvider initialCanvases={defaultCanvases} currentUser={currentUser}>
 				<CanvasDataContent />
 			</CanvasDataProvider>
 		</div>

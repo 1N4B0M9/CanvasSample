@@ -38,6 +38,22 @@ const CanvasContent = () => {
 
 	const handleDrop = (e) => {
 		e.preventDefault();
+
+		// Check if this is a magazine element bank drop
+		const magazineImageId = e.dataTransfer.getData('magazine-image-id');
+		if (magazineImageId) {
+			// File should be in dataTransfer.files
+			const file = e.dataTransfer.files[0];
+			if (file && file.type.startsWith('image/')) {
+				const rect = canvasRef.current.getBoundingClientRect();
+				const x = e.clientX - rect.left;
+				const y = e.clientY - rect.top;
+				addImageElement(file, x, y);
+			}
+			return;
+		}
+
+		// Handle regular file drops
 		const file = e.dataTransfer.files[0];
 		if (!file || !file.type.startsWith('image/')) return;
 
@@ -277,6 +293,7 @@ const CanvasContent = () => {
 				handleAddText={handleAddText}
 				handleAddMentor={handleAddMentor}
 				addImage={handleAddImage}
+				addImageElement={addImageElement}
 				handleBackgroundUpload={handleBackgroundUpload}
 				handleBackgroundFromSearch={handleBackgroundFromSearch}
 				removeBackgroundImage={removeBackgroundImage}

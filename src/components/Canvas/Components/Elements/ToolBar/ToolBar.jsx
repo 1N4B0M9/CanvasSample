@@ -8,6 +8,7 @@ import { LuUserRound, LuUserRoundPlus } from 'react-icons/lu';
 import { BsFileEarmarkFont } from 'react-icons/bs';
 import { GrRedo, GrUndo } from 'react-icons/gr';
 import { RiDeleteBin5Line } from 'react-icons/ri';
+import { FaBook } from 'react-icons/fa';
 import ImageSearch from '../ImageSearch';
 import ImagePanel from './Panels/ImagePanel';
 import BackgroundPanel from './Panels/BackgroundPanel';
@@ -16,11 +17,13 @@ import ExtractPanel from './Panels/ExtractPanel';
 import ImportPanel from './Panels/ImportPanel';
 import RecordingPanel from './Panels/RecordingPanel';
 import { useAuth } from '../../../../../firebase/AuthContext';
+import MagazinePanel from './Panels/MagazinePanel';
 
 const ToolBar = ({
 	handleAddText,
 	handleAddMentor,
 	addImage,
+	addImageElement,
 	handleBackgroundUpload,
 	handleBackgroundFromSearch,
 	removeBackgroundImage,
@@ -37,6 +40,8 @@ const ToolBar = ({
 	const [isRecording, setIsRecording] = useState(false);
 	const [recordingTime, setRecordingTime] = useState(0);
 	const recordingPanelRef = useRef(null);
+	// Persist element bank state so it doesn't get cleared when panel closes
+	const [magazineElementBank, setMagazineElementBank] = useState([]);
 
 	// Handle background scale change
 	const handleScaleChange = (newScale) => {
@@ -105,6 +110,12 @@ const ToolBar = ({
 			panelType: 'extract',
 		},
 		{
+			Icon: FaBook,
+			label: 'Magazine',
+			action: 'panel',
+			panelType: 'magazine',
+		},
+		{
 			Icon: PiSelectionBackgroundBold,
 			label: 'Background',
 			action: 'panel',
@@ -137,22 +148,22 @@ const ToolBar = ({
 			Icon: GrUndo,
 			label: 'Undo Action',
 			action: 'direct',
-			handler: () => {},
-			disabled: () => {},
+			handler: () => { },
+			disabled: () => { },
 		},
 		{
 			Icon: GrRedo,
 			label: 'Redo Action',
 			action: 'direct',
-			handler: () => {},
-			disabled: () => {},
+			handler: () => { },
+			disabled: () => { },
 		},
 		{
 			Icon: RiDeleteBin5Line,
 			label: 'Delete Element',
 			action: 'direct',
-			handler: () => {},
-			disabled: () => {},
+			handler: () => { },
+			disabled: () => { },
 			isDelete: true,
 		},
 	];
@@ -170,11 +181,9 @@ const ToolBar = ({
 						return (
 							<div
 								key={label}
-								className={`group relative rounded-md p-2 transition-colors duration-150 ${
-									isDisabled
-										? 'opacity-50 cursor-not-allowed'
-										: `cursor-pointer ${isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'}`
-								}`}
+								className={`group relative rounded-md p-2 transition-colors duration-150 ${isDisabled
+										? 'opacity-50 cursor-not-allowed' : `cursor-pointer ${isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'}`
+									}`}
 								title={isDisabled ? `${label} (Login required)` : label}
 								role="button"
 								tabIndex={isDisabled ? -1 : 0}
@@ -284,6 +293,14 @@ const ToolBar = ({
 						Stop
 					</button>
 				</div>
+			)}
+			{activePanel === 'magazine' && (
+				<MagazinePanel
+					addImageElement={addImageElement}
+					onClose={closePanel}
+					elementBank={magazineElementBank}
+					setElementBank={setMagazineElementBank}
+				/>
 			)}
 		</>
 	);

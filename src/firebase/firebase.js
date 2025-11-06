@@ -7,8 +7,10 @@ import {
 	signOut,
 } from 'firebase/auth';
 import { getFirestore, doc, Timestamp } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import { addData } from './firebaseReadWrite';
 
+// --- Firebase config (from your .env) ---
 const firebaseConfig = {
 	apiKey: process.env.REACT_APP_API_KEY,
 	authDomain: process.env.REACT_APP_AUTH_DOMAIN,
@@ -19,12 +21,13 @@ const firebaseConfig = {
 	measurementId: process.env.REACT_APP_MEASUREMENT_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// --- Initialize core services ---
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
 
-// const analytics = getAnalytics(app);
-
+// --- Auth helper functions ---
 const registerWithEmailAndPassword = async (name, email, password) => {
 	try {
 		const res = await createUserWithEmailAndPassword(auth, email, password);
@@ -36,7 +39,7 @@ const registerWithEmailAndPassword = async (name, email, password) => {
 			name,
 			email,
 		};
-		addData(docRef, docData);
+		await addData(docRef, docData);
 	} catch (err) {
 		alert(err.message);
 	}
@@ -61,4 +64,5 @@ const sendPasswordReset = async (email) => {
 
 const logout = () => signOut(auth);
 
-export { registerWithEmailAndPassword, logInWithEmailAndPassword, logout, sendPasswordReset, auth, db };
+// --- Exports ---
+export { registerWithEmailAndPassword, logInWithEmailAndPassword, logout, sendPasswordReset };
