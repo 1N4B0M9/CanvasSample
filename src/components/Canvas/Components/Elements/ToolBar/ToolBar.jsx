@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { FaImages, FaShapes } from 'react-icons/fa6';
-import { IoImage, IoLayers, IoCloudUpload, IoMic } from 'react-icons/io5';
+import { IoImage, IoLayers, IoCloudUpload, IoMic, IoStop } from 'react-icons/io5';
 import { PiSelectionBackgroundBold } from 'react-icons/pi';
 import { TbFileExport } from 'react-icons/tb';
 import { LuUserRound, LuUserRoundPlus } from 'react-icons/lu';
@@ -34,6 +34,9 @@ const ToolBar = ({
 	const { currentUser } = useAuth();
 	const [activePanel, setActivePanel] = useState(null);
 	const [backgroundScale, setBackgroundScale] = useState(100);
+	const [isRecording, setIsRecording] = useState(false);
+	const [recordingTime, setRecordingTime] = useState(0);
+	const recordingPanelRef = useRef(null);
 
 	// Handle background scale change
 	const handleScaleChange = (newScale) => {
@@ -46,6 +49,23 @@ const ToolBar = ({
 	// Close panel function
 	const closePanel = () => {
 		setActivePanel(null);
+	};
+
+	// Handle recording start
+	const handleRecordingStart = () => {
+		setIsRecording(true);
+		setRecordingTime(0);
+	};
+
+	// Handle recording stop
+	const handleRecordingStop = () => {
+		setIsRecording(false);
+		setRecordingTime(0);
+	};
+
+	// Handle recording time update
+	const handleRecordingTimeUpdate = (time) => {
+		setRecordingTime(time);
 	};
 
 	// Handle tool click, basically takes the tool action with the handler to process it
@@ -232,7 +252,39 @@ const ToolBar = ({
 
 			{activePanel === 'extract' && <ExtractPanel addImage={addImage} apiBaseUrl={apiBaseUrl} onClose={closePanel} />}
 
-			{activePanel === 'recording' && <RecordingPanel onClose={closePanel} />}
+			{activePanel === 'recording' && (
+				<RecordingPanel
+					ref={recordingPanelRef}
+					onClose={closePanel}
+					onRecordingStart={handleRecordingStart}
+					onRecordingStop={handleRecordingStop}
+					onRecordingTimeUpdate={handleRecordingTimeUpdate}
+				/>
+			)}
+
+			{/* Compact Recording Indicator - shown on the right side of toolbar when recording */}
+			{isRecording && (
+				<div className="absolute right-4 top-4 z-50 bg-white border border-red-500 rounded-xl shadow-lg p-3 flex items-center gap-3">
+					<div className="flex items-center gap-2">
+						<div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+						<span className="text-sm font-mono font-semibold text-gray-800">
+							{(() => {
+								const mins = Math.floor(recordingTime / 60);
+								const secs = recordingTime % 60;
+								return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+							})()}
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => recordingPanelRef.current?.stopRecording()}
+						className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-all active:scale-95"
+					>
+						<IoStop className="text-base" />
+						Stop
+					</button>
+				</div>
+			)}
 		</>
 	);
 };
