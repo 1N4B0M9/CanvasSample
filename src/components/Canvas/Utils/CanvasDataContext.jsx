@@ -18,6 +18,7 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		initialCanvases.length > 0 ? Math.max(...initialCanvases.map((c) => c.id)) + 1 : 0,
 	);
 	const [loadedFromStorage, setLoadedFromStorage] = useState(false);
+	const [loading, setLoading] = useState(true); // ← 1) NEW VARIABLE
 
 	// Track blob: URLs so we can revoke them
 	const urlsRef = useRef([]);
@@ -39,6 +40,7 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		const maxId = hydrated.length ? Math.max(...hydrated.map((c) => c.id)) : -1;
 		setNextId(maxId + 1);
 		setLoadedFromStorage(true);
+		setLoading(false); // ← stop loading after successful apply
 	}, []);
 
 	const loadFromEitherStorage = useCallback(async () => {
@@ -56,6 +58,7 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 			const maxId = loaded.length ? Math.max(...loaded.map((c) => c.id)) : -1;
 			setNextId(maxId + 1);
 			setLoadedFromStorage(true);
+			setLoading(false); // ← stop loading after load
 		} catch (err) {
 			console.warn('[Canvas] LoadFromStorage failed; falling back to initial.', err);
 			await applyLoadedData(Array.isArray(initialCanvases) ? initialCanvases : []);
@@ -67,13 +70,14 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 	const saveToEitherStorage = useCallback(
 		async (data) => {
 			try {
+				console.log('[saveToEitherStorage] Starting Save');
 				await SaveToStorage({
 					canvases: data,
 					path: filePath || null,
 					localKey,
 				});
 			} catch (error) {
-				console.error('[Canvas] SaveToStorage error:', error);
+				console.error('[saveToEitherStorage] error:', error);
 			}
 		},
 		[filePath],
@@ -109,6 +113,7 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		let cancelled = false;
 		(async () => {
 			setLoadedFromStorage(false);
+			setLoading(true); // ← show initial loading
 			await loadFromEitherStorage();
 			if (cancelled) return;
 		})();
@@ -187,7 +192,8 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		updateCanvasName,
 		deleteCanvas,
 		refreshFromStorage,
-		isLoggedIn: !!filePath, // truthy when logged in
+		isLoggedIn: !!filePath,
+		loading, // ← expose loading
 	};
 
 	return <CanvasDataContext.Provider value={value}>{children}</CanvasDataContext.Provider>;

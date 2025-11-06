@@ -1,5 +1,8 @@
 // src/components/Canvas/Utils/CanvasIO.js
 import { getStorage, ref as storageRef, uploadString, getDownloadURL, getBlob } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
+
+const STORAGE_BUCKET = 'gs://project-rebound.appspot.com'; // <-- your bucket
 
 /* ---------------- constants ---------------- */
 
@@ -25,11 +28,6 @@ async function dataUrlToObjectUrl(dataUrl) {
 }
 
 /* ====================== 1) ConvertCanvasToJson ====================== */
-/**
- * Convert an array of canvases into a JSON-safe structure.
- * - Any runtime image fields (file/blob/objectUrl/src/fileUrl) are stripped.
- * - Images are inlined to base64 data URLs at inlineData.dataUrl when needed.
- */
 async function serializeElement(el) {
 	if (!el || typeof el !== 'object') return el;
 	const {
@@ -41,7 +39,6 @@ async function serializeElement(el) {
 		...rest
 	} = el;
 
-	// Already inlined
 	if (el?.inlineData?.dataUrl) return { ...rest, inlineData: { ...el.inlineData } };
 
 	if (typeof File !== 'undefined' && file instanceof File) {
@@ -75,7 +72,6 @@ async function serializeElement(el) {
 		};
 	}
 
-	// If it references a normal URL or storage path, it's already serializable
 	return { ...rest };
 }
 
@@ -103,12 +99,6 @@ export async function ConvertCanvasToJson(canvases) {
 }
 
 /* ====================== 2) ConvertJsonToCanvas ====================== */
-/**
- * Rehydrate base64 inline images (inlineData.dataUrl) into runtime object URLs.
- * Also sets a stable `src` for immediate rendering:
- *   src = objectUrl || inlineData.dataUrl || EMPTY_PNG
- * Returns { canvases, urls } so the caller can later revoke URLs.
- */
 export async function ConvertJsonToCanvas(jsonArray) {
 	const urls = [];
 
@@ -120,7 +110,6 @@ export async function ConvertJsonToCanvas(jsonArray) {
 
 	const rehydrateEl = async (el) => {
 		if (!el || typeof el !== 'object') return el;
-		// strip any stale src/objectUrl/fileUrl from stored JSON just in case
 		const { file, fileUrl, objectUrl: _oldObj, src: _oldSrc, ...clean } = el;
 
 		if (el?.inlineData?.dataUrl) {
@@ -132,7 +121,6 @@ export async function ConvertJsonToCanvas(jsonArray) {
 				return withSrc(clean, null);
 			}
 		}
-		// no inline data → keep as-is but ensure src exists
 		return withSrc(clean, null);
 	};
 
@@ -172,21 +160,27 @@ export async function ConvertJsonToCanvas(jsonArray) {
 
 /* ====================== 3) SaveToStorage ====================== */
 export async function SaveToStorage({ canvases, path, localKey = 'canvas.local' }) {
+	console.log('[SaveToStorage] Starting Save');
+	const auth = getAuth();
+	console.log('[SaveToStorage] auth.currentUser:', auth.currentUser?.uid || null);
+
 	const jsonSafe = await ConvertCanvasToJson(canvases);
 	const json = JSON.stringify(jsonSafe, null, 2);
 
 	if (path) {
-		const storage = getStorage();
+		const storage = getStorage(undefined, STORAGE_BUCKET); // ← pin bucket
 		const ref = storageRef(storage, path);
 		await uploadString(ref, json, 'raw', {
 			contentType: 'application/json',
-			cacheControl: 'no-store',
+			cacheControl: 'public,max-age=30',
 		});
+		console.log('[SaveToStorage] Successfully saved to cloud storage:', path);
 		return;
 	}
 
 	try {
 		localStorage.setItem(localKey, json);
+		console.log('[SaveToStorage] Successfully saved to localStorage key:', localKey);
 	} catch (e) {
 		console.warn('[SaveToStorage] localStorage failed:', e);
 	}
@@ -197,12 +191,12 @@ export async function LoadFromStorage({ path, localKey = 'canvas.local', fallbac
 	let parsed = null;
 
 	if (path) {
-		const storage = getStorage();
+		const storage = getStorage(undefined, STORAGE_BUCKET); // ← pin bucket here too
 		const ref = storageRef(storage, path);
 
 		try {
 			const url = await getDownloadURL(ref);
-			const res = await fetch(`${url}&cb=${Date.now()}`, { cache: 'no-store' });
+			const res = await fetch(`${url}&cb=${Date.now()}`, { cacheControl: 'public,max-age=30' });
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			parsed = await res.json();
 		} catch (e) {
