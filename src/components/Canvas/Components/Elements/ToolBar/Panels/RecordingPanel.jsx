@@ -3,9 +3,11 @@ import PropTypes from 'prop-types';
 import { IoMic, IoStop, IoCheckmark, IoClose } from 'react-icons/io5';
 import { ref as storageRef, uploadBytes, getStorage } from 'firebase/storage';
 import { useAuth } from '../../../../../../firebase/AuthContext';
+import { useCanvas } from '../../../../Utils/CanvasContext';
 
 const RecordingPanel = forwardRef(({ onClose, onRecordingStart, onRecordingStop, onRecordingTimeUpdate }, ref) => {
 	const { currentUser } = useAuth();
+	const { canvasId } = useCanvas();
 	const [isRecording, setIsRecording] = useState(false);
 	const [recordingTime, setRecordingTime] = useState(0);
 	const [audioBlob, setAudioBlob] = useState(null);
@@ -191,7 +193,7 @@ const RecordingPanel = forwardRef(({ onClose, onRecordingStart, onRecordingStop,
 
 			// Create a unique filename with correct extension
 			const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-			const fileName = `canvas-recordings/${currentUser.uid}/${timestamp}.${fileExtension}`;
+			const fileName = `canvas-recordings/${currentUser.uid}/${canvasId}/${timestamp}.${fileExtension}`;
 
 			// Create storage reference
 			const fileRef = storageRef(storage, fileName);
