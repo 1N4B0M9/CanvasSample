@@ -11,7 +11,7 @@ import { useAuth } from '../firebase/AuthContext';
 const CanvasDataContent = () => {
 	const [activeTab, setActiveTab] = useState(0);
 	const [availableHeight, setAvailableHeight] = useState('100vh');
-	const { canvases, loading } = useCanvasData(); // ← use loading
+	const { canvases, loading, loadError } = useCanvasData(); // ← use error flag
 	const contentRef = useRef(null);
 	const containerRef = useRef(null);
 
@@ -54,11 +54,23 @@ const CanvasDataContent = () => {
 		}
 	};
 
-	// ← 2) SHOW INITIAL LOAD STATE
+	// Initial loading UI
 	if (loading) {
 		return (
 			<div className="w-full h-screen flex items-center justify-center">
 				<span className="text-gray-600">Loading…</span>
+			</div>
+		);
+	}
+
+	// Cloud load failure UI (prevents immediate overwrite since autosave is gated by loadedFromStorage)
+	if (loadError) {
+		return (
+			<div className="w-full h-screen flex items-center justify-center">
+				<div className="text-center space-y-2">
+					<p className="text-red-600 font-medium">Failed to load from cloud.</p>
+					<p className="text-gray-600">Showing local/default copy. Try refresh when you’re back online.</p>
+				</div>
 			</div>
 		);
 	}

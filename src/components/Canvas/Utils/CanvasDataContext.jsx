@@ -18,7 +18,8 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		initialCanvases.length > 0 ? Math.max(...initialCanvases.map((c) => c.id)) + 1 : 0,
 	);
 	const [loadedFromStorage, setLoadedFromStorage] = useState(false);
-	const [loading, setLoading] = useState(true); // ← 1) NEW VARIABLE
+	const [loading, setLoading] = useState(true);
+	const [loadError, setLoadError] = useState(false); // ← NEW: track cloud load failure
 
 	// Track blob: URLs so we can revoke them
 	const urlsRef = useRef([]);
@@ -29,8 +30,8 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 
 	/* ----------------------------- load helpers ----------------------------- */
 
-	const applyLoadedData = useCallback(async (jsonArray) => {
-		// Convert JSON-safe → runtime (adds objectUrl for inline images)
+	// markLoaded controls whether we set loadedFromStorage=true (enables autosave)
+	const applyLoadedData = useCallback(async (jsonArray, markLoaded = true) => {
 		const { canvases: hydrated, urls } = await ConvertJsonToCanvas(jsonArray);
 
 		if (urlsRef.current?.length) RevokeObjectUrls(urlsRef.current);
@@ -39,8 +40,9 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		setCanvases(hydrated);
 		const maxId = hydrated.length ? Math.max(...hydrated.map((c) => c.id)) : -1;
 		setNextId(maxId + 1);
-		setLoadedFromStorage(true);
-		setLoading(false); // ← stop loading after successful apply
+		if (markLoaded) setLoadedFromStorage(true);
+		setLoadError(false);
+		setLoading(false);
 	}, []);
 
 	const loadFromEitherStorage = useCallback(async () => {
@@ -58,10 +60,15 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 			const maxId = loaded.length ? Math.max(...loaded.map((c) => c.id)) : -1;
 			setNextId(maxId + 1);
 			setLoadedFromStorage(true);
-			setLoading(false); // ← stop loading after load
+			setLoadError(false);
+			setLoading(false);
 		} catch (err) {
 			console.warn('[Canvas] LoadFromStorage failed; falling back to initial.', err);
-			await applyLoadedData(Array.isArray(initialCanvases) ? initialCanvases : []);
+			setLoadError(true); // ← flag the failure
+			setLoading(false);
+			// Load initial/fallback but DO NOT mark as loadedFromStorage,
+			// so autosave won't overwrite cloud with blank/default data.
+			await applyLoadedData(Array.isArray(initialCanvases) ? initialCanvases : [], false);
 		}
 	}, [applyLoadedData, filePath, initialCanvases]);
 
@@ -86,7 +93,7 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 	// Debounced background save (catches non-mutator changes too)
 	const saveTimer = useRef(null);
 	useEffect(() => {
-		if (!loadedFromStorage) return; // avoid saving before initial load
+		if (!loadedFromStorage) return; // avoid saving before initial load (or after failed cloud load)
 		if (saveTimer.current) clearTimeout(saveTimer.current);
 		saveTimer.current = setTimeout(() => {
 			saveToEitherStorage(canvases);
@@ -96,11 +103,10 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		};
 	}, [canvases, loadedFromStorage, saveToEitherStorage]);
 
-	// Immediate save helper used by mutators (ensures “write whenever there is a change”)
+	// Immediate save helper used by mutators
 	const immediateSave = useCallback(
 		(data) => {
 			if (!loadedFromStorage) return;
-			// schedule after state commit
 			Promise.resolve().then(() => saveToEitherStorage(data));
 		},
 		[loadedFromStorage, saveToEitherStorage],
@@ -108,12 +114,12 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 
 	/* --------------------------- lifecycle: load ---------------------------- */
 
-	// Load on page load AND whenever `currentUser` changes
 	useEffect(() => {
 		let cancelled = false;
 		(async () => {
 			setLoadedFromStorage(false);
-			setLoading(true); // ← show initial loading
+			setLoadError(false);
+			setLoading(true);
 			await loadFromEitherStorage();
 			if (cancelled) return;
 		})();
@@ -182,7 +188,6 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		[immediateSave],
 	);
 
-	// Optional: let the UI force a reload if needed
 	const refreshFromStorage = useCallback(() => loadFromEitherStorage(), [loadFromEitherStorage]);
 
 	const value = {
@@ -193,7 +198,8 @@ export const CanvasDataProvider = ({ children, initialCanvases = [], currentUser
 		deleteCanvas,
 		refreshFromStorage,
 		isLoggedIn: !!filePath,
-		loading, // ← expose loading
+		loading,
+		loadError, // ← expose error flag
 	};
 
 	return <CanvasDataContext.Provider value={value}>{children}</CanvasDataContext.Provider>;
