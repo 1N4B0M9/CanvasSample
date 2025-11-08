@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { FaImages, FaShapes } from 'react-icons/fa6';
-import { IoImage, IoLayers, IoCloudUpload, IoMic, IoStop } from 'react-icons/io5';
+import { IoImage, IoLayers, IoCloudUpload, IoMic, IoStop, IoPause, IoPlay } from 'react-icons/io5';
 import { PiSelectionBackgroundBold } from 'react-icons/pi';
 import { TbFileExport } from 'react-icons/tb';
 import { LuUserRound, LuUserRoundPlus } from 'react-icons/lu';
@@ -38,7 +38,9 @@ const ToolBar = ({
 	const [activePanel, setActivePanel] = useState(null);
 	const [backgroundScale, setBackgroundScale] = useState(100);
 	const [isRecording, setIsRecording] = useState(false);
+	const [isPaused, setIsPaused] = useState(false);
 	const [recordingTime, setRecordingTime] = useState(0);
+	const [showWarning, setShowWarning] = useState(false);
 	const recordingPanelRef = useRef(null);
 	// Persist element bank state so it doesn't get cleared when panel closes
 	const [magazineElementBank, setMagazineElementBank] = useState([]);
@@ -59,18 +61,38 @@ const ToolBar = ({
 	// Handle recording start
 	const handleRecordingStart = () => {
 		setIsRecording(true);
+		setIsPaused(false);
 		setRecordingTime(0);
 	};
 
 	// Handle recording stop
 	const handleRecordingStop = () => {
 		setIsRecording(false);
+		setIsPaused(false);
 		setRecordingTime(0);
 	};
 
 	// Handle recording time update
 	const handleRecordingTimeUpdate = (time) => {
 		setRecordingTime(time);
+	};
+
+	// Handle warning change
+	const handleWarningChange = (warning) => {
+		setShowWarning(warning);
+	};
+
+	// Handle pause/resume toggle
+	const handlePauseResume = () => {
+		if (recordingPanelRef.current) {
+			if (isPaused) {
+				recordingPanelRef.current.resumeRecording();
+				setIsPaused(false);
+			} else {
+				recordingPanelRef.current.pauseRecording();
+				setIsPaused(true);
+			}
+		}
 	};
 
 	// Handle tool click, basically takes the tool action with the handler to process it
@@ -268,6 +290,7 @@ const ToolBar = ({
 					onRecordingStart={handleRecordingStart}
 					onRecordingStop={handleRecordingStop}
 					onRecordingTimeUpdate={handleRecordingTimeUpdate}
+					onWarningChange={handleWarningChange}
 				/>
 			)}
 
@@ -275,7 +298,7 @@ const ToolBar = ({
 			{isRecording && (
 				<div className="absolute right-4 top-4 z-50 bg-white border border-red-500 rounded-xl shadow-lg p-3 flex items-center gap-3">
 					<div className="flex items-center gap-2">
-						<div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+						<div className={`w-3 h-3 bg-red-500 rounded-full ${isPaused ? '' : 'animate-pulse'}`} />
 						<span className="text-sm font-mono font-semibold text-gray-800">
 							{(() => {
 								const mins = Math.floor(recordingTime / 60);
@@ -284,16 +307,52 @@ const ToolBar = ({
 							})()}
 						</span>
 					</div>
-					<button
-						type="button"
-						onClick={() => recordingPanelRef.current?.stopRecording()}
-						className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-all active:scale-95"
-					>
-						<IoStop className="text-base" />
-						Stop
-					</button>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handlePauseResume}
+							className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-95 ${
+								isPaused
+									? 'bg-green-600 text-white hover:bg-green-700'
+									: 'bg-yellow-500 text-white hover:bg-yellow-600'
+							}`}
+						>
+							{isPaused ? (
+								<>
+									<IoPlay className="text-base" />
+									Resume
+								</>
+							) : (
+								<>
+									<IoPause className="text-base" />
+									Pause
+								</>
+							)}
+						</button>
+						<button
+							type="button"
+							onClick={() => recordingPanelRef.current?.stopRecording()}
+							className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-all active:scale-95"
+						>
+							<IoStop className="text-base" />
+							Stop
+						</button>
+					</div>
 				</div>
 			)}
+
+			{/* Warning Notification - shown when recording reaches 4:30 */}
+			{isRecording && showWarning && (
+				<div className="absolute right-4 top-24 z-50 bg-yellow-500 bg-opacity-90 border border-yellow-600 rounded-xl shadow-lg p-4 w-64 animate-pulse">
+					<p className="text-sm font-semibold text-white text-center">
+						⏰ Time's almost up!
+					</p>
+					<p className="text-xs text-white text-center mt-1">
+						Please wrap up your story in 30 seconds
+					</p>
+				</div>
+			)}
+
 			{activePanel === 'magazine' && (
 				<MagazinePanel
 					addImageElement={addImageElement}
