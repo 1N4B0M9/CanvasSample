@@ -3,13 +3,11 @@ import { IoClose, IoChevronBack, IoChevronForward } from 'react-icons/io5';
 
 // List of all images in VB Magazine JPEGs folder (sorted by filename)
 const VB_MAGAZINE_IMAGES = [
-	'1.jpeg',
 	'2.jpeg',
 	'3.jpeg',
 	'4.jpeg',
 	'5.jpeg',
 	'6.jpg',
-	'7.jpeg',
 	'8.jpeg',
 	'9.jpeg',
 	'10.jpeg',
