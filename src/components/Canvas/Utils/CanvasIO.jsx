@@ -30,21 +30,35 @@ async function dataUrlToObjectUrl(dataUrl) {
 /* ====================== 1) ConvertCanvasToJson ====================== */
 async function serializeElement(el) {
 	if (!el || typeof el !== 'object') return el;
+
+	// NOTE: We NO LONGER strip a normal (non-"blob:") src. We only discard blob/objectUrl/file/fileUrl fields.
 	const {
 		file,
 		blob,
 		objectUrl, // strip
 		fileUrl, // strip
-		src, // strip
+		src, // we'll preserve if non-blob below
 		...rest
 	} = el;
 
-	if (el?.inlineData?.dataUrl) return { ...rest, inlineData: { ...el.inlineData } };
+	// Keep src if it's a regular URL or data URL (anything that's not a session-scoped blob URL).
+	const keepSrc = typeof src === 'string' && !src.startsWith('blob:') ? { src } : {};
 
+	// Keep inlineData as-is if present
+	if (el?.inlineData?.dataUrl) {
+		return {
+			...rest,
+			...keepSrc,
+			inlineData: { ...el.inlineData },
+		};
+	}
+
+	// If original element came from a File
 	if (typeof File !== 'undefined' && file instanceof File) {
 		const dataUrl = await fileToDataUrl(file);
 		return {
 			...rest,
+			...keepSrc,
 			inlineData: {
 				dataUrl,
 				mimeType: file.type || 'application/octet-stream',
@@ -54,25 +68,35 @@ async function serializeElement(el) {
 		};
 	}
 
+	// If original element came from a Blob
 	if (blob instanceof Blob) {
 		const dataUrl = await fileToDataUrl(blob);
 		return {
 			...rest,
+			...keepSrc,
 			inlineData: { dataUrl, mimeType: blob.type || 'application/octet-stream' },
 		};
 	}
 
+	// If original element had an object URL
 	if (typeof objectUrl === 'string' && objectUrl.startsWith('blob:')) {
-		const res = await fetch(objectUrl);
-		const b = await res.blob();
-		const dataUrl = await fileToDataUrl(b);
-		return {
-			...rest,
-			inlineData: { dataUrl, mimeType: b.type || 'application/octet-stream' },
-		};
+		try {
+			const res = await fetch(objectUrl);
+			const b = await res.blob();
+			const dataUrl = await fileToDataUrl(b);
+			return {
+				...rest,
+				...keepSrc,
+				inlineData: { dataUrl, mimeType: b.type || 'application/octet-stream' },
+			};
+		} catch {
+			// If something fails, just return what we can with preserved src if available
+			return { ...rest, ...keepSrc };
+		}
 	}
 
-	return { ...rest };
+	// Default path: preserved non-blob src (if any), otherwise just rest
+	return { ...rest, ...keepSrc };
 }
 
 export async function ConvertCanvasToJson(canvases) {
@@ -102,26 +126,37 @@ export async function ConvertCanvasToJson(canvases) {
 export async function ConvertJsonToCanvas(jsonArray) {
 	const urls = [];
 
-	const withSrc = (obj, objectUrl) => {
-		const inline = obj?.inlineData?.dataUrl;
-		const src = objectUrl || inline || EMPTY_PNG;
-		return { ...obj, ...(objectUrl ? { objectUrl } : {}), src };
+	// Builds the src field by preferring objectUrl (rebuilt from inlineData), then inlineData URL,
+	// then a preserved non-blob src (from JSON), and finally a fallback empty PNG.
+	const withSrc = (obj, { objectUrl, inline, existingSrc } = {}) => {
+		const safeExisting = typeof existingSrc === 'string' && !existingSrc.startsWith('blob:') ? existingSrc : null;
+
+		const src = objectUrl || inline || safeExisting || EMPTY_PNG;
+		const out = { ...obj, src };
+		if (objectUrl) out.objectUrl = objectUrl;
+		return out;
 	};
 
 	const rehydrateEl = async (el) => {
 		if (!el || typeof el !== 'object') return el;
-		const { file, fileUrl, objectUrl: _oldObj, src: _oldSrc, ...clean } = el;
 
+		// We drop transient fields if any snuck into JSON; keep src for non-blob only.
+		const { file, fileUrl, objectUrl: _oldObj, src, ...clean } = el;
+
+		// If there is inline data, rebuild a fresh object URL for this session.
 		if (el?.inlineData?.dataUrl) {
 			try {
 				const { objectUrl } = await dataUrlToObjectUrl(el.inlineData.dataUrl);
 				urls.push(objectUrl);
-				return withSrc(clean, objectUrl);
+				return withSrc(clean, { objectUrl });
 			} catch {
-				return withSrc(clean, null);
+				// If rebuilding objectUrl fails, at least return inline data URL or preserved src
+				return withSrc(clean, { inline: el.inlineData.dataUrl, existingSrc: src });
 			}
 		}
-		return withSrc(clean, null);
+
+		// No inline data: keep a preserved non-blob src if present
+		return withSrc(clean, { existingSrc: src });
 	};
 
 	const out = [];
@@ -132,17 +167,17 @@ export async function ConvertJsonToCanvas(jsonArray) {
 
 		let bg = c?.data?.backgroundImage || null;
 		if (bg && typeof bg === 'object') {
-			const { file, fileUrl, objectUrl: _oldObj, src: _oldSrc, ...bgClean } = bg;
+			const { file, fileUrl, objectUrl: _oldObj, src, ...bgClean } = bg;
 			if (bg?.inlineData?.dataUrl) {
 				try {
 					const { objectUrl } = await dataUrlToObjectUrl(bg.inlineData.dataUrl);
 					urls.push(objectUrl);
-					bg = withSrc(bgClean, objectUrl);
+					bg = withSrc(bgClean, { objectUrl });
 				} catch {
-					bg = withSrc(bgClean, null);
+					bg = withSrc(bgClean, { inline: bg.inlineData.dataUrl, existingSrc: src });
 				}
 			} else {
-				bg = withSrc(bgClean, null);
+				bg = withSrc(bgClean, { existingSrc: src });
 			}
 		}
 
