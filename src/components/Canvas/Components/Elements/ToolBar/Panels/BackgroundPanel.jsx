@@ -3,6 +3,13 @@ import { IoClose, IoCloudUpload } from 'react-icons/io5';
 import { RiDeleteBin5Line } from 'react-icons/ri';
 import ImageSearch from '../../ImageSearch';
 
+// Helper function to add UTM parameters to Unsplash URLs
+const addUnsplashUTM = (url) => {
+	if (!url) return url;
+	const separator = url.includes('?') ? '&' : '?';
+	return `${url}${separator}utm_source=strive-revamp&utm_medium=referral`;
+};
+
 const BackgroundPanel = ({
 	handleBackgroundUpload,
 	handleBackgroundFromSearch,
@@ -116,12 +123,21 @@ const BackgroundPanel = ({
 							<div className="text-xs text-gray-500 mt-2">
 								Photo by{' '}
 								<a
-									href={backgroundImage.attribution.photographerUrl}
+									href={addUnsplashUTM(backgroundImage.attribution.photographerUrl)}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="text-blue-500 hover:underline"
 								>
 									{backgroundImage.attribution.photographer}
+								</a>{' '}
+								on{' '}
+								<a
+									href={addUnsplashUTM('https://unsplash.com')}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-blue-500 hover:underline"
+								>
+									Unsplash
 								</a>
 							</div>
 						)}

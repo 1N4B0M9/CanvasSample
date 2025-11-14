@@ -10,6 +10,13 @@ import React, { useState } from 'react';
 // Unsplash API access key - replace with your own from https://unsplash.com/developers
 const UNSPLASH_ACCESS_KEY = 'Iq-QrfOSfMi3CCClwVFJ83rXo8bHj_IT0ppEFum7cow';
 
+// Helper function to add UTM parameters to Unsplash URLs
+const addUnsplashUTM = (url) => {
+	if (!url) return url;
+	const separator = url.includes('?') ? '&' : '?';
+	return `${url}${separator}utm_source=strive-revamp&utm_medium=referral`;
+};
+
 const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search' }) => {
 	// Component state
 	const [searchTerm, setSearchTerm] = useState('');
@@ -174,9 +181,8 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 					<button
 						type="submit"
 						disabled={isLoading || !searchTerm.trim()}
-						className={`p-2 rounded flex items-center justify-center ${
-							isLoading || !searchTerm.trim() ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-500 hover:bg-purple-600'
-						} text-white`}
+						className={`p-2 rounded flex items-center justify-center ${isLoading || !searchTerm.trim() ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-500 hover:bg-purple-600'
+							} text-white`}
 					>
 						{isLoading ? (
 							<>
@@ -252,7 +258,7 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 								<div className="mt-1 text-xs text-gray-300">
 									Photo by{' '}
 									<a
-										href={image.photographerUrl}
+										href={addUnsplashUTM(image.photographerUrl)}
 										target="_blank"
 										rel="noopener noreferrer"
 										className="text-blue-400 hover:underline"
@@ -262,7 +268,7 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 									</a>{' '}
 									on{' '}
 									<a
-										href="https://unsplash.com"
+										href={addUnsplashUTM('https://unsplash.com')}
 										target="_blank"
 										rel="noopener noreferrer"
 										className="text-blue-400 hover:underline"
@@ -279,9 +285,8 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 							<button
 								onClick={loadMore}
 								disabled={isLoading}
-								className={`w-full p-2 rounded ${
-									isLoading ? 'bg-gray-700 cursor-not-allowed' : 'bg-gray-600 hover:bg-gray-500'
-								} text-white text-center flex items-center justify-center`}
+								className={`w-full p-2 rounded ${isLoading ? 'bg-gray-700 cursor-not-allowed' : 'bg-gray-600 hover:bg-gray-500'
+									} text-white text-center flex items-center justify-center`}
 							>
 								{isLoading ? (
 									<>

@@ -3,6 +3,13 @@ import { Stage, Layer, Image, Transformer } from 'react-konva';
 
 const UNSPLASH_ACCESS_KEY = 'Iq-QrfOSfMi3CCClwVFJ83rXo8bHj_IT0ppEFum7cow';
 
+// Helper function to add UTM parameters to Unsplash URLs
+const addUnsplashUTM = (url) => {
+	if (!url) return url;
+	const separator = url.includes('?') ? '&' : '?';
+	return `${url}${separator}utm_source=strive-revamp&utm_medium=referral`;
+};
+
 const ImageSearch = ({ addImage }) => {
 	const [searchTerm, setSearchTerm] = useState('');
 	const [searchResults, setSearchResults] = useState([]);
@@ -106,9 +113,16 @@ const ImageSearch = ({ addImage }) => {
 								className="w-full h-20 object-cover rounded"
 								onClick={() => addImage(result, UNSPLASH_ACCESS_KEY)}
 							/>
-							<a href={result.photographerUrl} className="text-xs text-blue-400" target="_blank" rel="noopener noreferrer">
-								Photo by {result.photographer}
-							</a>
+							<div className="text-xs text-gray-300">
+								Photo by{' '}
+								<a href={addUnsplashUTM(result.photographerUrl)} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+									{result.photographer}
+								</a>{' '}
+								on{' '}
+								<a href={addUnsplashUTM('https://unsplash.com')} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+									Unsplash
+								</a>
+							</div>
 						</div>
 					))}
 					{searchResults.length > 0 && (
