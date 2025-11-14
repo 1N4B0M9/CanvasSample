@@ -10,6 +10,13 @@
 import React, { useState, useRef } from 'react';
 import ImageSearch from './ImageSearch';
 
+// Helper function to add UTM parameters to Unsplash URLs
+const addUnsplashUTM = (url) => {
+	if (!url) return url;
+	const separator = url.includes('?') ? '&' : '?';
+	return `${url}${separator}utm_source=strive-revamp&utm_medium=referral`;
+};
+
 const handleImageError = (imagePath) => {
 	setImageLoadErrors((prev) => new Set(prev).add(imagePath));
 };
@@ -232,9 +239,8 @@ const SidePanel = ({
 
 			{/* Side panel */}
 			<div
-				className={`fixed top-16 mt-8 left-0 z-40 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out shadow-xl ${
-					isOpen ? 'translate-x-0' : '-translate-x-full'
-				}`}
+				className={`fixed top-16 mt-8 left-0 z-40 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out shadow-xl ${isOpen ? 'translate-x-0' : '-translate-x-full'
+					}`}
 				style={{
 					width: '320px',
 					height: 'calc(100vh - 96px)',
@@ -267,35 +273,31 @@ const SidePanel = ({
 					<div className="flex-shrink-0 flex border-b border-gray-700">
 						<button
 							onClick={() => setActiveTab('elements')}
-							className={`flex-1 px-2 py-2 text-xs font-medium ${
-								activeTab === 'elements' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
-							}`}
+							className={`flex-1 px-2 py-2 text-xs font-medium ${activeTab === 'elements' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+								}`}
 						>
 							Elements
 						</button>
 						<button
 							onClick={() => setActiveTab('extract')}
-							className={`flex-1 px-2 py-2 text-xs font-medium ${
-								activeTab === 'extract' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
-							}`}
+							className={`flex-1 px-2 py-2 text-xs font-medium ${activeTab === 'extract' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+								}`}
 						>
 							Extract
 						</button>
 						<button
 							onClick={() => setActiveTab('background')}
-							className={`flex-1 px-2 py-2 text-xs font-medium ${
-								activeTab === 'background'
-									? 'bg-blue-600 text-white'
-									: 'text-gray-300 hover:text-white hover:bg-gray-700'
-							}`}
+							className={`flex-1 px-2 py-2 text-xs font-medium ${activeTab === 'background'
+								? 'bg-blue-600 text-white'
+								: 'text-gray-300 hover:text-white hover:bg-gray-700'
+								}`}
 						>
 							Background
 						</button>
 						<button
 							onClick={() => setActiveTab('export')}
-							className={`flex-1 px-2 py-2 text-xs font-medium ${
-								activeTab === 'export' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
-							}`}
+							className={`flex-1 px-2 py-2 text-xs font-medium ${activeTab === 'export' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+								}`}
 						>
 							Export
 						</button>
@@ -418,11 +420,10 @@ const SidePanel = ({
 												<button
 													onClick={handleVisionBoardUpload}
 													disabled={!selectedFile || extractionLoading}
-													className={`flex-1 px-3 py-2 rounded text-sm font-medium ${
-														!selectedFile || extractionLoading
-															? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-															: 'bg-green-600 hover:bg-green-700 text-white'
-													}`}
+													className={`flex-1 px-3 py-2 rounded text-sm font-medium ${!selectedFile || extractionLoading
+														? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+														: 'bg-green-600 hover:bg-green-700 text-white'
+														}`}
 												>
 													{extractionLoading ? (
 														<span className="flex items-center justify-center">
@@ -580,12 +581,21 @@ const SidePanel = ({
 													<div className="text-xs text-gray-400 mt-2">
 														Photo by{' '}
 														<a
-															href={backgroundImage.attribution.photographerUrl}
+															href={addUnsplashUTM(backgroundImage.attribution.photographerUrl)}
 															target="_blank"
 															rel="noopener noreferrer"
 															className="text-blue-400 hover:underline"
 														>
 															{backgroundImage.attribution.photographer}
+														</a>{' '}
+														on{' '}
+														<a
+															href={addUnsplashUTM('https://unsplash.com')}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="text-blue-400 hover:underline"
+														>
+															Unsplash
 														</a>
 													</div>
 												)}
