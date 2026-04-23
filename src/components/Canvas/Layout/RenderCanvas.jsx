@@ -4,18 +4,22 @@
  * This version ensures the canvas uses only the available space and exports correctly
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { FaBullseye } from 'react-icons/fa6';
 import { CanvasProvider, useCanvas } from '../Utils/CanvasContext';
 import RenderElements from './RenderElements';
 import RenderConnections from './RenderConnections';
 import SidePanel from '../Components/Elements/SidePanel';
 import ToolBar from '../Components/Elements/ToolBar/ToolBar';
+import ReentrySupportPanel from '../Components/Elements/ToolBar/Panels/ReentrySupportPanel';
 import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
 
 const CanvasContent = () => {
 	const {
 		canvasRef,
+		elements,
+		arrows,
 		backgroundImage,
 		backgroundScale,
 		updateBackgroundImage,
@@ -35,6 +39,31 @@ const CanvasContent = () => {
 		addImageElement,
 		addImageFromSearch,
 	} = useCanvas();
+
+	const [reentryOpen, setReentryOpen] = useState(false);
+	const [reentryGoalStateByElementId, setReentryGoalStateByElementId] = useState({});
+	const [reentryFallbackGoals, setReentryFallbackGoals] = useState([
+		{
+			id: 'goal-demo-1',
+			title: 'Find stable housing',
+			description: 'Identify resources and immediate next steps for housing options.',
+			prompt: '',
+			recommendations: [],
+			checkInComplete: false,
+			reflection: '',
+			lastUpdated: new Date().toISOString(),
+		},
+		{
+			id: 'goal-demo-2',
+			title: 'Get job-ready this month',
+			description: 'Build a practical plan for interviews, paperwork, and training.',
+			prompt: '',
+			recommendations: [],
+			checkInComplete: false,
+			reflection: '',
+			lastUpdated: new Date().toISOString(),
+		},
+	]);
 
 	const handleDrop = (e) => {
 		e.preventDefault();
@@ -272,66 +301,88 @@ const CanvasContent = () => {
 	};
 
 	return (
-		<div className="relative w-full h-full overflow-hidden">
-			{/* <p>Hi there</p> */}
-			{/* Side panel with integrated handlers */}
-			{/* <SidePanel
-				handleAddText={handleAddText}
-				handleAddMentor={handleAddMentor}
-				addImage={handleAddImage}
-				handleBackgroundUpload={handleBackgroundUpload}
-				handleBackgroundFromSearch={handleBackgroundFromSearch}
-				removeBackgroundImage={removeBackgroundImage}
-				backgroundImage={backgroundImage}
-				updateBackgroundScale={updateBackgroundScale}
-				handleExport={handleExport}
-			/> */}
-			<div className=" rounded-xl absolute left-4 top-4  z-50  bg-white shadow flex flex-row">
-				<ProfileMenu isCanvas />
-			</div>
-			<ToolBar
-				handleAddText={handleAddText}
-				handleAddMentor={handleAddMentor}
-				addImage={handleAddImage}
-				addImageElement={addImageElement}
-				handleBackgroundUpload={handleBackgroundUpload}
-				handleBackgroundFromSearch={handleBackgroundFromSearch}
-				removeBackgroundImage={removeBackgroundImage}
-				backgroundImage={backgroundImage}
-				updateBackgroundScale={updateBackgroundScale}
-				handleExport={handleExport}
-				handleExportJSON={handleExportJSON}
-				handleImport={handleImport}
-			/>
+		<div className="relative h-full w-full min-h-0 overflow-hidden">
+			{/* Reentry: overlays left edge; canvas stays full size underneath */}
+			{reentryOpen && (
+				<div
+					id="reentry-support-panel"
+					className="absolute left-0 top-0 z-[70] flex h-full w-[min(420px,40vw)] min-h-0 flex-col overflow-hidden border-r border-gray-200 bg-white shadow-lg"
+				>
+					<ReentrySupportPanel
+						variant="dock"
+						elements={elements}
+						arrows={arrows}
+						goalStateByElementId={reentryGoalStateByElementId}
+						setGoalStateByElementId={setReentryGoalStateByElementId}
+						fallbackGoals={reentryFallbackGoals}
+						setFallbackGoals={setReentryFallbackGoals}
+						onClose={() => setReentryOpen(false)}
+					/>
+				</div>
+			)}
 
-			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
-			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-			<div
-				ref={canvasRef}
-				className="w-full h-full relative"
-				style={{
-					backgroundColor: backgroundImage ? 'transparent' : '#ffffff', // white background
-					border: '1px solid #d1d5db', // gray-300
-					boxSizing: 'border-box',
-
-					// Apply background image styling
-					...getBackgroundStyle(),
-				}}
-				onDrop={handleDrop}
-				onDragOver={(e) => e.preventDefault()}
-				onMouseDown={handleMouseDown}
-				onMouseMove={handleMouseMove}
-				onMouseUp={handleElementMouseUp}
-				onMouseLeave={handleElementMouseUp}
-				onWheel={handleElementWheel}
-			>
-				{/* Semi-transparent overlay when background is present to improve element visibility */}
-				{backgroundImage && (
-					<div className="absolute inset-0 bg-white bg-opacity-5 pointer-events-none" style={{ zIndex: -1 }} />
+			<div className="relative flex h-full w-full min-h-0 flex-col">
+				{!reentryOpen && (
+					<button
+						type="button"
+						className="absolute left-4 bottom-4 z-50 flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-md hover:bg-gray-50"
+						title="Open Recommendations"
+						aria-expanded={false}
+						aria-label="Open Recommendations panel"
+						onClick={() => setReentryOpen(true)}
+					>
+						<FaBullseye className="text-lg text-blue-600" aria-hidden />
+						Recommendations
+					</button>
 				)}
 
-				<RenderConnections />
-				<RenderElements />
+				<div className=" rounded-xl absolute left-4 top-4  z-50  bg-white shadow flex flex-row">
+					<ProfileMenu isCanvas />
+				</div>
+				<ToolBar
+					handleAddText={handleAddText}
+					handleAddMentor={handleAddMentor}
+					addImage={handleAddImage}
+					addImageElement={addImageElement}
+					handleBackgroundUpload={handleBackgroundUpload}
+					handleBackgroundFromSearch={handleBackgroundFromSearch}
+					removeBackgroundImage={removeBackgroundImage}
+					backgroundImage={backgroundImage}
+					updateBackgroundScale={updateBackgroundScale}
+					handleExport={handleExport}
+					handleExportJSON={handleExportJSON}
+					handleImport={handleImport}
+				/>
+
+				{/* Main canvas drawing area - full width; Reentry panel floats on top when open */}
+				{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+				<div
+					ref={canvasRef}
+					className="relative min-h-0 w-full flex-1"
+					style={{
+						backgroundColor: backgroundImage ? 'transparent' : '#ffffff', // white background
+						border: '1px solid #d1d5db', // gray-300
+						boxSizing: 'border-box',
+
+						// Apply background image styling
+						...getBackgroundStyle(),
+					}}
+					onDrop={handleDrop}
+					onDragOver={(e) => e.preventDefault()}
+					onMouseDown={handleMouseDown}
+					onMouseMove={handleMouseMove}
+					onMouseUp={handleElementMouseUp}
+					onMouseLeave={handleElementMouseUp}
+					onWheel={handleElementWheel}
+				>
+					{/* Semi-transparent overlay when background is present to improve element visibility */}
+					{backgroundImage && (
+						<div className="absolute inset-0 bg-white bg-opacity-5 pointer-events-none" style={{ zIndex: -1 }} />
+					)}
+
+					<RenderConnections />
+					<RenderElements />
+				</div>
 			</div>
 		</div>
 	);
