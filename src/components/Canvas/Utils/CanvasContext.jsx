@@ -542,6 +542,26 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[setArrowsWithSave],
 	);
 
+	// update the label text on a connection line
+	const updateConnectionLabel = useCallback(
+		(connectionId, label) => {
+			setConnectionsWithSave((prev) =>
+				prev.map((conn) => (conn.id === connectionId ? { ...conn, label } : conn))
+			);
+		},
+		[setConnectionsWithSave],
+	);
+
+	// update the label text on an arrow
+	const updateArrowLabel = useCallback(
+		(arrowId, label) => {
+			setArrowsWithSave((prev) =>
+				prev.map((arrow) => (arrow.id === arrowId ? { ...arrow, label } : arrow))
+			);
+		},
+		[setArrowsWithSave],
+	);
+
 	// Helper function to calculate element center for connections
 	const getElementCenter = useCallback((element) => {
 		const finalScale = element.scale || 1;
@@ -1055,10 +1075,12 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		createConnection: connectionOps?.createConnection,
 		deleteConnection: connectionOps?.deleteConnection,
 		updateConnectionData,
+		updateConnectionLabel,
 
 		// Arrow operations
 		deleteArrow,
 		updateArrowData,
+		updateArrowLabel,
 
 		// Selection handlers
 		handleSelect,
