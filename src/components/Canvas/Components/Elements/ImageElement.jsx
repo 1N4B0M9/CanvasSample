@@ -48,8 +48,8 @@ const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) 
 	// handle blur on the label input — trim, clear empty to undefined, close edit mode
 	const handleLabelBlur = (e) => {
 		const val = e.target.value.trim();
-		onUpdate({ ...element, label: val || undefined });
-		setIsEditingLabel(false);
+		onUpdate?.({ ...element, label: val || undefined });
+		setIsEditingLabel?.(false);
 	};
 
 	return (
@@ -88,7 +88,7 @@ const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) 
 				/>
 			)}
 
-			{element.file && isLoaded && !imageError && (
+			{element.file && isLoaded && !imageError && !element.label && (
 				<div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
 					{element.file.name}
 				</div>
