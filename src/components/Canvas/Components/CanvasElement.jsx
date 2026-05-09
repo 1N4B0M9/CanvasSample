@@ -25,6 +25,7 @@ const CanvasElement = ({
 	onCompleteArrow,
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
+	const [isEditingLabel, setIsEditingLabel] = useState(false);
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
 	const textRef = useRef(null);
@@ -74,6 +75,9 @@ const CanvasElement = ({
 				textRef.current?.focus();
 				textRef.current?.select();
 			}, 0);
+		} else if (element.type === 'image') {
+			// double-clicking an image opens the label editor
+			setIsEditingLabel(true);
 		}
 	};
 
@@ -155,7 +159,12 @@ const CanvasElement = ({
 			<div ref={contentRef} className="relative">
 				{/* Render the appropriate element type */}
 				{element.type === 'image' ? (
-					<ImageElement element={element} />
+					<ImageElement
+						element={element}
+						onUpdate={onUpdate}
+						isEditingLabel={isEditingLabel}
+						setIsEditingLabel={setIsEditingLabel}
+					/>
 				) : element.type === 'mentor' ? (
 					<MentorElement
 						element={element}
