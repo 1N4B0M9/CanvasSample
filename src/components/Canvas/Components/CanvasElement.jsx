@@ -68,6 +68,10 @@ const CanvasElement = ({
 		};
 	}, [element.id, element.content, element.type, element.rotation, onUpdateSize]);
 
+	useEffect(() => {
+		if (!isSelected) setIsEditingLabel(false);
+	}, [isSelected]);
+
 	const handleDoubleClick = () => {
 		if (element.type === 'text' || element.type === 'mentor') {
 			setIsEditing(true);
