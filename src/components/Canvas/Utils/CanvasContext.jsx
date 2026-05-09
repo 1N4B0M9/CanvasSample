@@ -934,6 +934,16 @@ export const CanvasProvider = ({ children, canvasId }) => {
 							ctx.font = '14px Arial';
 							ctx.fillText('Image', 8, element.height / 2);
 						}
+						// draw the label overlay if there is one — match what the user sees on screen
+						if (element.label) {
+							const overlayHeight = 24;
+							ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+							ctx.fillRect(0, element.height - overlayHeight, element.width, overlayHeight);
+							ctx.fillStyle = '#ffffff';
+							ctx.font = '12px Arial';
+							const labelText = element.label.length > 40 ? element.label.substring(0, 40) + '…' : element.label;
+							ctx.fillText(labelText, 6, element.height - overlayHeight + 16);
+						}
 					} else if (element.type === 'mentor') {
 						// Draw mentor element background
 						ctx.fillStyle = '#ffffff';
