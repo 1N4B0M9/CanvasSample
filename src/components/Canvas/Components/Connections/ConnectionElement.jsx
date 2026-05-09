@@ -25,7 +25,7 @@ const ConnectionLabel = ({ id, label, isSelected, midX, midY, color, onLabelChan
 
 	if (isSelected) {
 		return (
-			<foreignObject x={midX - 60} y={midY + 18} width={120} height={26}>
+			<foreignObject x={midX - 60} y={midY + 18} width={120} height={26} style={{ pointerEvents: 'auto' }}>
 				<input
 					defaultValue={label || ''}
 					placeholder="add label..."
@@ -55,7 +55,7 @@ const ConnectionLabel = ({ id, label, isSelected, midX, midY, color, onLabelChan
 	const display = label.length > 18 ? label.substring(0, 18) + '…' : label;
 
 	return (
-		<g>
+		<g pointerEvents="auto">
 			<rect
 				x={midX - 60}
 				y={midY - 12}
