@@ -10,6 +10,7 @@ import MentorElement from './Elements/MentorElement';
 const CanvasElement = ({
 	element,
 	isSelected,
+	selectedIds,
 	isConnecting,
 	isCreatingArrow,
 	connections,
@@ -93,7 +94,7 @@ const CanvasElement = ({
 		} else if (isCreatingArrow) {
 			onCompleteArrow(element.id);
 		} else {
-			onSelect(element.id);
+			onSelect(element.id, e.shiftKey);
 		}
 	};
 
@@ -203,58 +204,65 @@ const CanvasElement = ({
 					>
 						<div className="absolute inset-2 border-2 border-blue-500 rounded" data-connection-border="true" />
 
-						{['nw', 'ne', 'se', 'sw'].map((corner) => (
-							<div
-								key={corner}
-								className={getScaleHandleStyle(corner)}
-								style={{
-									top: corner.includes('n') ? '-4px' : 'auto',
-									bottom: corner.includes('s') ? '-4px' : 'auto',
-									left: corner.includes('w') ? '-4px' : 'auto',
-									right: corner.includes('e') ? '-4px' : 'auto',
-									transform: `scale(${1 / element.scale})`,
-									transformOrigin: 'center',
-									pointerEvents: 'auto',
-									zIndex: 31,
-								}}
-								onMouseDown={(e) => handleScaleHandleMouseDown(corner, e)}
-							/>
-						))}
+						{/* scale handles and mini-toolbar only make sense for single-select */}
+						{selectedIds.size === 1 && (
+							<>
+								{['nw', 'ne', 'se', 'sw'].map((corner) => (
+									<div
+										key={corner}
+										className={getScaleHandleStyle(corner)}
+										style={{
+											top: corner.includes('n') ? '-4px' : 'auto',
+											bottom: corner.includes('s') ? '-4px' : 'auto',
+											left: corner.includes('w') ? '-4px' : 'auto',
+											right: corner.includes('e') ? '-4px' : 'auto',
+											transform: `scale(${1 / element.scale})`,
+											transformOrigin: 'center',
+											pointerEvents: 'auto',
+											zIndex: 31,
+										}}
+										onMouseDown={(e) => handleScaleHandleMouseDown(corner, e)}
+									/>
+								))}
+							</>
+						)}
 					</div>
 
-					<div
-						className="absolute -top-8 left-1/2 flex gap-2"
-						style={{
-							transform: `translateX(-50%) scale(${1 / element.scale})`,
-							transformOrigin: 'center',
-						}}
-					>
-						<button
-							className="p-1 bg-white rounded shadow hover:bg-gray-100"
-							onClick={handleStartConnection}
-							title="Connect to another element"
-						>
-							↔
-						</button>
-
-						<button
-							className="p-1 bg-white rounded shadow hover:bg-gray-100"
-							onClick={handleStartArrow}
-							title="Create arrow to another element"
-						>
-							→
-						</button>
-
-						<button
-							className="p-1 bg-white rounded shadow hover:bg-gray-100 text-red-500"
-							onClick={(e) => {
-								e.stopPropagation();
-								onDelete(element.id);
+					{selectedIds.size === 1 && (
+						<div
+							className="absolute -top-8 left-1/2 flex gap-2"
+							style={{
+								transform: `translateX(-50%) scale(${1 / element.scale})`,
+								transformOrigin: 'center',
 							}}
 						>
-							×
-						</button>
-					</div>
+							<button
+								className="p-1 bg-white rounded shadow hover:bg-gray-100"
+								onClick={handleStartConnection}
+								title="Connect to another element"
+							>
+								↔
+							</button>
+
+							<button
+								className="p-1 bg-white rounded shadow hover:bg-gray-100"
+								onClick={handleStartArrow}
+								title="Create arrow to another element"
+							>
+								→
+							</button>
+
+							<button
+								className="p-1 bg-white rounded shadow hover:bg-gray-100 text-red-500"
+								onClick={(e) => {
+									e.stopPropagation();
+									onDelete(element.id);
+								}}
+							>
+								×
+							</button>
+						</div>
+					)}
 				</>
 			)}
 		</div>
