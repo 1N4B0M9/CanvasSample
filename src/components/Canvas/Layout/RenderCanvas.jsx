@@ -12,6 +12,7 @@ import RenderConnections from './RenderConnections';
 import SidePanel from '../Components/Elements/SidePanel';
 import ToolBar from '../Components/Elements/ToolBar/ToolBar';
 import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
+import DeleteConfirmModal from '../Components/DeleteConfirmModal';
 
 const CanvasContent = () => {
 	const {
@@ -34,7 +35,50 @@ const CanvasContent = () => {
 		addMentorElement,
 		addImageElement,
 		addImageFromSearch,
+		elements,
+		connections,
+		arrows,
+		selectedIds,
+		deleteSelected,
 	} = useCanvas();
+
+	const [confirmOpen, setConfirmOpen] = React.useState(false);
+	const [deletionSummary, setDeletionSummary] = React.useState(null);
+
+	const handleDeleteSelected = React.useCallback(() => {
+		const items = [];
+
+		for (const id of selectedIds) {
+			const el = elements.find((e) => e.id === id);
+			if (el) {
+				items.push({ id, type: el.type, label: el.label || null });
+				continue;
+			}
+			const conn = connections.find((c) => c.id === id);
+			if (conn) {
+				items.push({ id, type: 'connection', label: conn.label || null });
+				continue;
+			}
+			const arrow = arrows.find((a) => a.id === id);
+			if (arrow) {
+				items.push({ id, type: 'arrow', label: arrow.label || null });
+			}
+		}
+
+		const selectedElementIds = new Set(
+			items.filter((i) => ['text', 'image', 'mentor'].includes(i.type)).map((i) => i.id)
+		);
+		const implicitCount =
+			connections.filter(
+				(c) => !selectedIds.has(c.id) && (selectedElementIds.has(c.startId) || selectedElementIds.has(c.endId))
+			).length +
+			arrows.filter(
+				(a) => !selectedIds.has(a.id) && (selectedElementIds.has(a.startId) || selectedElementIds.has(a.endId))
+			).length;
+
+		setDeletionSummary({ items, implicitCount });
+		setConfirmOpen(true);
+	}, [selectedIds, elements, connections, arrows]);
 
 	const handleDrop = (e) => {
 		e.preventDefault();
@@ -302,6 +346,8 @@ const CanvasContent = () => {
 				handleExport={handleExport}
 				handleExportJSON={handleExportJSON}
 				handleImport={handleImport}
+				selectedCount={selectedIds.size}
+				onDeleteSelected={handleDeleteSelected}
 			/>
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
@@ -333,6 +379,16 @@ const CanvasContent = () => {
 				<RenderConnections />
 				<RenderElements />
 			</div>
+
+			<DeleteConfirmModal
+				open={confirmOpen}
+				summary={deletionSummary}
+				onClose={() => setConfirmOpen(false)}
+				onConfirm={() => {
+					deleteSelected();
+					setConfirmOpen(false);
+				}}
+			/>
 		</div>
 	);
 };
