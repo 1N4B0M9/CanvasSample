@@ -198,6 +198,19 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[elementOps],
 	);
 
+	// same treatment for connections — keeps selectedIds clean when the × button fires
+	const deleteConnection = useCallback(
+		(id) => {
+			connectionOps?.deleteConnection(id);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				next.delete(id);
+				return next;
+			});
+		},
+		[connectionOps],
+	);
+
 	const connectionOps = useConnectionOperations(
 		elements,
 		connections,
@@ -355,6 +368,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	// Handle selection
 	const handleSelect = useCallback((id, isShift) => {
 		if (isShift) {
+			setSelectedId(null); // prevent stale drag target
 			// clear the scalar connection/arrow selections so they don't stay highlighted
 			setSelectedConnectionId(null);
 			setSelectedArrowId(null);
@@ -1175,7 +1189,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 		// Connection operations
 		createConnection: connectionOps?.createConnection,
-		deleteConnection: connectionOps?.deleteConnection,
+		deleteConnection,
 		updateConnectionData,
 		updateConnectionLabel,
 
