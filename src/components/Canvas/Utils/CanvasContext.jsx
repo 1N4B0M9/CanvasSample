@@ -184,6 +184,20 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[elementOps, canvasRef],
 	);
 
+	// wraps elementOps.deleteElement so deleted IDs don't linger in selectedIds
+	// when the element was shift-selected (selectedId points elsewhere)
+	const deleteElement = useCallback(
+		(id) => {
+			elementOps?.deleteElement(id);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				next.delete(id);
+				return next;
+			});
+		},
+		[elementOps],
+	);
+
 	const connectionOps = useConnectionOperations(
 		elements,
 		connections,
@@ -341,6 +355,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	// Handle selection
 	const handleSelect = useCallback((id, isShift) => {
 		if (isShift) {
+			// clear the scalar connection/arrow selections so they don't stay highlighted
+			setSelectedConnectionId(null);
+			setSelectedArrowId(null);
 			setSelectedIds((prev) => {
 				const next = new Set(prev);
 				if (next.has(id)) next.delete(id);
@@ -836,6 +853,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			setSelectedId,
 			setSelectedConnectionId,
 			setSelectedArrowId,
+			setSelectedIds,
 		],
 	);
 
@@ -1134,7 +1152,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		addImageElement,
 		updateElement: elementOps?.updateElement,
 		updateElementSize: elementOps?.updateElementSize,
-		deleteElement: elementOps?.deleteElement,
+		deleteElement,
 		handleScaleStart: elementOps?.handleScaleStart,
 		handleElementMouseDown: elementOps?.handleElementMouseDown,
 		handleElementMouseMove: elementOps?.handleElementMouseMove,
