@@ -46,6 +46,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const [selectedId, setSelectedId] = useState(null);
 	const [selectedConnectionId, setSelectedConnectionId] = useState(null);
 	const [selectedArrowId, setSelectedArrowId] = useState(null);
+	const [selectedIds, setSelectedIds] = useState(new Set());
 	const [isConnecting, setIsConnecting] = useState(false);
 	const [isCreatingArrow, setIsCreatingArrow] = useState(false);
 	const [connectionStart, setConnectionStart] = useState(null);
@@ -126,6 +127,13 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		setArrows(newArrowsOrFn);
 	}, []);
 
+	// keeps selectedIds in sync whenever the element scalar is set directly
+	// (useElementOperations calls setSelectedId — this wrapper intercepts it)
+	const setSelectedIdAndSync = useCallback((id) => {
+		setSelectedId(id);
+		setSelectedIds(id ? new Set([id]) : new Set());
+	}, []);
+
 	// Background image operations
 	const updateBackgroundImage = useCallback((imageData) => {
 		setBackgroundImage(imageData);
@@ -147,7 +155,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		elements,
 		setElementsWithSave,
 		selectedId,
-		setSelectedId,
+		setSelectedIdAndSync,
 		connections,
 		setConnectionsWithSave,
 	);
@@ -239,10 +247,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			// Add the element to the canvas immediately with the responsive dimensions
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
-			setSelectedId(newElement.id);
+			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave, setSelectedId],
+		[setElementsWithSave, setSelectedIdAndSync],
 	);
 
 	// For addImageFromSearch with screen-fitting dimensions
@@ -294,10 +302,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			// Add directly to canvas with responsive dimensions
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
-			setSelectedId(newElement.id);
+			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave, setSelectedId],
+		[setElementsWithSave, setSelectedIdAndSync],
 	);
 
 	// Add a new mentor element
@@ -324,28 +332,46 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			};
 
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
-			setSelectedId(newElement.id);
+			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave],
+		[setElementsWithSave, setSelectedIdAndSync],
 	);
 
 	// Handle selection
-	const handleSelect = useCallback((id) => {
-		setSelectedId(id);
-		setSelectedConnectionId(null);
+	const handleSelect = useCallback((id, isShift) => {
+		if (isShift) {
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				if (next.has(id)) next.delete(id);
+				else next.add(id);
+				return next;
+			});
+		} else {
+			setSelectedId(id);
+			setSelectedConnectionId(null);
+			setSelectedArrowId(null);
+			setSelectedIds(new Set([id]));
+		}
 	}, []);
 
 	// Handle connection selection
 	const handleConnectionSelect = useCallback(
 		(id, e) => {
 			e.stopPropagation();
-
-			if (selectedConnectionId === id) {
-				setSelectedConnectionId(null);
+			if (e.shiftKey) {
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					if (next.has(id)) next.delete(id);
+					else next.add(id);
+					return next;
+				});
 			} else {
+				const newId = selectedConnectionId === id ? null : id;
 				setSelectedId(null);
-				setSelectedConnectionId(id);
+				setSelectedConnectionId(newId);
+				setSelectedArrowId(null);
+				setSelectedIds(newId ? new Set([newId]) : new Set());
 			}
 		},
 		[selectedConnectionId],
@@ -413,24 +439,14 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 	// Reset selection
 	const resetSelection = useCallback(() => {
-		// For debugging
-		console.log('Resetting all selections');
-
-		// Clear any element selections
 		setSelectedId(null);
-
-		// Clear any connection selections
 		setSelectedConnectionId(null);
-
-		// Clear any arrow selections
 		setSelectedArrowId(null);
-
-		// Also cancel any connection or arrow creation mode
+		setSelectedIds(new Set());
 		if (isConnecting) {
 			setIsConnecting(false);
 			setConnectionStart(null);
 		}
-
 		if (isCreatingArrow) {
 			setIsCreatingArrow(false);
 			setArrowStart(null);
@@ -441,13 +457,19 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const handleArrowSelect = useCallback(
 		(id, e) => {
 			e.stopPropagation();
-
-			if (selectedArrowId === id) {
-				setSelectedArrowId(null);
+			if (e.shiftKey) {
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					if (next.has(id)) next.delete(id);
+					else next.add(id);
+					return next;
+				});
 			} else {
+				const newId = selectedArrowId === id ? null : id;
 				setSelectedId(null);
 				setSelectedConnectionId(null);
-				setSelectedArrowId(id);
+				setSelectedArrowId(newId);
+				setSelectedIds(newId ? new Set([newId]) : new Set());
 			}
 		},
 		[selectedArrowId],
@@ -498,12 +520,62 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	// Delete an arrow
 	const deleteArrow = useCallback(
 		(arrowId) => {
-			console.log('Deleting arrow with ID:', arrowId);
 			setArrowsWithSave((prev) => prev.filter((arrow) => arrow.id !== arrowId));
 			setSelectedArrowId(null);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				next.delete(arrowId);
+				return next;
+			});
 		},
 		[setArrowsWithSave],
 	);
+
+	// Delete all currently selected elements, connections, and arrows — also removes
+	// any connections/arrows that were implicitly attached to deleted elements
+	const deleteSelected = useCallback(() => {
+		const selectedElementIds = new Set(
+			[...selectedIds].filter((id) => elements.some((e) => e.id === id))
+		);
+		const selectedConnectionIds = new Set(
+			[...selectedIds].filter((id) => connections.some((c) => c.id === id))
+		);
+		const selectedArrowIds = new Set(
+			[...selectedIds].filter((id) => arrows.some((a) => a.id === id))
+		);
+
+		// connections/arrows attached to selected elements that weren't explicitly selected
+		const implicitConnectionIds = new Set(
+			connections
+				.filter(
+					(c) =>
+						!selectedConnectionIds.has(c.id) &&
+						(selectedElementIds.has(c.startId) || selectedElementIds.has(c.endId))
+				)
+				.map((c) => c.id)
+		);
+		const implicitArrowIds = new Set(
+			arrows
+				.filter(
+					(a) =>
+						!selectedArrowIds.has(a.id) &&
+						(selectedElementIds.has(a.startId) || selectedElementIds.has(a.endId))
+				)
+				.map((a) => a.id)
+		);
+
+		setElementsWithSave((prev) => prev.filter((e) => !selectedElementIds.has(e.id)));
+		setConnectionsWithSave((prev) =>
+			prev.filter((c) => !selectedConnectionIds.has(c.id) && !implicitConnectionIds.has(c.id))
+		);
+		setArrowsWithSave((prev) =>
+			prev.filter((a) => !selectedArrowIds.has(a.id) && !implicitArrowIds.has(a.id))
+		);
+		setSelectedIds(new Set());
+		setSelectedId(null);
+		setSelectedConnectionId(null);
+		setSelectedArrowId(null);
+	}, [selectedIds, elements, connections, arrows, setElementsWithSave, setConnectionsWithSave, setArrowsWithSave]);
 
 	// Toggle arrow creation mode
 	const toggleArrowMode = useCallback(() => {
@@ -745,6 +817,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				setSelectedId(null);
 				setSelectedConnectionId(null);
 				setSelectedArrowId(null);
+				setSelectedIds(new Set());
 
 				console.log('Canvas imported successfully');
 				return true;
@@ -1048,6 +1121,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		selectedId,
 		selectedConnectionId,
 		selectedArrowId,
+		selectedIds,
 		isConnecting,
 		isCreatingArrow,
 		connectionStart,
@@ -1091,6 +1165,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		deleteArrow,
 		updateArrowData,
 		updateArrowLabel,
+		deleteSelected,
 
 		// Selection handlers
 		handleSelect,
