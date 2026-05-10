@@ -36,7 +36,7 @@ const RenderElements = () => {
 	const {
 		// State
 		elements, // Array of all canvas elements
-		selectedId, // ID of the currently selected element
+		selectedIds, // Set of IDs of currently selected elements
 		isConnecting, // Boolean flag indicating if a connection is being created
 		isCreatingArrow, // Boolean flag indicating if an arrow is being created
 		connections, // Array of all connections between elements
@@ -63,7 +63,8 @@ const RenderElements = () => {
 				<CanvasElement
 					key={element.id}
 					element={element}
-					isSelected={selectedId === element.id}
+					isSelected={selectedIds.has(element.id)}
+					selectedIds={selectedIds}
 					isConnecting={isConnecting}
 					isCreatingArrow={isCreatingArrow}
 					connections={connections}
