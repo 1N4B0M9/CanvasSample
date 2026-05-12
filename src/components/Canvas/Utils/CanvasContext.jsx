@@ -608,6 +608,85 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		setSelectedArrowId(null);
 	}, [selectedIds, elements, connections, arrows, setElementsWithSave, setConnectionsWithSave, setArrowsWithSave]);
 
+	// Save a resource pathway as native canvas elements (text steps + arrows + optional logo image)
+	const savePathwayToBoard = useCallback(
+		(resource, originElementId) => {
+			const originElement = elements.find((el) => el.id === originElementId);
+			const originX = originElement ? originElement.x : 100;
+			const originY = originElement ? originElement.y : 100;
+
+			const newElements = [];
+			const newArrows = [];
+			const stepIds = [];
+
+			for (const step of resource.pathwaySteps) {
+				const stepId = `text-step-${Date.now()}-${step.order}`;
+				stepIds.push(stepId);
+				newElements.push({
+					id: stepId,
+					type: 'text',
+					content: `${step.order}. ${step.title}\n${step.detail}`,
+					label: step.actionLabel,
+					x: originX + step.order * 200,
+					y: originY,
+					width: 180,
+					height: 80,
+					rotation: 0,
+					scale: 1,
+					fontSize: 13,
+					fontFamily: 'Arial',
+					color: '#14532d',
+				});
+			}
+
+			if (originElementId && stepIds[0]) {
+				newArrows.push({
+					id: `arrow-origin-${Date.now()}`,
+					startId: originElementId,
+					endId: stepIds[0],
+					type: 'arrow',
+					color: '#22c55e',
+					thickness: 2,
+					label: 'step 1',
+				});
+			}
+
+			for (let i = 0; i < stepIds.length - 1; i++) {
+				newArrows.push({
+					id: `arrow-step-${Date.now()}-${i}`,
+					startId: stepIds[i],
+					endId: stepIds[i + 1],
+					type: 'arrow',
+					color: '#22c55e',
+					thickness: 2,
+					label: resource.pathwaySteps[i + 1]?.actionLabel ?? '',
+				});
+			}
+
+			if (resource.logoUrl) {
+				newElements.push({
+					id: `image-logo-${Date.now()}`,
+					type: 'image',
+					src: resource.logoUrl,
+					alt: resource.name,
+					label: resource.contact?.hours ?? resource.contact?.phone ?? '',
+					x: originX + 200,
+					y: originY + 140,
+					width: 120,
+					height: 60,
+					rotation: 0,
+					scale: 1,
+				});
+			}
+
+			setElementsWithSave((prev) => [...prev, ...newElements]);
+			setArrowsWithSave((prev) => [...prev, ...newArrows]);
+			setSelectedIds(new Set(newElements.map((el) => el.id)));
+			setSelectedId(null);
+		},
+		[elements, setElementsWithSave, setArrowsWithSave],
+	);
+
 	// Toggle arrow creation mode
 	const toggleArrowMode = useCallback(() => {
 		setIsCreatingArrow((prevState) => {
@@ -1214,6 +1293,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		handleStartArrow,
 		handleCompleteArrow,
 		toggleArrowMode,
+
+		// Recommendations
+		savePathwayToBoard,
 
 		// Mouse tracking
 		updateMousePosition,

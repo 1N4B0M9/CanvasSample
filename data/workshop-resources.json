@@ -1,0 +1,357 @@
+[
+  {
+    "name": "Goodwill Career Solutions",
+    "description": "Free job training, resume help, and employment placement for people with barriers to employment.",
+    "domains": ["job_skills_education", "financial_security"],
+    "goalTypes": ["vocational_training", "employment_search"],
+    "contact": {
+      "phone": "412-632-2400",
+      "url": "goodwillswpa.org",
+      "address": "118 52nd St, Pittsburgh PA 15201",
+      "hours": "Mon–Fri 9am–5pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Call or walk in for intake",
+        "detail": "No appointment needed — walk in Mon–Fri 9am–5pm or call 412-632-2400",
+        "actionLabel": "Do first",
+        "url": "https://goodwillswpa.org/career-solutions"
+      },
+      {
+        "order": 2,
+        "title": "Complete skills assessment",
+        "detail": "A career coach will assess your skills and identify training options — takes about 1 hour",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Enroll in training program",
+        "detail": "Choose from retail, warehouse, healthcare aide, or customer service tracks — all free",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["job", "jobs", "work", "employment", "career", "training", "vocational", "resume", "interview", "goodwill", "workforce"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "PA State Board of Nursing — License Reinstatement",
+    "description": "Official process to reinstate a lapsed or revoked nursing license in Pennsylvania.",
+    "domains": ["job_skills_education", "financial_security"],
+    "goalTypes": ["professional_license_reinstatement"],
+    "contact": {
+      "phone": "717-783-7142",
+      "url": "dos.pa.gov/ProfessionalLicensing/BoardsCommissions/Nursing",
+      "address": "PO Box 2649, Harrisburg PA 17105",
+      "hours": "Mon–Fri 8am–4:30pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Get your criminal record report",
+        "detail": "Request via Pennsylvania Access to Criminal History (PATCH) at epatch.pa.gov — free, takes 3 days",
+        "actionLabel": "Do first",
+        "url": "https://epatch.pa.gov"
+      },
+      {
+        "order": 2,
+        "title": "Complete reinstatement application",
+        "detail": "Download form BPOA-NUR-RN-REINST from dos.pa.gov — include all conviction disclosures and a personal statement",
+        "actionLabel": "Then",
+        "url": "https://dos.pa.gov/ProfessionalLicensing/BoardsCommissions/Nursing"
+      },
+      {
+        "order": 3,
+        "title": "Submit with fee and supporting docs",
+        "detail": "Mail application + $100 fee + criminal record + personal statement. Board reviews in 60–90 days.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["nursing", "nurse", "rn", "lpn", "license", "reinstate", "reinstatement", "revoked", "expired", "board of nursing", "healthcare", "medical", "clinical", "cosmetology", "cosmetologist", "professional license"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "UPMC Western Psychiatric Hospital — PCSI Program",
+    "description": "Outpatient addiction and mental health services for adults, including specialized re-entry support.",
+    "domains": ["mental_health"],
+    "goalTypes": ["sobriety_recovery", "mental_health_counseling"],
+    "contact": {
+      "phone": "412-624-2100",
+      "url": "upmc.com/services/behavioral-health",
+      "address": "3811 O'Hara St, Pittsburgh PA 15213",
+      "hours": "Mon–Fri 8am–5pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Call for a phone screening",
+        "detail": "Call 412-624-2100 and ask for outpatient intake — screening takes 20 minutes",
+        "actionLabel": "Do first"
+      },
+      {
+        "order": 2,
+        "title": "Attend intake appointment",
+        "detail": "Bring ID and insurance card (Medicaid accepted). Intake appointment is about 90 minutes.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Begin individualized treatment plan",
+        "detail": "Meet weekly with counselor; group sessions available. Medications (MAT) offered if appropriate.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["sober", "sobriety", "recovery", "addiction", "alcohol", "drugs", "substance", "mental health", "counseling", "therapy", "upmc", "psychiatric"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "Alma Illery Medical Center",
+    "description": "Community health center offering primary care and behavioral health for underserved populations in Pittsburgh.",
+    "domains": ["physical_health", "mental_health"],
+    "goalTypes": ["mental_health_counseling"],
+    "contact": {
+      "phone": "412-441-8272",
+      "url": "almaillerymedicalcenter.org",
+      "address": "7227 Hamilton Ave, Pittsburgh PA 15208",
+      "hours": "Mon–Fri 8am–5pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Call to schedule a new patient appointment",
+        "detail": "Call 412-441-8272. Sliding scale fees based on income — Medicaid and uninsured patients welcome.",
+        "actionLabel": "Do first"
+      },
+      {
+        "order": 2,
+        "title": "Bring ID and income documentation",
+        "detail": "Any government ID works. For sliding scale: bring a recent pay stub or benefit letter.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Complete your health assessment",
+        "detail": "First visit includes physical and behavioral health screening. Ongoing care coordinated from one location.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["health", "doctor", "medical", "mental health", "counseling", "therapy", "depression", "anxiety", "primary care", "community health"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "Allegheny County Legal Aid",
+    "description": "Free civil legal help for low-income Allegheny County residents including family law, housing, and record expungement.",
+    "domains": ["community_support", "family_caregiving"],
+    "goalTypes": ["legal_aid", "family_reunification"],
+    "contact": {
+      "phone": "412-255-6700",
+      "url": "acla.org",
+      "address": "425 Sixth Ave Suite 1800, Pittsburgh PA 15219",
+      "hours": "Mon–Fri 9am–4pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Call the intake line",
+        "detail": "Call 412-255-6700 to determine if you qualify (income-based). Intake staff will explain next steps.",
+        "actionLabel": "Do first"
+      },
+      {
+        "order": 2,
+        "title": "Gather relevant documents",
+        "detail": "Court orders, custody paperwork, lease agreements, or any official notices related to your legal issue.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Meet with your assigned attorney",
+        "detail": "All services are free for qualifying clients. Cases include expungement, custody, housing, and benefits.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["legal", "lawyer", "attorney", "law", "court", "expungement", "custody", "family", "reunification", "housing", "eviction", "rights"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "Amachi Pittsburgh",
+    "description": "Mentoring program connecting children of incarcerated parents with caring adult volunteers.",
+    "domains": ["family_caregiving", "social_belonging"],
+    "goalTypes": ["family_reunification", "childcare_support", "peer_support"],
+    "contact": {
+      "phone": "412-361-5065",
+      "url": "bigbrotherbigsisters.org/pittsburgh",
+      "address": "912 Fort Duquesne Blvd, Pittsburgh PA 15222",
+      "hours": "Mon–Fri 9am–5pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Call to enroll your child",
+        "detail": "Call 412-361-5065. Children ages 6–17 with a parent who is or has been incarcerated are eligible.",
+        "actionLabel": "Do first"
+      },
+      {
+        "order": 2,
+        "title": "Complete family intake",
+        "detail": "A caseworker meets with you and your child to understand needs and preferences for a mentor match.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Begin mentoring relationship",
+        "detail": "Mentor and child meet 2–4 times per month. Family support specialist checks in monthly.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["children", "kids", "family", "reunification", "reunite", "childcare", "mentoring", "parenting", "parent", "child care"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "ACTION-Housing Transitional Housing Program",
+    "description": "Transitional and permanent supportive housing for women leaving incarceration in Allegheny County.",
+    "domains": ["financial_security", "community_support"],
+    "goalTypes": ["housing_stability"],
+    "contact": {
+      "phone": "412-765-3810",
+      "url": "actionhousing.org",
+      "address": "425 Sixth Ave Suite 950, Pittsburgh PA 15219",
+      "hours": "Mon–Fri 8:30am–4:30pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Submit a housing application",
+        "detail": "Download the application at actionhousing.org or call 412-765-3810. Applications are rolling.",
+        "actionLabel": "Do first",
+        "url": "https://actionhousing.org"
+      },
+      {
+        "order": 2,
+        "title": "Complete eligibility interview",
+        "detail": "A case manager will contact you within 5 business days to review income, history, and housing needs.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Move into transitional unit",
+        "detail": "Stay up to 24 months with on-site support services. Goal is permanent housing placement.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["housing", "shelter", "home", "homeless", "transitional", "apartment", "rent", "live", "place to stay", "women", "reentry", "re-entry"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "Dollar Bank Financial Education Center",
+    "description": "Free financial literacy workshops, credit counseling, and banking access for underserved communities.",
+    "domains": ["financial_security"],
+    "goalTypes": ["financial_literacy"],
+    "contact": {
+      "phone": "412-261-4966",
+      "url": "dollarbank.com/community",
+      "address": "3 Gateway Center, Pittsburgh PA 15222",
+      "hours": "Mon–Fri 9am–5pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Attend a free financial literacy workshop",
+        "detail": "Workshops cover budgeting, saving, and avoiding predatory lenders. Register at dollarbank.com or call.",
+        "actionLabel": "Do first"
+      },
+      {
+        "order": 2,
+        "title": "Schedule one-on-one credit counseling",
+        "detail": "Free 60-minute session with a certified counselor to review your credit report and build a repair plan.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Open a second-chance checking account",
+        "detail": "Dollar Bank's Fresh Start account is available even with past banking problems (ChexSystems).",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["money", "financial", "finance", "credit", "debt", "bank", "banking", "budget", "savings", "financial literacy", "credit repair", "credit score"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "Community College of Allegheny County (CCAC)",
+    "description": "Affordable associate degrees, certificate programs, and GED preparation at multiple Pittsburgh campuses.",
+    "domains": ["job_skills_education"],
+    "goalTypes": ["education_ged_college", "vocational_training"],
+    "contact": {
+      "phone": "412-237-2700",
+      "url": "ccac.edu",
+      "address": "800 Allegheny Ave, Pittsburgh PA 15233",
+      "hours": "Mon–Fri 8am–7pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Attend an information session",
+        "detail": "Free sessions held weekly at all CCAC campuses — no appointment needed. Find schedule at ccac.edu.",
+        "actionLabel": "Do first",
+        "url": "https://www.ccac.edu"
+      },
+      {
+        "order": 2,
+        "title": "Apply and complete placement test",
+        "detail": "Application is free online. Placement test determines which math and English courses to start in.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Apply for PELL grant and FAFSA",
+        "detail": "Most re-entry students with drug convictions are now eligible. Financial aid office can help you apply.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["school", "college", "education", "ged", "degree", "certificate", "class", "classes", "learn", "study", "ccac", "community college", "diploma"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "Bethlehem Haven",
+    "description": "Comprehensive services for homeless women including shelter, peer support, mental health, and job training.",
+    "domains": ["social_belonging", "mental_health", "community_support"],
+    "goalTypes": ["peer_support", "housing_stability", "mental_health_counseling"],
+    "contact": {
+      "phone": "412-281-2378",
+      "url": "bethlehemhaven.org",
+      "address": "905 Watson St, Pittsburgh PA 15219",
+      "hours": "24/7 for shelter; services Mon–Fri 8am–4pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Call or walk in for emergency shelter",
+        "detail": "Open 24/7 for women needing immediate shelter. Bring ID if you have it — not required for emergency.",
+        "actionLabel": "Do first"
+      },
+      {
+        "order": 2,
+        "title": "Meet with a case manager",
+        "detail": "Within 72 hours of arrival a case manager creates a personalized plan covering housing, health, and employment goals.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Connect with peer support group",
+        "detail": "Weekly peer groups for women with shared experiences — re-entry, addiction recovery, family reunification.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["peer", "peer support", "support group", "community", "women", "shelter", "homeless", "housing", "mental health", "sisterhood"],
+    "source": "workshop",
+    "active": true
+  }
+]

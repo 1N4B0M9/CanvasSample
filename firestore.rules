@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /canvas/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /resources/{resourceId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /pathway_cache/{goalType} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

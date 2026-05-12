@@ -6,6 +6,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import ImageElement from './Elements/ImageElement';
 import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
+import { detectGoal } from '../Recommendations/useGoalDetection';
+import GoalPopup from '../Recommendations/GoalPopup';
 
 const CanvasElement = ({
 	element,
@@ -24,9 +26,11 @@ const CanvasElement = ({
 	onCompleteConnection,
 	onStartArrow,
 	onCompleteArrow,
+	onOpenPanel,
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
+	const [detectedGoal, setDetectedGoal] = useState(null);
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
 	const textRef = useRef(null);
@@ -73,6 +77,10 @@ const CanvasElement = ({
 		if (!isSelected) setIsEditingLabel(false);
 	}, [isSelected]);
 
+	useEffect(() => {
+		if (!isSelected) setDetectedGoal(null);
+	}, [isSelected]);
+
 	const handleDoubleClick = () => {
 		if (element.type === 'text' || element.type === 'mentor') {
 			setIsEditing(true);
@@ -95,6 +103,12 @@ const CanvasElement = ({
 			onCompleteArrow(element.id);
 		} else {
 			onSelect(element.id, e.shiftKey);
+			if (element.type === 'text' && element.content) {
+				const goal = detectGoal(element.content);
+				setDetectedGoal(goal);
+			} else {
+				setDetectedGoal(null);
+			}
 		}
 	};
 
@@ -162,6 +176,16 @@ const CanvasElement = ({
 			data-element-id={element.id}
 		>
 			<div ref={contentRef} className="relative">
+				{detectedGoal && !isConnecting && !isCreatingArrow && (
+					<GoalPopup
+						goalType={detectedGoal.goalType}
+						domain={detectedGoal.domain}
+						onFindResources={() => {
+							if (typeof onOpenPanel === 'function') onOpenPanel(detectedGoal);
+						}}
+						onDismiss={() => setDetectedGoal(null)}
+					/>
+				)}
 				{/* Render the appropriate element type */}
 				{element.type === 'image' ? (
 					<ImageElement

@@ -31,7 +31,7 @@ import CanvasElement from '../Components/CanvasElement';
  *
  * @returns {JSX.Element|null} Collection of all canvas elements or null if no elements exist
  */
-const RenderElements = () => {
+const RenderElements = ({ onOpenPanel }) => {
 	// Extract all required state and callbacks from the canvas context
 	const {
 		// State
@@ -78,6 +78,7 @@ const RenderElements = () => {
 					onCompleteConnection={handleCompleteConnection}
 					onStartArrow={handleStartArrow}
 					onCompleteArrow={handleCompleteArrow}
+					onOpenPanel={onOpenPanel}
 				/>
 			))}
 		</>

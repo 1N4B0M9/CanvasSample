@@ -13,6 +13,10 @@ import SidePanel from '../Components/Elements/SidePanel';
 import ToolBar from '../Components/Elements/ToolBar/ToolBar';
 import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
 import DeleteConfirmModal from '../Components/DeleteConfirmModal';
+import SparkleButton from '../Recommendations/SparkleButton';
+import ResourcePanel from '../Recommendations/ResourcePanel';
+import PathwayOverlay from '../Recommendations/PathwayOverlay';
+import { detectGoal } from '../Recommendations/useGoalDetection';
 
 const CanvasContent = () => {
 	const {
@@ -40,10 +44,33 @@ const CanvasContent = () => {
 		arrows,
 		selectedIds,
 		deleteSelected,
+		savePathwayToBoard,
 	} = useCanvas();
 
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
 	const [deletionSummary, setDeletionSummary] = React.useState(null);
+
+	// Recommendations state
+	const [panelOpen, setPanelOpen] = React.useState(false);
+	const [panelGoal, setPanelGoal] = React.useState({ goalType: null, domain: null });
+	const [hoveredResource, setHoveredResource] = React.useState(null);
+	const [resourceCount, setResourceCount] = React.useState(0);
+
+	// Debounced count of text elements that contain a detectable goal (3s delay)
+	React.useEffect(() => {
+		const timer = setTimeout(() => {
+			const count = elements.filter(
+				(el) => el.type === 'text' && el.content && detectGoal(el.content) !== null,
+			).length;
+			setResourceCount(count);
+		}, 3000);
+		return () => clearTimeout(timer);
+	}, [elements]);
+
+	const openPanelForGoal = React.useCallback((detection) => {
+		setPanelGoal({ goalType: detection.goalType, domain: detection.domain });
+		setPanelOpen(true);
+	}, []);
 
 	const handleDeleteSelected = React.useCallback(() => {
 		const items = [];
@@ -350,6 +377,29 @@ const CanvasContent = () => {
 				onDeleteSelected={handleDeleteSelected}
 			/>
 
+			{/* Recommendations: floating sparkle button */}
+			<SparkleButton
+				resourceCount={resourceCount}
+				onOpen={() => {
+					setPanelGoal({ goalType: null, domain: null });
+					setPanelOpen(true);
+				}}
+			/>
+
+			{/* Recommendations: slide-in resource panel */}
+			{panelOpen && (
+				<ResourcePanel
+					goalType={panelGoal.goalType}
+					domain={panelGoal.domain}
+					onClose={() => {
+						setPanelOpen(false);
+						setHoveredResource(null);
+					}}
+					onHoverResource={(resource) => setHoveredResource(resource)}
+					onLeaveResource={() => setHoveredResource(null)}
+				/>
+			)}
+
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
 			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
 			<div
@@ -377,7 +427,25 @@ const CanvasContent = () => {
 				)}
 
 				<RenderConnections />
-				<RenderElements />
+				<RenderElements onOpenPanel={openPanelForGoal} />
+
+				{/* Recommendations: pathway overlay on resource card hover */}
+				{hoveredResource && (
+					<PathwayOverlay
+						resource={hoveredResource}
+						onAddToBoard={() => {
+							const originEl = elements.find(
+								(el) =>
+									el.type === 'text' &&
+									el.content &&
+									detectGoal(el.content)?.goalType === panelGoal.goalType,
+							);
+							savePathwayToBoard(hoveredResource, originEl?.id);
+							setPanelOpen(false);
+							setHoveredResource(null);
+						}}
+					/>
+				)}
 			</div>
 
 			<DeleteConfirmModal
