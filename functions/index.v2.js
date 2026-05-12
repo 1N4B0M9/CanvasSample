@@ -1,9 +1,14 @@
-// functions/index.js
-const functions = require('firebase-functions');
+// functions/index.v2.js — 2nd gen (Cloud Run) version
+// Swap this to index.js once roles/functions.admin is granted.
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
+const { logger } = require('firebase-functions');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
 const db = admin.firestore();
+
+const PERPLEXITY_API_KEY = defineSecret('PERPLEXITY_API_KEY');
 
 // ─── Enum validation ─────────────────────────────────────────────────────────
 
@@ -73,9 +78,9 @@ function buildSonarQuery(goalType) {
 
 async function callSonar(goalType) {
   try {
-    const apiKey = process.env.PERPLEXITY_API_KEY;
+    const apiKey = PERPLEXITY_API_KEY.value();
     if (!apiKey) {
-      functions.logger.warn('Perplexity API key not configured — skipping Sonar call');
+      logger.warn('Perplexity API key not configured — skipping Sonar call');
       return null;
     }
 
@@ -103,7 +108,7 @@ async function callSonar(goalType) {
     });
 
     if (!response.ok) {
-      functions.logger.warn('Sonar API returned non-OK status', { status: response.status });
+      logger.warn('Sonar API returned non-OK status', { status: response.status });
       return null;
     }
 
@@ -114,7 +119,7 @@ async function callSonar(goalType) {
       source: data.citations?.[0] ?? '',
     };
   } catch (err) {
-    functions.logger.warn('Sonar call failed — degrading gracefully', { err: err.message });
+    logger.warn('Sonar call failed — degrading gracefully', { err: err.message });
     return null;
   }
 }
@@ -157,27 +162,27 @@ async function writeSonarCache(goalType, sonarUpdate) {
       cachedAt: admin.firestore.Timestamp.now(),
     });
   } catch (err) {
-    functions.logger.warn('Failed to write Sonar cache', { err: err.message });
+    logger.warn('Failed to write Sonar cache', { err: err.message });
   }
 }
 
 // ─── Main callable function ───────────────────────────────────────────────────
 
-exports.getPathway = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be signed in to call getPathway');
+exports.getPathway = onCall({ secrets: [PERPLEXITY_API_KEY] }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be signed in to call getPathway');
   }
 
-  const { goalType, domain } = data;
+  const { goalType, domain } = request.data;
 
   if (!goalType || !VALID_GOAL_TYPES.has(goalType)) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       `Invalid goalType: "${goalType}". Must be one of: ${[...VALID_GOAL_TYPES].join(', ')}`
     );
   }
   if (!domain || !VALID_DOMAINS.has(domain)) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       `Invalid domain: "${domain}". Must be one of: ${[...VALID_DOMAINS].join(', ')}`
     );
@@ -189,8 +194,8 @@ exports.getPathway = functions.https.onCall(async (data, context) => {
   try {
     resources = await fetchResources(goalType);
   } catch (err) {
-    functions.logger.error('Firestore resource fetch failed', { err: err.message });
-    throw new functions.https.HttpsError('internal', 'Failed to fetch resources');
+    logger.error('Firestore resource fetch failed', { err: err.message });
+    throw new HttpsError('internal', 'Failed to fetch resources');
   }
 
   if (!sonarUpdate) {
