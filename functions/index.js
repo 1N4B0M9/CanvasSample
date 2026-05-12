@@ -1,6 +1,9 @@
 // functions/index.js
 const functions = require('firebase-functions');
+const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
+
+const PERPLEXITY_API_KEY = defineSecret('PERPLEXITY_API_KEY');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -75,7 +78,7 @@ function buildSonarQuery(goalType) {
 
 async function callSonar(goalType) {
   try {
-    const apiKey = functions.config().perplexity?.api_key;
+    const apiKey = PERPLEXITY_API_KEY.value();
     if (!apiKey) {
       functions.logger.warn('Perplexity API key not configured — skipping Sonar call');
       return null;
@@ -165,7 +168,7 @@ async function writeSonarCache(goalType, sonarUpdate) {
 
 // ─── Main callable function ───────────────────────────────────────────────────
 
-exports.getPathway = functions.https.onCall(async (data, context) => {
+exports.getPathway = functions.runWith({ secrets: ['PERPLEXITY_API_KEY'] }).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Must be signed in to call getPathway');
   }
