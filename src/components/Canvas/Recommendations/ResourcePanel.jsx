@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useGetPathway } from './useGetPathway';
+import useGetPathway from './useGetPathway';
 
 /**
  * Slide-in resource panel from the right edge of the canvas.
@@ -9,11 +9,11 @@ import { useGetPathway } from './useGetPathway';
  *   goalType: string|null,
  *   domain: string|null,
  *   onClose: () => void,
- *   onHoverResource: (resource: object) => void,
- *   onLeaveResource: () => void
+ *   onSelectResource: (resource: object|null) => void,
+ *   selectedResourceId: string|null
  * }} props
  */
-const ResourcePanel = ({ goalType, domain, onClose, onHoverResource, onLeaveResource }) => {
+const ResourcePanel = ({ goalType, domain, onClose, onSelectResource, selectedResourceId }) => {
   const { fetchPathway, data, loading, error } = useGetPathway();
 
   useEffect(() => {
@@ -73,13 +73,19 @@ const ResourcePanel = ({ goalType, domain, onClose, onHoverResource, onLeaveReso
             resources.map((resource) => (
               <div
                 key={resource.id}
-                className="rounded-lg border border-gray-100 p-3 cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all"
-                onMouseEnter={() => onHoverResource(resource)}
-                onMouseLeave={onLeaveResource}
+                className="rounded-lg border p-3 cursor-pointer transition-all"
+                style={
+                  selectedResourceId === resource.id
+                    ? { border: '2px solid #3b82f6', boxShadow: '0 0 0 2px #bfdbfe' }
+                    : { border: '1px solid #f3f4f6' }
+                }
+                onClick={() =>
+                  onSelectResource(selectedResourceId === resource.id ? null : resource)
+                }
               >
                 <p className="text-xs font-semibold text-gray-900 leading-tight">{resource.name}</p>
                 <p className="text-xs text-gray-500 mt-1 leading-snug">{resource.description}</p>
-                <p className="text-xs text-blue-400 mt-1">hover → see path</p>
+                <p className="text-xs text-blue-400 mt-1">click to see path</p>
               </div>
             ))}
         </div>

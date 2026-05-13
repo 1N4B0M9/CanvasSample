@@ -3,6 +3,10 @@
 
 const TAG_MAP = {
   // professional_license_reinstatement
+  'nursing degree':   { goalType: 'professional_license_reinstatement', domain: 'job_skills_education' },
+  'nursing license':  { goalType: 'professional_license_reinstatement', domain: 'job_skills_education' },
+  'get my nursing':   { goalType: 'professional_license_reinstatement', domain: 'job_skills_education' },
+  'become a nurse':   { goalType: 'professional_license_reinstatement', domain: 'job_skills_education' },
   'board of nursing': { goalType: 'professional_license_reinstatement', domain: 'job_skills_education' },
   'professional license': { goalType: 'professional_license_reinstatement', domain: 'job_skills_education' },
   reinstatement: { goalType: 'professional_license_reinstatement', domain: 'job_skills_education' },

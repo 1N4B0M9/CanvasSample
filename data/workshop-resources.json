@@ -320,6 +320,114 @@
     "active": true
   },
   {
+    "name": "CCAC Allied Health & Nursing Programs",
+    "description": "CNA, LPN, and RN degree pathways at Allegheny Campus — affordable tuition with financial aid for qualifying students.",
+    "domains": ["job_skills_education"],
+    "goalTypes": ["professional_license_reinstatement", "education_ged_college", "vocational_training"],
+    "contact": {
+      "phone": "412-237-3112",
+      "url": "ccac.edu/programs/health-sciences",
+      "address": "808 Ridge Ave, Pittsburgh PA 15212",
+      "hours": "Mon–Fri 8am–5pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Attend an Allied Health info session",
+        "detail": "Free sessions held monthly — covers CNA, LPN, and RN tracks, admission requirements, and costs. Register at ccac.edu.",
+        "actionLabel": "Do first",
+        "url": "https://www.ccac.edu/programs/health-sciences"
+      },
+      {
+        "order": 2,
+        "title": "Complete prerequisites and background check",
+        "detail": "Most nursing programs require a PA background check (Act 34 + Act 73) and basic math/English placement. Advisors can help.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Apply for PELL grant and CareerLink funding",
+        "detail": "Many re-entry students qualify for Pell grants. PA CareerLink can cover remaining tuition for healthcare tracks.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["nursing", "nurse", "rn", "lpn", "cna", "nursing degree", "nursing license", "healthcare", "allied health", "medical", "clinical", "degree", "school", "ccac"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "PA CareerLink Pittsburgh — Healthcare Training Fund",
+    "description": "Funding and coaching for low-income adults pursuing healthcare careers including CNA, LPN, and phlebotomy training.",
+    "domains": ["job_skills_education", "financial_security"],
+    "goalTypes": ["professional_license_reinstatement", "vocational_training"],
+    "contact": {
+      "phone": "412-325-3800",
+      "url": "pacareerlink.pa.gov",
+      "address": "111 Blvd of the Allies, Pittsburgh PA 15222",
+      "hours": "Mon–Fri 8:30am–4:30pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Register at PA CareerLink Pittsburgh",
+        "detail": "Walk in or call 412-325-3800. Create a free account at pacareerlink.pa.gov to access funding programs.",
+        "actionLabel": "Do first",
+        "url": "https://pacareerlink.pa.gov"
+      },
+      {
+        "order": 2,
+        "title": "Meet with a healthcare career advisor",
+        "detail": "Advisors identify training funds (WIOA, Pell) that can cover nursing school tuition and fees at approved programs.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Enroll in an approved nursing program",
+        "detail": "CareerLink covers tuition at CCAC, Pittsburgh Technical, and other approved healthcare schools — can include books and supplies.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["nursing", "nurse", "healthcare", "training", "funding", "career", "workforce", "employment", "careerlink", "wioa", "tuition", "financial aid"],
+    "source": "workshop",
+    "active": true
+  },
+  {
+    "name": "Goodwill SWPA — Healthcare Aide Training",
+    "description": "Free 4-week Certified Nursing Assistant (CNA) training program with job placement support upon completion.",
+    "domains": ["job_skills_education"],
+    "goalTypes": ["professional_license_reinstatement", "vocational_training", "employment_search"],
+    "contact": {
+      "phone": "412-632-2400",
+      "url": "goodwillswpa.org/healthcare",
+      "address": "118 52nd St, Pittsburgh PA 15201",
+      "hours": "Mon–Fri 9am–5pm"
+    },
+    "pathwaySteps": [
+      {
+        "order": 1,
+        "title": "Apply for the CNA training cohort",
+        "detail": "Call 412-632-2400 or walk in. Cohorts start every 6 weeks — training is free including scrubs and textbooks.",
+        "actionLabel": "Do first",
+        "url": "https://goodwillswpa.org/healthcare"
+      },
+      {
+        "order": 2,
+        "title": "Complete 4-week classroom and clinical training",
+        "detail": "75 hours total — 16 hours of clinical at a local nursing facility. Transportation assistance available.",
+        "actionLabel": "Then"
+      },
+      {
+        "order": 3,
+        "title": "Pass state CNA exam and get placed",
+        "detail": "Goodwill pays for your state exam. Job placement coaches connect graduates with local hospitals and nursing homes.",
+        "actionLabel": "Finally"
+      }
+    ],
+    "tags": ["nursing", "nurse", "cna", "nursing aide", "healthcare", "training", "certified", "clinical", "hospital", "vocational", "free", "goodwill"],
+    "source": "workshop",
+    "active": true
+  },
+  {
     "name": "Bethlehem Haven",
     "description": "Comprehensive services for homeless women including shelter, peer support, mental health, and job training.",
     "domains": ["social_belonging", "mental_health", "community_support"],

@@ -198,6 +198,14 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[elementOps],
 	);
 
+	const connectionOps = useConnectionOperations(
+		elements,
+		connections,
+		setConnectionsWithSave,
+		selectedConnectionId,
+		setSelectedConnectionId,
+	);
+
 	// same treatment for connections — keeps selectedIds clean when the × button fires
 	const deleteConnection = useCallback(
 		(id) => {
@@ -209,14 +217,6 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			});
 		},
 		[connectionOps],
-	);
-
-	const connectionOps = useConnectionOperations(
-		elements,
-		connections,
-		setConnectionsWithSave,
-		selectedConnectionId,
-		setSelectedConnectionId,
 	);
 
 	/**

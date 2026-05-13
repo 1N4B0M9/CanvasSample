@@ -53,7 +53,7 @@ const CanvasContent = () => {
 	// Recommendations state
 	const [panelOpen, setPanelOpen] = React.useState(false);
 	const [panelGoal, setPanelGoal] = React.useState({ goalType: null, domain: null });
-	const [hoveredResource, setHoveredResource] = React.useState(null);
+	const [selectedResource, setSelectedResource] = React.useState(null);
 	const [resourceCount, setResourceCount] = React.useState(0);
 
 	// Debounced count of text elements that contain a detectable goal (3s delay)
@@ -393,10 +393,10 @@ const CanvasContent = () => {
 					domain={panelGoal.domain}
 					onClose={() => {
 						setPanelOpen(false);
-						setHoveredResource(null);
+						setSelectedResource(null);
 					}}
-					onHoverResource={(resource) => setHoveredResource(resource)}
-					onLeaveResource={() => setHoveredResource(null)}
+					onSelectResource={(resource) => setSelectedResource(resource)}
+					selectedResourceId={selectedResource?.id}
 				/>
 			)}
 
@@ -415,6 +415,7 @@ const CanvasContent = () => {
 				}}
 				onDrop={handleDrop}
 				onDragOver={(e) => e.preventDefault()}
+				onClick={() => setSelectedResource(null)}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
 				onMouseUp={handleElementMouseUp}
@@ -430,9 +431,9 @@ const CanvasContent = () => {
 				<RenderElements onOpenPanel={openPanelForGoal} />
 
 				{/* Recommendations: pathway overlay on resource card hover */}
-				{hoveredResource && (
+				{selectedResource && (
 					<PathwayOverlay
-						resource={hoveredResource}
+						resource={selectedResource}
 						onAddToBoard={() => {
 							const originEl = elements.find(
 								(el) =>
@@ -440,9 +441,9 @@ const CanvasContent = () => {
 									el.content &&
 									detectGoal(el.content)?.goalType === panelGoal.goalType,
 							);
-							savePathwayToBoard(hoveredResource, originEl?.id);
+							savePathwayToBoard(selectedResource, originEl?.id);
 							setPanelOpen(false);
-							setHoveredResource(null);
+							setSelectedResource(null);
 						}}
 					/>
 				)}

@@ -16,8 +16,10 @@ const PathwayOverlay = ({ resource, onAddToBoard }) => {
       className="absolute inset-0 flex flex-col items-center justify-center"
       style={{ zIndex: 45, background: 'rgba(0,0,0,0.25)', pointerEvents: 'none' }}
     >
-      {/* Step nodes row */}
-      <div className="flex items-center gap-0 mb-4">
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div style={{ pointerEvents: 'auto' }} onClick={(e) => e.stopPropagation()}>
+        {/* Step nodes row */}
+        <div className="flex items-center gap-0 mb-4">
         {steps.map((step, i) => (
           <React.Fragment key={step.order}>
             <div
@@ -94,6 +96,7 @@ const PathwayOverlay = ({ resource, onAddToBoard }) => {
         >
           + Add to board
         </button>
+      </div>
       </div>
     </div>
   );

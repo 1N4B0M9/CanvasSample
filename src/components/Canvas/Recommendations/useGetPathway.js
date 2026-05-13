@@ -8,7 +8,7 @@ import { app } from '../../../firebase/firebase';
  *
  * @returns {{ fetchPathway: Function, data: object|null, loading: boolean, error: string|null }}
  */
-export function useGetPathway() {
+export default function useGetPathway() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -27,6 +27,10 @@ export function useGetPathway() {
 
     try {
       const functions = getFunctions(app);
+      if (process.env.NODE_ENV === 'development') {
+        const { connectFunctionsEmulator } = await import('firebase/functions');
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+      }
       const getPathway = httpsCallable(functions, 'getPathway');
       const result = await getPathway({
         goalType,
