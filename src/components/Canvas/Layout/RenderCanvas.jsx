@@ -67,6 +67,17 @@ const CanvasContent = () => {
 		return () => clearTimeout(timer);
 	}, [elements]);
 
+	useEffect(() => {
+		const handleKeyDown = (e) => {
+			if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+			const active = document.activeElement;
+			if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) return;
+			if (selectedIds.size > 0) handleDeleteSelected();
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [selectedIds, handleDeleteSelected]);
+
 	const openPanelForGoal = React.useCallback((detection) => {
 		setPanelGoal({ goalType: detection.goalType, domain: detection.domain });
 		setPanelOpen(true);
@@ -381,7 +392,13 @@ const CanvasContent = () => {
 			<SparkleButton
 				resourceCount={resourceCount}
 				onOpen={() => {
-					setPanelGoal({ goalType: null, domain: null });
+					const goalEl = [...elements].reverse().find(
+						(el) => el.type === 'text' && el.content && detectGoal(el.content),
+					);
+					const detected = goalEl
+						? detectGoal(goalEl.content)
+						: { goalType: null, domain: null };
+					setPanelGoal({ goalType: detected.goalType, domain: detected.domain });
 					setPanelOpen(true);
 				}}
 			/>
