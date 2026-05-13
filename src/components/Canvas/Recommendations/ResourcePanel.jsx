@@ -22,7 +22,10 @@ const ResourcePanel = ({ goalType, domain, onClose, onSelectResource, selectedRe
     }
   }, [goalType, domain, fetchPathway]);
 
-  const resources = data?.resources ?? [];
+  const resources = [
+    ...(data?.resources ?? []),
+    ...(data?.sonarResources ?? []),
+  ];
 
   return (
     <>
@@ -76,14 +79,22 @@ const ResourcePanel = ({ goalType, domain, onClose, onSelectResource, selectedRe
                 className="rounded-lg border p-3 cursor-pointer transition-all"
                 style={
                   selectedResourceId === resource.id
-                    ? { border: '2px solid #3b82f6', boxShadow: '0 0 0 2px #bfdbfe' }
-                    : { border: '1px solid #f3f4f6' }
+                    ? { position: 'relative', border: '2px solid #3b82f6', boxShadow: '0 0 0 2px #bfdbfe' }
+                    : { position: 'relative', border: '1px solid #f3f4f6' }
                 }
                 onClick={() =>
                   onSelectResource(selectedResourceId === resource.id ? null : resource)
                 }
               >
                 <p className="text-xs font-semibold text-gray-900 leading-tight">{resource.name}</p>
+                {resource.source === 'sonar' && (
+                  <span
+                    className="absolute top-2 right-2 text-xs font-semibold rounded-full px-2 py-0.5"
+                    style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' }}
+                  >
+                    ⚡ Live
+                  </span>
+                )}
                 <p className="text-xs text-gray-500 mt-1 leading-snug">{resource.description}</p>
                 <p className="text-xs text-blue-400 mt-1">click to see path</p>
               </div>
