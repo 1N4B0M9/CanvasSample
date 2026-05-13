@@ -5,7 +5,7 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 const db = admin.firestore();
 
-// ─── Enum validation ─────────────────────────────────────────────────────────
+// enum validation
 
 const VALID_GOAL_TYPES = new Set([
   'professional_license_reinstatement',
@@ -33,93 +33,7 @@ const VALID_DOMAINS = new Set([
   'community_support',
 ]);
 
-// ─── Sonar query templates ────────────────────────────────────────────────────
-
-const SONAR_QUERY_TEMPLATES = {
-  professional_license_reinstatement:
-    'Professional license reinstatement process requirements {location} {year} for people with criminal records',
-  vocational_training:
-    'Free vocational job training programs {location} {year} re-entry formerly incarcerated',
-  employment_search:
-    'Employment resources resume help job placement {location} {year} re-entry formerly incarcerated',
-  sobriety_recovery:
-    'Addiction recovery programs resources {location} {year} re-entry formerly incarcerated women',
-  mental_health_counseling:
-    'Mental health counseling services sliding scale {location} {year} re-entry formerly incarcerated',
-  housing_stability:
-    'Transitional housing programs {location} {year} formerly incarcerated women',
-  financial_literacy:
-    'Financial literacy credit repair banking programs {location} {year} low income',
-  family_reunification:
-    'Family reunification services formerly incarcerated parents {location} {year}',
-  childcare_support:
-    'Childcare assistance programs low income {location} {year}',
-  legal_aid:
-    'Free legal aid civil services formerly incarcerated {location} {year}',
-  education_ged_college:
-    'GED and college programs formerly incarcerated adults {location} {year}',
-  peer_support:
-    'Peer support groups formerly incarcerated women {location} {year}',
-};
-
-function buildSonarQuery(goalType) {
-  const template = SONAR_QUERY_TEMPLATES[goalType];
-  return template
-    .replace('{location}', 'Pittsburgh PA')
-    .replace('{year}', String(new Date().getFullYear()));
-}
-
-// ─── Perplexity Sonar call ────────────────────────────────────────────────────
-
-async function callSonar(goalType) {
-  try {
-    const apiKey = process.env.PERPLEXITY_API_KEY;
-    if (!apiKey) {
-      functions.logger.warn('Perplexity API key not configured — skipping Sonar call');
-      return null;
-    }
-
-    const query = buildSonarQuery(goalType);
-
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'sonar',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a social services information assistant. Return factual, current information about community resources. Be brief — 1-2 sentences max. Include one specific actionable detail if available.',
-          },
-          { role: 'user', content: query },
-        ],
-        max_tokens: 150,
-        return_citations: true,
-      }),
-    });
-
-    if (!response.ok) {
-      functions.logger.warn('Sonar API returned non-OK status', { status: response.status });
-      return null;
-    }
-
-    const data = await response.json();
-    return {
-      summary: data.choices[0].message.content,
-      asOf: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-      source: data.citations?.[0] ?? '',
-    };
-  } catch (err) {
-    functions.logger.warn('Sonar call failed — degrading gracefully', { err: err.message });
-    return null;
-  }
-}
-
-// ─── Firestore resource query ─────────────────────────────────────────────────
+// firestore resource query
 
 async function fetchResources(goalType) {
   const snapshot = await db
@@ -132,36 +46,121 @@ async function fetchResources(goalType) {
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-// ─── Cache helpers ────────────────────────────────────────────────────────────
+// track a: enrich existing resources with current status blurbs
+
+async function callSonarEnrichment(resources, goalType) {
+  try {
+    const apiKey = process.env.PERPLEXITY_API_KEY;
+    if (!apiKey) return {};
+
+    const orgNames = resources.map((r) => r.name).join('\n');
+    const year = new Date().getFullYear();
+
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a social services information assistant for Pittsburgh PA. Return only valid JSON, no markdown.',
+          },
+          {
+            role: 'user',
+            content: `For each organization below, provide a 1-2 sentence current status update about their programs and availability for Pittsburgh PA residents in ${year}.\n\nReturn ONLY valid JSON: {"Org Name": "status blurb"}\n\nOrganizations (for ${goalType.replace(/_/g, ' ')} services):\n${orgNames}`,
+          },
+        ],
+        max_tokens: 400,
+      }),
+    });
+
+    if (!response.ok) return {};
+    const data = await response.json();
+    const raw = data.choices[0].message.content.trim();
+    return JSON.parse(raw);
+  } catch (err) {
+    functions.logger.warn('Sonar enrichment failed', { err: err.message });
+    return {};
+  }
+}
+
+// track b: discover additional orgs not already in firestore
+
+async function callSonarDiscovery(goalType, existingNames) {
+  try {
+    const apiKey = process.env.PERPLEXITY_API_KEY;
+    if (!apiKey) return [];
+
+    const year = new Date().getFullYear();
+    const knownList = existingNames.join(', ');
+
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a social services information assistant for Pittsburgh PA. Return only valid JSON arrays, no markdown.',
+          },
+          {
+            role: 'user',
+            content: `These Pittsburgh PA organizations already serve re-entry women for ${goalType.replace(/_/g, ' ')} in ${year}:\n${knownList}\n\nFind 3 DIFFERENT currently operating Pittsburgh PA / Allegheny County organizations NOT on this list that serve a similar purpose.\n\nReturn ONLY a valid JSON array:\n[\n  {\n    "name": "org name",\n    "description": "1-2 sentences",\n    "contactPhone": "412-xxx-xxxx or null",\n    "contactUrl": "website.com or null",\n    "pathwaySteps": [\n      {"order": 1, "title": "...", "detail": "...", "actionLabel": "Do first", "url": null},\n      {"order": 2, "title": "...", "detail": "...", "actionLabel": "Then", "url": null},\n      {"order": 3, "title": "...", "detail": "...", "actionLabel": "Finally", "url": null}\n    ]\n  }\n]`,
+          },
+        ],
+        max_tokens: 800,
+      }),
+    });
+
+    if (!response.ok) return [];
+    const data = await response.json();
+    const raw = data.choices[0].message.content.trim();
+    const parsed = JSON.parse(raw);
+    return parsed.slice(0, 3).map((org, i) => ({
+      ...org,
+      id: `sonar-${goalType}-${i}`,
+      source: 'sonar',
+      active: true,
+      contact: { phone: org.contactPhone ?? '', url: org.contactUrl ?? '' },
+    }));
+  } catch (err) {
+    functions.logger.warn('Sonar discovery failed', { err: err.message });
+    return [];
+  }
+}
+
+// cache helpers
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-async function getCachedSonar(goalType) {
+async function getCached(key) {
   try {
-    const doc = await db.collection('pathway_cache').doc(goalType).get();
+    const doc = await db.collection('pathway_cache').doc(key).get();
     if (!doc.exists) return null;
     const data = doc.data();
-    const age = Date.now() - data.cachedAt.toMillis();
-    if (age > CACHE_TTL_MS) return null;
-    return data.sonarUpdate;
+    if (Date.now() - data.cachedAt.toMillis() > CACHE_TTL_MS) return null;
+    return data.value;
   } catch {
     return null;
   }
 }
 
-async function writeSonarCache(goalType, sonarUpdate) {
+async function writeCache(key, value) {
   try {
-    await db.collection('pathway_cache').doc(goalType).set({
-      goalType,
-      sonarUpdate,
+    await db.collection('pathway_cache').doc(key).set({
+      value,
       cachedAt: admin.firestore.Timestamp.now(),
     });
   } catch (err) {
-    functions.logger.warn('Failed to write Sonar cache', { err: err.message });
+    functions.logger.warn('Cache write failed', { key, err: err.message });
   }
 }
 
-// ─── Main callable function ───────────────────────────────────────────────────
+// main callable function
 
 exports.getPathway = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
@@ -183,8 +182,6 @@ exports.getPathway = functions.https.onCall(async (data, context) => {
     );
   }
 
-  let sonarUpdate = await getCachedSonar(goalType);
-
   let resources;
   try {
     resources = await fetchResources(goalType);
@@ -193,16 +190,38 @@ exports.getPathway = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('internal', 'Failed to fetch resources');
   }
 
-  if (!sonarUpdate) {
-    sonarUpdate = await callSonar(goalType);
-    if (sonarUpdate) {
-      await writeSonarCache(goalType, sonarUpdate);
+  const enrichmentKey = `${goalType}_enrichment`;
+  const discoveryKey = `${goalType}_discovery`;
+
+  let [enrichments, sonarResources] = await Promise.all([
+    getCached(enrichmentKey),
+    getCached(discoveryKey),
+  ]);
+
+  if (!enrichments || !sonarResources) {
+    const [freshEnrichments, freshDiscovery] = await Promise.all([
+      enrichments ? Promise.resolve(enrichments) : callSonarEnrichment(resources, goalType),
+      sonarResources ? Promise.resolve(sonarResources) : callSonarDiscovery(goalType, resources.map((r) => r.name)),
+    ]);
+
+    if (!enrichments && freshEnrichments) {
+      enrichments = freshEnrichments;
+      await writeCache(enrichmentKey, enrichments);
+    }
+    if (!sonarResources && freshDiscovery) {
+      sonarResources = freshDiscovery;
+      await writeCache(discoveryKey, sonarResources);
     }
   }
 
+  const enrichedResources = resources.map((r) => ({
+    ...r,
+    sonarEnrichment: enrichments?.[r.name] ?? null,
+  }));
+
   return {
-    resources,
-    sonarUpdate,
+    resources: enrichedResources,
+    sonarResources: sonarResources ?? [],
     queriedAt: Date.now(),
   };
 });
