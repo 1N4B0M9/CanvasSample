@@ -635,7 +635,30 @@ export const CanvasProvider = ({ children, canvasId }) => {
 					scale: 1,
 					fontSize: 13,
 					fontFamily: 'Arial',
-					color: '#14532d',
+					color: '#111827',
+				});
+			}
+
+			// add a contact card for the resource if contact info exists
+			if (resource.contact && (resource.contact.phone || resource.contact.url)) {
+				const contactLines = [resource.name];
+				if (resource.contact.phone) contactLines.push(resource.contact.phone);
+				if (resource.contact.url) contactLines.push(resource.contact.url);
+
+				newElements.push({
+					id: `text-contact-${Date.now()}`,
+					type: 'text',
+					content: contactLines.join('\n'),
+					label: 'Contact',
+					x: originX + (resource.pathwaySteps.length + 1) * 200,
+					y: originY,
+					width: 180,
+					height: 80,
+					rotation: 0,
+					scale: 1,
+					fontSize: 13,
+					fontFamily: 'Arial',
+					color: '#111827',
 				});
 			}
 
