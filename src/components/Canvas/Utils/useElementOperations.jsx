@@ -145,16 +145,18 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 
 			// If we found an element ID, set it as selected and prepare for dragging
 			if (elementId) {
-				console.log(`Found element with ID: ${elementId}, selecting it`);
-				setSelectedId(elementId);
-
-				if (!isScaling) {
-					const rect = canvasRef.current.getBoundingClientRect();
-					setIsDragging(true);
-					setDragStart({
-						x: e.clientX - rect.left,
-						y: e.clientY - rect.top,
-					});
+				// only reset selection on a plain click, not shift+click
+				// shift+click selection is handled by CanvasElement's onClick
+				if (!e.shiftKey) {
+					setSelectedId(elementId);
+					if (!isScaling) {
+						const rect = canvasRef.current.getBoundingClientRect();
+						setIsDragging(true);
+						setDragStart({
+							x: e.clientX - rect.left,
+							y: e.clientY - rect.top,
+						});
+					}
 				}
 			} else {
 				// Clicked somewhere but not on an element
