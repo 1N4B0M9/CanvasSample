@@ -4,7 +4,7 @@ import { IoClose, IoChevronBack, IoChevronForward } from 'react-icons/io5';
 // List of all images in VB Magazine JPEGs folder (sorted by filename)
 const VB_MAGAZINE_IMAGES = [
 	'2.jpeg',
-	'3.jpeg',
+	//'3.jpeg', //commeent this out later
 	'4.jpeg',
 	'5.jpeg',
 	'6.jpg',
@@ -20,7 +20,7 @@ const VB_MAGAZINE_IMAGES = [
 	'17.jpeg',
 	'18.jpeg',
 	'19.jpeg',
-	'20.jpeg',
+	//'20.jpeg', //coment out later
 	'21.jpeg',
 	'22.jpeg',
 	'23.jpeg',
@@ -38,14 +38,15 @@ const VB_MAGAZINE_IMAGES = [
 	'35.jpeg',
 	'36.jpeg',
 	'37.jpeg',
-	'38.jpeg',
+	//'38.jpeg', //commemt
 	'39.jpeg',
 	'40.jpeg',
 	'41.jpeg',
 	'42.jpeg',
-	'43.jpeg',
+	//'43.jpeg', //comment
 	'44.jpeg',
 	'45.jpeg',
+	'46.jpeg'
 ];
 
 const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }) => {
