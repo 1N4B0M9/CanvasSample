@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 
-const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections) => {
+const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections, viewportZoom = 1) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 	const [isScaling, setIsScaling] = useState(false);
@@ -145,16 +145,18 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 
 			// If we found an element ID, set it as selected and prepare for dragging
 			if (elementId) {
-				console.log(`Found element with ID: ${elementId}, selecting it`);
-				setSelectedId(elementId);
-
-				if (!isScaling) {
-					const rect = canvasRef.current.getBoundingClientRect();
-					setIsDragging(true);
-					setDragStart({
-						x: e.clientX - rect.left,
-						y: e.clientY - rect.top,
-					});
+				// only reset selection on a plain click, not shift+click
+				// shift+click selection is handled by CanvasElement's onClick
+				if (!e.shiftKey) {
+					setSelectedId(elementId);
+					if (!isScaling) {
+						const rect = canvasRef.current.getBoundingClientRect();
+						setIsDragging(true);
+						setDragStart({
+							x: e.clientX - rect.left,
+							y: e.clientY - rect.top,
+						});
+					}
 				}
 			} else {
 				// Clicked somewhere but not on an element
@@ -181,8 +183,8 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 						el.id === selectedId
 							? {
 									...el,
-									x: el.x + (x - dragStart.x),
-									y: el.y + (y - dragStart.y),
+									x: el.x + (x - dragStart.x) / viewportZoom,
+									y: el.y + (y - dragStart.y) / viewportZoom,
 								}
 							: el,
 					),
@@ -227,7 +229,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 				setConnections((prev) => [...prev]); // Force connection redraw
 			}
 		},
-		[isDragging, isScaling, selectedId, dragStart, setElements, setConnections],
+		[isDragging, isScaling, selectedId, dragStart, viewportZoom, setElements, setConnections],
 	);
 
 	// Handle mouse up to end dragging or scaling

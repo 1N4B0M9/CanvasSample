@@ -1,21 +1,12 @@
-/**
- * ImageElement Component - Fixed Version with Proper Size Constraints
- *
- * This version ensures images display with fixed dimensions and
- * maintains proper aspect ratio within those constraints.
- */
-
 import React, { useState, useEffect } from 'react';
 
-const ImageElement = ({ element }) => {
+const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) => {
 	const [imageError, setImageError] = useState(false);
 	const [isLoaded, setIsLoaded] = useState(false);
 
-	// Default dimensions - will be used if the element doesn't specify any
 	const DEFAULT_WIDTH = 250;
 	const DEFAULT_HEIGHT = 150;
 
-	// Reset states when element changes
 	useEffect(() => {
 		setImageError(false);
 		setIsLoaded(false);
@@ -31,7 +22,6 @@ const ImageElement = ({ element }) => {
 		setIsLoaded(true);
 	};
 
-	// Simplified source determination
 	let imageSource = null;
 	if (element.fileUrl) {
 		imageSource = element.fileUrl;
@@ -41,7 +31,6 @@ const ImageElement = ({ element }) => {
 		imageSource = element.src;
 	}
 
-	// Use element dimensions if provided, otherwise use defaults
 	const width = element.width || DEFAULT_WIDTH;
 	const height = element.height || DEFAULT_HEIGHT;
 
@@ -56,23 +45,24 @@ const ImageElement = ({ element }) => {
 		);
 	}
 
+	// handle blur on the label input — trim, clear empty to undefined, close edit mode
+	const handleLabelBlur = (e) => {
+		const val = e.target.value.trim();
+		onUpdate?.({ ...element, label: val || undefined });
+		setIsEditingLabel?.(false);
+	};
+
 	return (
 		<div
 			className="relative overflow-hidden rounded border border-gray-300"
-			style={{
-				width: `${width}px`,
-				height: `${height}px`,
-				maxWidth: '100%',
-			}}
+			style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }}
 		>
-			{/* Show loading indicator until image loads */}
 			{!isLoaded && !imageError && (
 				<div className="absolute inset-0 flex items-center justify-center bg-gray-100">
 					<div className="animate-pulse text-gray-500">Loading...</div>
 				</div>
 			)}
 
-			{/* Display error placeholder if image fails to load */}
 			{imageError ? (
 				<div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-600">
 					<div className="text-center p-2">
@@ -98,10 +88,32 @@ const ImageElement = ({ element }) => {
 				/>
 			)}
 
-			{/* Footer for user uploaded images */}
-			{element.file && isLoaded && !imageError && (
+			{element.file && isLoaded && !imageError && !element.label && (
 				<div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
 					{element.file.name}
+				</div>
+			)}
+
+			{/* label overlay — always visible if label is set, swaps to input when editing */}
+			{(element.label || isEditingLabel) && (
+				<div
+					className="absolute bottom-0 left-0 right-0 text-white text-xs px-2 py-1"
+					style={{ background: 'rgba(0,0,0,0.55)' }}
+				>
+					{isEditingLabel ? (
+						<input
+							autoFocus
+							defaultValue={element.label || ''}
+							placeholder="add label..."
+							onBlur={handleLabelBlur}
+							onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+							onClick={(e) => e.stopPropagation()}
+							onMouseDown={(e) => e.stopPropagation()}
+							className="bg-transparent border-none outline-none text-white text-xs w-full placeholder-gray-400"
+						/>
+					) : (
+						element.label
+					)}
 				</div>
 			)}
 		</div>

@@ -46,11 +46,23 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const [selectedId, setSelectedId] = useState(null);
 	const [selectedConnectionId, setSelectedConnectionId] = useState(null);
 	const [selectedArrowId, setSelectedArrowId] = useState(null);
+	const [selectedIds, setSelectedIds] = useState(new Set());
 	const [isConnecting, setIsConnecting] = useState(false);
 	const [isCreatingArrow, setIsCreatingArrow] = useState(false);
 	const [connectionStart, setConnectionStart] = useState(null);
 	const [arrowStart, setArrowStart] = useState(null);
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+	const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
+	const [viewportZoom, setViewportZoom] = useState(1);
+
+	// convert screen px coords to world coords
+	const screenToWorld = useCallback(
+		(screenX, screenY) => ({
+			x: (screenX - viewportOffset.x) / viewportZoom,
+			y: (screenY - viewportOffset.y) / viewportZoom,
+		}),
+		[viewportOffset, viewportZoom],
+	);
 
 	// Refs
 	const canvasRef = useRef(null);
@@ -126,6 +138,13 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		setArrows(newArrowsOrFn);
 	}, []);
 
+	// keeps selectedIds in sync whenever the element scalar is set directly
+	// (useElementOperations calls setSelectedId — this wrapper intercepts it)
+	const setSelectedIdAndSync = useCallback((id) => {
+		setSelectedId(id);
+		setSelectedIds(id ? new Set([id]) : new Set());
+	}, []);
+
 	// Background image operations
 	const updateBackgroundImage = useCallback((imageData) => {
 		setBackgroundImage(imageData);
@@ -147,9 +166,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		elements,
 		setElementsWithSave,
 		selectedId,
-		setSelectedId,
+		setSelectedIdAndSync,
 		connections,
 		setConnectionsWithSave,
+		viewportZoom,
 	);
 
 	// Create an enhanced version of addTextElement that centers elements
@@ -176,12 +196,39 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[elementOps, canvasRef],
 	);
 
+	// wraps elementOps.deleteElement so deleted IDs don't linger in selectedIds
+	// when the element was shift-selected (selectedId points elsewhere)
+	const deleteElement = useCallback(
+		(id) => {
+			elementOps?.deleteElement(id);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				next.delete(id);
+				return next;
+			});
+		},
+		[elementOps],
+	);
+
 	const connectionOps = useConnectionOperations(
 		elements,
 		connections,
 		setConnectionsWithSave,
 		selectedConnectionId,
 		setSelectedConnectionId,
+	);
+
+	// same treatment for connections — keeps selectedIds clean when the × button fires
+	const deleteConnection = useCallback(
+		(id) => {
+			connectionOps?.deleteConnection(id);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				next.delete(id);
+				return next;
+			});
+		},
+		[connectionOps],
 	);
 
 	/**
@@ -239,10 +286,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			// Add the element to the canvas immediately with the responsive dimensions
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
-			setSelectedId(newElement.id);
+			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave, setSelectedId],
+		[setElementsWithSave, setSelectedIdAndSync],
 	);
 
 	// For addImageFromSearch with screen-fitting dimensions
@@ -294,10 +341,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			// Add directly to canvas with responsive dimensions
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
-			setSelectedId(newElement.id);
+			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave, setSelectedId],
+		[setElementsWithSave, setSelectedIdAndSync],
 	);
 
 	// Add a new mentor element
@@ -324,28 +371,50 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			};
 
 			setElementsWithSave((prevElements) => [...prevElements, newElement]);
-			setSelectedId(newElement.id);
+			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave],
+		[setElementsWithSave, setSelectedIdAndSync],
 	);
 
 	// Handle selection
-	const handleSelect = useCallback((id) => {
-		setSelectedId(id);
-		setSelectedConnectionId(null);
+	const handleSelect = useCallback((id, isShift) => {
+		if (isShift) {
+			setSelectedId(null); // prevent stale drag target
+			// clear the scalar connection/arrow selections so they don't stay highlighted
+			setSelectedConnectionId(null);
+			setSelectedArrowId(null);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				if (next.has(id)) next.delete(id);
+				else next.add(id);
+				return next;
+			});
+		} else {
+			setSelectedId(id);
+			setSelectedConnectionId(null);
+			setSelectedArrowId(null);
+			setSelectedIds(new Set([id]));
+		}
 	}, []);
 
 	// Handle connection selection
 	const handleConnectionSelect = useCallback(
 		(id, e) => {
 			e.stopPropagation();
-
-			if (selectedConnectionId === id) {
-				setSelectedConnectionId(null);
+			if (e.shiftKey) {
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					if (next.has(id)) next.delete(id);
+					else next.add(id);
+					return next;
+				});
 			} else {
+				const newId = selectedConnectionId === id ? null : id;
 				setSelectedId(null);
-				setSelectedConnectionId(id);
+				setSelectedConnectionId(newId);
+				setSelectedArrowId(null);
+				setSelectedIds(newId ? new Set([newId]) : new Set());
 			}
 		},
 		[selectedConnectionId],
@@ -413,24 +482,14 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 	// Reset selection
 	const resetSelection = useCallback(() => {
-		// For debugging
-		console.log('Resetting all selections');
-
-		// Clear any element selections
 		setSelectedId(null);
-
-		// Clear any connection selections
 		setSelectedConnectionId(null);
-
-		// Clear any arrow selections
 		setSelectedArrowId(null);
-
-		// Also cancel any connection or arrow creation mode
+		setSelectedIds(new Set());
 		if (isConnecting) {
 			setIsConnecting(false);
 			setConnectionStart(null);
 		}
-
 		if (isCreatingArrow) {
 			setIsCreatingArrow(false);
 			setArrowStart(null);
@@ -441,13 +500,19 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const handleArrowSelect = useCallback(
 		(id, e) => {
 			e.stopPropagation();
-
-			if (selectedArrowId === id) {
-				setSelectedArrowId(null);
+			if (e.shiftKey) {
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					if (next.has(id)) next.delete(id);
+					else next.add(id);
+					return next;
+				});
 			} else {
+				const newId = selectedArrowId === id ? null : id;
 				setSelectedId(null);
 				setSelectedConnectionId(null);
-				setSelectedArrowId(id);
+				setSelectedArrowId(newId);
+				setSelectedIds(newId ? new Set([newId]) : new Set());
 			}
 		},
 		[selectedArrowId],
@@ -498,11 +563,163 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	// Delete an arrow
 	const deleteArrow = useCallback(
 		(arrowId) => {
-			console.log('Deleting arrow with ID:', arrowId);
 			setArrowsWithSave((prev) => prev.filter((arrow) => arrow.id !== arrowId));
 			setSelectedArrowId(null);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				next.delete(arrowId);
+				return next;
+			});
 		},
 		[setArrowsWithSave],
+	);
+
+	// Delete all currently selected elements, connections, and arrows — also removes
+	// any connections/arrows that were implicitly attached to deleted elements
+	const deleteSelected = useCallback(() => {
+		const selectedElementIds = new Set(
+			[...selectedIds].filter((id) => elements.some((e) => e.id === id))
+		);
+		const selectedConnectionIds = new Set(
+			[...selectedIds].filter((id) => connections.some((c) => c.id === id))
+		);
+		const selectedArrowIds = new Set(
+			[...selectedIds].filter((id) => arrows.some((a) => a.id === id))
+		);
+
+		// connections/arrows attached to selected elements that weren't explicitly selected
+		const implicitConnectionIds = new Set(
+			connections
+				.filter(
+					(c) =>
+						!selectedConnectionIds.has(c.id) &&
+						(selectedElementIds.has(c.startId) || selectedElementIds.has(c.endId))
+				)
+				.map((c) => c.id)
+		);
+		const implicitArrowIds = new Set(
+			arrows
+				.filter(
+					(a) =>
+						!selectedArrowIds.has(a.id) &&
+						(selectedElementIds.has(a.startId) || selectedElementIds.has(a.endId))
+				)
+				.map((a) => a.id)
+		);
+
+		setElementsWithSave((prev) => prev.filter((e) => !selectedElementIds.has(e.id)));
+		setConnectionsWithSave((prev) =>
+			prev.filter((c) => !selectedConnectionIds.has(c.id) && !implicitConnectionIds.has(c.id))
+		);
+		setArrowsWithSave((prev) =>
+			prev.filter((a) => !selectedArrowIds.has(a.id) && !implicitArrowIds.has(a.id))
+		);
+		setSelectedIds(new Set());
+		setSelectedId(null);
+		setSelectedConnectionId(null);
+		setSelectedArrowId(null);
+	}, [selectedIds, elements, connections, arrows, setElementsWithSave, setConnectionsWithSave, setArrowsWithSave]);
+
+	// Save a resource pathway as native canvas elements (text steps + arrows + optional logo image)
+	const savePathwayToBoard = useCallback(
+		(resource, originElementId) => {
+			const originElement = elements.find((el) => el.id === originElementId);
+			const originX = originElement ? originElement.x : 100;
+			const originY = originElement ? originElement.y : 100;
+
+			const newElements = [];
+			const newArrows = [];
+			const stepIds = [];
+
+			for (const step of resource.pathwaySteps) {
+				const stepId = `text-step-${Date.now()}-${step.order}`;
+				stepIds.push(stepId);
+				newElements.push({
+					id: stepId,
+					type: 'text',
+					content: `${step.order}. ${step.title}\n${step.detail}`,
+					label: step.actionLabel,
+					x: originX + step.order * 200,
+					y: originY,
+					width: 180,
+					height: 80,
+					rotation: 0,
+					scale: 1,
+					fontSize: 13,
+					fontFamily: 'Arial',
+					color: '#111827',
+				});
+			}
+
+			// add a contact card for the resource if contact info exists
+			if (resource.contact && (resource.contact.phone || resource.contact.url)) {
+				const contactLines = [resource.name];
+				if (resource.contact.phone) contactLines.push(resource.contact.phone);
+				if (resource.contact.url) contactLines.push(resource.contact.url);
+
+				newElements.push({
+					id: `text-contact-${Date.now()}`,
+					type: 'text',
+					content: contactLines.join('\n'),
+					label: 'Contact',
+					x: originX + (resource.pathwaySteps.length + 1) * 200,
+					y: originY,
+					width: 180,
+					height: 80,
+					rotation: 0,
+					scale: 1,
+					fontSize: 13,
+					fontFamily: 'Arial',
+					color: '#111827',
+				});
+			}
+
+			if (originElementId && stepIds[0]) {
+				newArrows.push({
+					id: `arrow-origin-${Date.now()}`,
+					startId: originElementId,
+					endId: stepIds[0],
+					type: 'arrow',
+					color: '#22c55e',
+					thickness: 2,
+					label: 'step 1',
+				});
+			}
+
+			for (let i = 0; i < stepIds.length - 1; i++) {
+				newArrows.push({
+					id: `arrow-step-${Date.now()}-${i}`,
+					startId: stepIds[i],
+					endId: stepIds[i + 1],
+					type: 'arrow',
+					color: '#22c55e',
+					thickness: 2,
+					label: resource.pathwaySteps[i + 1]?.actionLabel ?? '',
+				});
+			}
+
+			if (resource.logoUrl) {
+				newElements.push({
+					id: `image-logo-${Date.now()}`,
+					type: 'image',
+					src: resource.logoUrl,
+					alt: resource.name,
+					label: resource.contact?.hours ?? resource.contact?.phone ?? '',
+					x: originX + 200,
+					y: originY + 140,
+					width: 120,
+					height: 60,
+					rotation: 0,
+					scale: 1,
+				});
+			}
+
+			setElementsWithSave((prev) => [...prev, ...newElements]);
+			setArrowsWithSave((prev) => [...prev, ...newArrows]);
+			setSelectedIds(new Set(newElements.map((el) => el.id)));
+			setSelectedId(null);
+		},
+		[elements, setElementsWithSave, setArrowsWithSave],
 	);
 
 	// Toggle arrow creation mode
@@ -538,6 +755,26 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const updateArrowData = useCallback(
 		(arrowId, data) => {
 			setArrowsWithSave((prev) => prev.map((arrow) => (arrow.id === arrowId ? { ...arrow, data } : arrow)));
+		},
+		[setArrowsWithSave],
+	);
+
+	// update the label text on a connection line
+	const updateConnectionLabel = useCallback(
+		(connectionId, label) => {
+			setConnectionsWithSave((prev) =>
+				prev.map((conn) => (conn.id === connectionId ? { ...conn, label } : conn))
+			);
+		},
+		[setConnectionsWithSave],
+	);
+
+	// update the label text on an arrow
+	const updateArrowLabel = useCallback(
+		(arrowId, label) => {
+			setArrowsWithSave((prev) =>
+				prev.map((arrow) => (arrow.id === arrowId ? { ...arrow, label } : arrow))
+			);
 		},
 		[setArrowsWithSave],
 	);
@@ -725,6 +962,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				setSelectedId(null);
 				setSelectedConnectionId(null);
 				setSelectedArrowId(null);
+				setSelectedIds(new Set());
 
 				console.log('Canvas imported successfully');
 				return true;
@@ -743,6 +981,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			setSelectedId,
 			setSelectedConnectionId,
 			setSelectedArrowId,
+			setSelectedIds,
 		],
 	);
 
@@ -914,6 +1153,16 @@ export const CanvasProvider = ({ children, canvasId }) => {
 							ctx.font = '14px Arial';
 							ctx.fillText('Image', 8, element.height / 2);
 						}
+						// draw the label overlay if there is one — match what the user sees on screen
+						if (element.label) {
+							const overlayHeight = 24;
+							ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+							ctx.fillRect(0, element.height - overlayHeight, element.width, overlayHeight);
+							ctx.fillStyle = '#ffffff';
+							ctx.font = '12px Arial';
+							const labelText = element.label.length > 40 ? element.label.substring(0, 40) + '…' : element.label;
+							ctx.fillText(labelText, 6, element.height - overlayHeight + 16);
+						}
 					} else if (element.type === 'mentor') {
 						// Draw mentor element background
 						ctx.fillStyle = '#ffffff';
@@ -1018,19 +1267,25 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		selectedId,
 		selectedConnectionId,
 		selectedArrowId,
+		selectedIds,
 		isConnecting,
 		isCreatingArrow,
 		connectionStart,
 		arrowStart,
 		mousePosition,
 		canvasRef,
+		viewportOffset,
+		viewportZoom,
+		setViewportOffset,
+		setViewportZoom,
+		screenToWorld,
 
 		// Element operations
 		addTextElement,
 		addImageElement,
 		updateElement: elementOps?.updateElement,
 		updateElementSize: elementOps?.updateElementSize,
-		deleteElement: elementOps?.deleteElement,
+		deleteElement,
 		handleScaleStart: elementOps?.handleScaleStart,
 		handleElementMouseDown: elementOps?.handleElementMouseDown,
 		handleElementMouseMove: elementOps?.handleElementMouseMove,
@@ -1053,12 +1308,15 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 		// Connection operations
 		createConnection: connectionOps?.createConnection,
-		deleteConnection: connectionOps?.deleteConnection,
+		deleteConnection,
 		updateConnectionData,
+		updateConnectionLabel,
 
 		// Arrow operations
 		deleteArrow,
 		updateArrowData,
+		updateArrowLabel,
+		deleteSelected,
 
 		// Selection handlers
 		handleSelect,
@@ -1075,6 +1333,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		handleStartArrow,
 		handleCompleteArrow,
 		toggleArrowMode,
+
+		// Recommendations
+		savePathwayToBoard,
 
 		// Mouse tracking
 		updateMousePosition,
