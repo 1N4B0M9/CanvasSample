@@ -12,12 +12,6 @@ import RenderConnections from './RenderConnections';
 import SidePanel from '../Components/Elements/SidePanel';
 import ToolBar from '../Components/Elements/ToolBar/ToolBar';
 import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
-import DeleteConfirmModal from '../Components/DeleteConfirmModal';
-import SparkleButton from '../Recommendations/SparkleButton';
-import ResourcePanel from '../Recommendations/ResourcePanel';
-import PathwayOverlay from '../Recommendations/PathwayOverlay';
-import { detectGoal } from '../Recommendations/useGoalDetection';
-import ViewportHUD from './ViewportHUD';
 
 const CanvasContent = () => {
 	const {
@@ -40,114 +34,7 @@ const CanvasContent = () => {
 		addMentorElement,
 		addImageElement,
 		addImageFromSearch,
-		elements,
-		connections,
-		arrows,
-		selectedIds,
-		deleteSelected,
-		savePathwayToBoard,
-		viewportOffset,
-		viewportZoom,
-		setViewportOffset,
-		setViewportZoom,
-		screenToWorld,
 	} = useCanvas();
-
-	const [confirmOpen, setConfirmOpen] = React.useState(false);
-	const [deletionSummary, setDeletionSummary] = React.useState(null);
-
-	// Recommendations state
-	const [panelOpen, setPanelOpen] = React.useState(false);
-	const [panelGoal, setPanelGoal] = React.useState({ goalType: null, domain: null });
-	const [selectedResource, setSelectedResource] = React.useState(null);
-	const [resourceCount, setResourceCount] = React.useState(0);
-
-	const [isPanning, setIsPanning] = React.useState(false);
-	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
-	const panStartRef = React.useRef(null);
-
-	React.useEffect(() => {
-		const onKeyDown = (e) => {
-			if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
-				e.preventDefault();
-				setIsSpaceDown(true);
-			}
-		};
-		const onKeyUp = (e) => {
-			if (e.code === 'Space') {
-				setIsSpaceDown(false);
-				setIsPanning(false);
-			}
-		};
-		window.addEventListener('keydown', onKeyDown);
-		window.addEventListener('keyup', onKeyUp);
-		return () => {
-			window.removeEventListener('keydown', onKeyDown);
-			window.removeEventListener('keyup', onKeyUp);
-		};
-	}, []);
-
-	// Debounced count of text elements that contain a detectable goal (3s delay)
-	React.useEffect(() => {
-		const timer = setTimeout(() => {
-			const count = elements.filter(
-				(el) => el.type === 'text' && el.content && detectGoal(el.content) !== null,
-			).length;
-			setResourceCount(count);
-		}, 3000);
-		return () => clearTimeout(timer);
-	}, [elements]);
-
-	useEffect(() => {
-		const handleKeyDown = (e) => {
-			if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-			const active = document.activeElement;
-			if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) return;
-			if (selectedIds.size > 0) handleDeleteSelected();
-		};
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [selectedIds, handleDeleteSelected]);
-
-	const openPanelForGoal = React.useCallback((detection) => {
-		setPanelGoal({ goalType: detection.goalType, domain: detection.domain });
-		setPanelOpen(true);
-	}, []);
-
-	const handleDeleteSelected = React.useCallback(() => {
-		const items = [];
-
-		for (const id of selectedIds) {
-			const el = elements.find((e) => e.id === id);
-			if (el) {
-				items.push({ id, type: el.type, label: el.label || null });
-				continue;
-			}
-			const conn = connections.find((c) => c.id === id);
-			if (conn) {
-				items.push({ id, type: 'connection', label: conn.label || null });
-				continue;
-			}
-			const arrow = arrows.find((a) => a.id === id);
-			if (arrow) {
-				items.push({ id, type: 'arrow', label: arrow.label || null });
-			}
-		}
-
-		const selectedElementIds = new Set(
-			items.filter((i) => ['text', 'image', 'mentor'].includes(i.type)).map((i) => i.id)
-		);
-		const implicitCount =
-			connections.filter(
-				(c) => !selectedIds.has(c.id) && (selectedElementIds.has(c.startId) || selectedElementIds.has(c.endId))
-			).length +
-			arrows.filter(
-				(a) => !selectedIds.has(a.id) && (selectedElementIds.has(a.startId) || selectedElementIds.has(a.endId))
-			).length;
-
-		setDeletionSummary({ items, implicitCount });
-		setConfirmOpen(true);
-	}, [selectedIds, elements, connections, arrows]);
 
 	const handleDrop = (e) => {
 		e.preventDefault();
@@ -159,8 +46,9 @@ const CanvasContent = () => {
 			const file = e.dataTransfer.files[0];
 			if (file && file.type.startsWith('image/')) {
 				const rect = canvasRef.current.getBoundingClientRect();
-				const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-				addImageElement(file, world.x, world.y);
+				const x = e.clientX - rect.left;
+				const y = e.clientY - rect.top;
+				addImageElement(file, x, y);
 			}
 			return;
 		}
@@ -170,23 +58,13 @@ const CanvasContent = () => {
 		if (!file || !file.type.startsWith('image/')) return;
 
 		const rect = canvasRef.current.getBoundingClientRect();
-		const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
 
-		addImageElement(file, world.x, world.y);
+		addImageElement(file, x, y);
 	};
 
 	const handleMouseDown = (e) => {
-		if (isSpaceDown) {
-			setIsPanning(true);
-			panStartRef.current = {
-				mouseX: e.clientX,
-				mouseY: e.clientY,
-				offsetX: viewportOffset.x,
-				offsetY: viewportOffset.y,
-			};
-			return;
-		}
-
 		if (e.target === canvasRef.current) {
 			console.log('Clicked on canvas background, resetting selection');
 			resetSelection();
@@ -224,16 +102,6 @@ const CanvasContent = () => {
 	};
 
 	const handleMouseMove = (e) => {
-		if (isPanning && panStartRef.current) {
-			const dx = e.clientX - panStartRef.current.mouseX;
-			const dy = e.clientY - panStartRef.current.mouseY;
-			setViewportOffset({
-				x: panStartRef.current.offsetX + dx,
-				y: panStartRef.current.offsetY + dy,
-			});
-			return;
-		}
-
 		if (!canvasRef.current) return;
 
 		const rect = canvasRef.current.getBoundingClientRect();
@@ -258,42 +126,21 @@ const CanvasContent = () => {
 		};
 	}, [updateMousePosition]);
 
-	const handleMouseUp = (e) => {
-		setIsPanning(false);
-		handleElementMouseUp(e);
-	};
-
-	const handleWheel = (e) => {
-		if (e.ctrlKey) {
-			e.preventDefault();
-			const rect = canvasRef.current.getBoundingClientRect();
-			const mouseX = e.clientX - rect.left;
-			const mouseY = e.clientY - rect.top;
-			const factor = e.deltaY > 0 ? 0.9 : 1.1;
-			const newZoom = Math.min(3, Math.max(0.1, viewportZoom * factor));
-			setViewportZoom(newZoom);
-			setViewportOffset((prev) => ({
-				x: mouseX - (mouseX - prev.x) * (newZoom / viewportZoom),
-				y: mouseY - (mouseY - prev.y) * (newZoom / viewportZoom),
-			}));
-			return;
-		}
-		handleElementWheel(e);
-	};
-
 	// Handlers for SidePanel actions
 	const handleAddText = () => {
 		if (!canvasRef.current) return;
 		const canvasRect = canvasRef.current.getBoundingClientRect();
-		const world = screenToWorld(canvasRect.width / 2, canvasRect.height / 2);
-		addTextElement(world.x, world.y);
+		const centerX = canvasRect.width / 2;
+		const centerY = canvasRect.height / 2;
+		addTextElement(centerX, centerY);
 	};
 
 	const handleAddMentor = () => {
 		if (!canvasRef.current) return;
 		const canvasRect = canvasRef.current.getBoundingClientRect();
-		const world = screenToWorld(canvasRect.width / 2, canvasRect.height / 2);
-		addMentorElement(world.x, world.y);
+		const centerX = canvasRect.width / 2;
+		const centerY = canvasRect.height / 2;
+		addMentorElement(centerX, centerY);
 	};
 
 	const handleAddImage = (imageData, apiKey) => {
@@ -455,38 +302,7 @@ const CanvasContent = () => {
 				handleExport={handleExport}
 				handleExportJSON={handleExportJSON}
 				handleImport={handleImport}
-				selectedCount={selectedIds.size}
-				onDeleteSelected={handleDeleteSelected}
 			/>
-
-			{/* Recommendations: floating sparkle button */}
-			<SparkleButton
-				resourceCount={resourceCount}
-				onOpen={() => {
-					const goalEl = [...elements].reverse().find(
-						(el) => el.type === 'text' && el.content && detectGoal(el.content),
-					);
-					const detected = goalEl
-						? detectGoal(goalEl.content)
-						: { goalType: null, domain: null };
-					setPanelGoal({ goalType: detected.goalType, domain: detected.domain });
-					setPanelOpen(true);
-				}}
-			/>
-
-			{/* Recommendations: slide-in resource panel */}
-			{panelOpen && (
-				<ResourcePanel
-					goalType={panelGoal.goalType}
-					domain={panelGoal.domain}
-					onClose={() => {
-						setPanelOpen(false);
-						setSelectedResource(null);
-					}}
-					onSelectResource={(resource) => setSelectedResource(resource)}
-					selectedResourceId={selectedResource?.id}
-				/>
-			)}
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
 			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
@@ -497,79 +313,26 @@ const CanvasContent = () => {
 					backgroundColor: backgroundImage ? 'transparent' : '#ffffff', // white background
 					border: '1px solid #d1d5db', // gray-300
 					boxSizing: 'border-box',
-					cursor: isPanning ? 'grabbing' : isSpaceDown ? 'grab' : undefined,
 
 					// Apply background image styling
 					...getBackgroundStyle(),
 				}}
 				onDrop={handleDrop}
 				onDragOver={(e) => e.preventDefault()}
-				onClick={() => setSelectedResource(null)}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
-				onMouseUp={handleMouseUp}
-				onMouseLeave={handleMouseUp}
-				onWheel={handleWheel}
+				onMouseUp={handleElementMouseUp}
+				onMouseLeave={handleElementMouseUp}
+				onWheel={handleElementWheel}
 			>
 				{/* Semi-transparent overlay when background is present to improve element visibility */}
 				{backgroundImage && (
 					<div className="absolute inset-0 bg-white bg-opacity-5 pointer-events-none" style={{ zIndex: -1 }} />
 				)}
 
-				<div
-					style={{
-						transform: `translate(${viewportOffset.x}px, ${viewportOffset.y}px) scale(${viewportZoom})`,
-						transformOrigin: '0 0',
-						position: 'absolute',
-						inset: 0,
-						pointerEvents: isPanning ? 'none' : 'auto',
-					}}
-				>
-					<RenderConnections />
-					<RenderElements onOpenPanel={openPanelForGoal} />
-				</div>
-
-				{/* Recommendations: pathway overlay on resource card hover */}
-				{selectedResource && (
-					<PathwayOverlay
-						resource={selectedResource}
-						onAddToBoard={() => {
-							const originEl = elements.find(
-								(el) =>
-									el.type === 'text' &&
-									el.content &&
-									detectGoal(el.content)?.goalType === panelGoal.goalType,
-							);
-							savePathwayToBoard(selectedResource, originEl?.id);
-							setPanelOpen(false);
-							setSelectedResource(null);
-						}}
-					/>
-				)}
-
-				{/* zoom HUD — sits outside the transform wrapper so it stays fixed on screen */}
-				<div style={{ position: 'absolute', bottom: '1rem', left: '1rem', zIndex: 50 }}>
-					<ViewportHUD
-						zoom={viewportZoom}
-						onZoomIn={() => setViewportZoom((z) => Math.min(3, parseFloat((z * 1.1).toFixed(3))))}
-						onZoomOut={() => setViewportZoom((z) => Math.max(0.1, parseFloat((z * 0.9).toFixed(3))))}
-						onReset={() => {
-							setViewportZoom(1);
-							setViewportOffset({ x: 0, y: 0 });
-						}}
-					/>
-				</div>
+				<RenderConnections />
+				<RenderElements />
 			</div>
-
-			<DeleteConfirmModal
-				open={confirmOpen}
-				summary={deletionSummary}
-				onClose={() => setConfirmOpen(false)}
-				onConfirm={() => {
-					deleteSelected();
-					setConfirmOpen(false);
-				}}
-			/>
 		</div>
 	);
 };

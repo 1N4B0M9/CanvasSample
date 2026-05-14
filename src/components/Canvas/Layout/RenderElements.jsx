@@ -31,12 +31,12 @@ import CanvasElement from '../Components/CanvasElement';
  *
  * @returns {JSX.Element|null} Collection of all canvas elements or null if no elements exist
  */
-const RenderElements = ({ onOpenPanel }) => {
+const RenderElements = () => {
 	// Extract all required state and callbacks from the canvas context
 	const {
 		// State
 		elements, // Array of all canvas elements
-		selectedIds, // Set of IDs of currently selected elements
+		selectedId, // ID of the currently selected element
 		isConnecting, // Boolean flag indicating if a connection is being created
 		isCreatingArrow, // Boolean flag indicating if an arrow is being created
 		connections, // Array of all connections between elements
@@ -63,8 +63,7 @@ const RenderElements = ({ onOpenPanel }) => {
 				<CanvasElement
 					key={element.id}
 					element={element}
-					isSelected={selectedIds.has(element.id)}
-					selectedIds={selectedIds}
+					isSelected={selectedId === element.id}
 					isConnecting={isConnecting}
 					isCreatingArrow={isCreatingArrow}
 					connections={connections}
@@ -78,7 +77,6 @@ const RenderElements = ({ onOpenPanel }) => {
 					onCompleteConnection={handleCompleteConnection}
 					onStartArrow={handleStartArrow}
 					onCompleteArrow={handleCompleteArrow}
-					onOpenPanel={onOpenPanel}
 				/>
 			))}
 		</>

@@ -33,16 +33,15 @@ const RenderConnections = () => {
 
 		// Standard connections
 		connections,
-		selectedIds,
+		selectedConnectionId,
 		handleConnectionSelect,
 		deleteConnection,
-		updateConnectionLabel,
 
 		// Arrows
 		arrows,
+		selectedArrowId,
 		handleArrowSelect,
 		deleteArrow,
-		updateArrowLabel,
 
 		// Temporary standard connection
 		isConnecting,
@@ -64,10 +63,9 @@ const RenderConnections = () => {
 					key={connection.id}
 					connection={connection}
 					elements={elements}
-					isSelected={selectedIds.has(connection.id)}
+					isSelected={selectedConnectionId === connection.id}
 					onSelect={handleConnectionSelect}
 					onDelete={deleteConnection}
-					onLabelChange={updateConnectionLabel}
 				/>
 			))}
 
@@ -77,10 +75,9 @@ const RenderConnections = () => {
 					key={arrow.id}
 					connection={arrow}
 					elements={elements}
-					isSelected={selectedIds.has(arrow.id)}
+					isSelected={selectedArrowId === arrow.id}
 					onSelect={handleArrowSelect}
 					onDelete={deleteArrow}
-					onLabelChange={updateArrowLabel}
 				/>
 			))}
 

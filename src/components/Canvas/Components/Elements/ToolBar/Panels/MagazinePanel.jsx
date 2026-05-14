@@ -64,7 +64,8 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 	useEffect(() => {
 		const loadVBMagazineImages = async () => {
 			const loadedPages = await Promise.all(
-				VB_MAGAZINE_IMAGES.map((filename, index) => new Promise((resolve) => {
+				VB_MAGAZINE_IMAGES.map((filename, index) => {
+					return new Promise((resolve) => {
 						const img = new Image();
 						img.onload = () => {
 							resolve({
@@ -80,7 +81,8 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 							});
 						};
 						img.src = `/VB Magazine JPEGs/${filename}`;
-					}))
+					});
+				})
 			);
 
 			setPages(loadedPages);
@@ -171,7 +173,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 	// Improved image detection using edge detection and contour analysis
 	const detectImageRegions = (imageData, width, height) => {
 		const regions = [];
-		const {data} = imageData;
+		const data = imageData.data;
 
 		// Convert to grayscale and detect edges
 		const grayscale = new Uint8Array(width * height);
@@ -253,10 +255,10 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 	// Flood fill algorithm to find connected edge regions
 	const floodFill = (edges, visited, startX, startY, width, height) => {
 		const stack = [{ x: startX, y: startY }];
-		let minX = startX;
-			let maxX = startX;
-			let minY = startY;
-			let maxY = startY;
+		let minX = startX,
+			maxX = startX,
+			minY = startY,
+			maxY = startY;
 		let pixelCount = 0;
 
 		while (stack.length > 0) {
@@ -293,7 +295,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 		const regions = [];
 		const aspectRatio = width / height;
 
-		let cols; let rows;
+		let cols, rows;
 		if (aspectRatio > 1.5) {
 			cols = 4;
 			rows = 3;
@@ -394,7 +396,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 				// Create element bank entry
 				const elementBankItem = {
 					id: `magazine-${Date.now()}-${region.id}`,
-					file,
+					file: file,
 					fileUrl: URL.createObjectURL(blob),
 					page: currentPage + 1,
 					regionId: region.id,
