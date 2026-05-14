@@ -17,6 +17,7 @@ import SparkleButton from '../Recommendations/SparkleButton';
 import ResourcePanel from '../Recommendations/ResourcePanel';
 import PathwayOverlay from '../Recommendations/PathwayOverlay';
 import { detectGoal } from '../Recommendations/useGoalDetection';
+import ViewportHUD from './ViewportHUD';
 
 const CanvasContent = () => {
 	const {
@@ -545,6 +546,19 @@ const CanvasContent = () => {
 						}}
 					/>
 				)}
+
+				{/* zoom HUD — sits outside the transform wrapper so it stays fixed on screen */}
+				<div style={{ position: 'absolute', bottom: '1rem', left: '1rem', zIndex: 50 }}>
+					<ViewportHUD
+						zoom={viewportZoom}
+						onZoomIn={() => setViewportZoom((z) => Math.min(3, parseFloat((z * 1.1).toFixed(3))))}
+						onZoomOut={() => setViewportZoom((z) => Math.max(0.1, parseFloat((z * 0.9).toFixed(3))))}
+						onReset={() => {
+							setViewportZoom(1);
+							setViewportOffset({ x: 0, y: 0 });
+						}}
+					/>
+				</div>
 			</div>
 
 			<DeleteConfirmModal
