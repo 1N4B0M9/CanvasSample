@@ -45,6 +45,11 @@ const CanvasContent = () => {
 		selectedIds,
 		deleteSelected,
 		savePathwayToBoard,
+		viewportOffset,
+		viewportZoom,
+		setViewportOffset,
+		setViewportZoom,
+		screenToWorld,
 	} = useCanvas();
 
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -55,6 +60,31 @@ const CanvasContent = () => {
 	const [panelGoal, setPanelGoal] = React.useState({ goalType: null, domain: null });
 	const [selectedResource, setSelectedResource] = React.useState(null);
 	const [resourceCount, setResourceCount] = React.useState(0);
+
+	const [isPanning, setIsPanning] = React.useState(false);
+	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
+	const panStartRef = React.useRef(null);
+
+	React.useEffect(() => {
+		const onKeyDown = (e) => {
+			if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+				e.preventDefault();
+				setIsSpaceDown(true);
+			}
+		};
+		const onKeyUp = (e) => {
+			if (e.code === 'Space') {
+				setIsSpaceDown(false);
+				setIsPanning(false);
+			}
+		};
+		window.addEventListener('keydown', onKeyDown);
+		window.addEventListener('keyup', onKeyUp);
+		return () => {
+			window.removeEventListener('keydown', onKeyDown);
+			window.removeEventListener('keyup', onKeyUp);
+		};
+	}, []);
 
 	// Debounced count of text elements that contain a detectable goal (3s delay)
 	React.useEffect(() => {
@@ -128,9 +158,8 @@ const CanvasContent = () => {
 			const file = e.dataTransfer.files[0];
 			if (file && file.type.startsWith('image/')) {
 				const rect = canvasRef.current.getBoundingClientRect();
-				const x = e.clientX - rect.left;
-				const y = e.clientY - rect.top;
-				addImageElement(file, x, y);
+				const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+				addImageElement(file, world.x, world.y);
 			}
 			return;
 		}
@@ -140,13 +169,23 @@ const CanvasContent = () => {
 		if (!file || !file.type.startsWith('image/')) return;
 
 		const rect = canvasRef.current.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
+		const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
 
-		addImageElement(file, x, y);
+		addImageElement(file, world.x, world.y);
 	};
 
 	const handleMouseDown = (e) => {
+		if (isSpaceDown) {
+			setIsPanning(true);
+			panStartRef.current = {
+				mouseX: e.clientX,
+				mouseY: e.clientY,
+				offsetX: viewportOffset.x,
+				offsetY: viewportOffset.y,
+			};
+			return;
+		}
+
 		if (e.target === canvasRef.current) {
 			console.log('Clicked on canvas background, resetting selection');
 			resetSelection();
@@ -184,6 +223,16 @@ const CanvasContent = () => {
 	};
 
 	const handleMouseMove = (e) => {
+		if (isPanning && panStartRef.current) {
+			const dx = e.clientX - panStartRef.current.mouseX;
+			const dy = e.clientY - panStartRef.current.mouseY;
+			setViewportOffset({
+				x: panStartRef.current.offsetX + dx,
+				y: panStartRef.current.offsetY + dy,
+			});
+			return;
+		}
+
 		if (!canvasRef.current) return;
 
 		const rect = canvasRef.current.getBoundingClientRect();
@@ -208,21 +257,42 @@ const CanvasContent = () => {
 		};
 	}, [updateMousePosition]);
 
+	const handleMouseUp = (e) => {
+		setIsPanning(false);
+		handleElementMouseUp(e);
+	};
+
+	const handleWheel = (e) => {
+		if (e.ctrlKey) {
+			e.preventDefault();
+			const rect = canvasRef.current.getBoundingClientRect();
+			const mouseX = e.clientX - rect.left;
+			const mouseY = e.clientY - rect.top;
+			const factor = e.deltaY > 0 ? 0.9 : 1.1;
+			const newZoom = Math.min(3, Math.max(0.1, viewportZoom * factor));
+			setViewportZoom(newZoom);
+			setViewportOffset((prev) => ({
+				x: mouseX - (mouseX - prev.x) * (newZoom / viewportZoom),
+				y: mouseY - (mouseY - prev.y) * (newZoom / viewportZoom),
+			}));
+			return;
+		}
+		handleElementWheel(e);
+	};
+
 	// Handlers for SidePanel actions
 	const handleAddText = () => {
 		if (!canvasRef.current) return;
 		const canvasRect = canvasRef.current.getBoundingClientRect();
-		const centerX = canvasRect.width / 2;
-		const centerY = canvasRect.height / 2;
-		addTextElement(centerX, centerY);
+		const world = screenToWorld(canvasRect.width / 2, canvasRect.height / 2);
+		addTextElement(world.x, world.y);
 	};
 
 	const handleAddMentor = () => {
 		if (!canvasRef.current) return;
 		const canvasRect = canvasRef.current.getBoundingClientRect();
-		const centerX = canvasRect.width / 2;
-		const centerY = canvasRect.height / 2;
-		addMentorElement(centerX, centerY);
+		const world = screenToWorld(canvasRect.width / 2, canvasRect.height / 2);
+		addMentorElement(world.x, world.y);
 	};
 
 	const handleAddImage = (imageData, apiKey) => {
@@ -426,6 +496,7 @@ const CanvasContent = () => {
 					backgroundColor: backgroundImage ? 'transparent' : '#ffffff', // white background
 					border: '1px solid #d1d5db', // gray-300
 					boxSizing: 'border-box',
+					cursor: isPanning ? 'grabbing' : isSpaceDown ? 'grab' : undefined,
 
 					// Apply background image styling
 					...getBackgroundStyle(),
@@ -435,17 +506,27 @@ const CanvasContent = () => {
 				onClick={() => setSelectedResource(null)}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
-				onMouseUp={handleElementMouseUp}
-				onMouseLeave={handleElementMouseUp}
-				onWheel={handleElementWheel}
+				onMouseUp={handleMouseUp}
+				onMouseLeave={handleMouseUp}
+				onWheel={handleWheel}
 			>
 				{/* Semi-transparent overlay when background is present to improve element visibility */}
 				{backgroundImage && (
 					<div className="absolute inset-0 bg-white bg-opacity-5 pointer-events-none" style={{ zIndex: -1 }} />
 				)}
 
-				<RenderConnections />
-				<RenderElements onOpenPanel={openPanelForGoal} />
+				<div
+					style={{
+						transform: `translate(${viewportOffset.x}px, ${viewportOffset.y}px) scale(${viewportZoom})`,
+						transformOrigin: '0 0',
+						position: 'absolute',
+						inset: 0,
+						pointerEvents: isPanning ? 'none' : 'auto',
+					}}
+				>
+					<RenderConnections />
+					<RenderElements onOpenPanel={openPanelForGoal} />
+				</div>
 
 				{/* Recommendations: pathway overlay on resource card hover */}
 				{selectedResource && (
