@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 
-const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections) => {
+const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections, viewportZoom = 1) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 	const [isScaling, setIsScaling] = useState(false);
@@ -183,8 +183,8 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 						el.id === selectedId
 							? {
 									...el,
-									x: el.x + (x - dragStart.x),
-									y: el.y + (y - dragStart.y),
+									x: el.x + (x - dragStart.x) / viewportZoom,
+									y: el.y + (y - dragStart.y) / viewportZoom,
 								}
 							: el,
 					),
@@ -229,7 +229,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 				setConnections((prev) => [...prev]); // Force connection redraw
 			}
 		},
-		[isDragging, isScaling, selectedId, dragStart, setElements, setConnections],
+		[isDragging, isScaling, selectedId, dragStart, viewportZoom, setElements, setConnections],
 	);
 
 	// Handle mouse up to end dragging or scaling

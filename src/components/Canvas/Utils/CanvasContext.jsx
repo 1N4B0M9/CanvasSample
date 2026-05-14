@@ -52,6 +52,17 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const [connectionStart, setConnectionStart] = useState(null);
 	const [arrowStart, setArrowStart] = useState(null);
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+	const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
+	const [viewportZoom, setViewportZoom] = useState(1);
+
+	// convert screen px coords to world coords
+	const screenToWorld = useCallback(
+		(screenX, screenY) => ({
+			x: (screenX - viewportOffset.x) / viewportZoom,
+			y: (screenY - viewportOffset.y) / viewportZoom,
+		}),
+		[viewportOffset, viewportZoom],
+	);
 
 	// Refs
 	const canvasRef = useRef(null);
@@ -158,6 +169,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		setSelectedIdAndSync,
 		connections,
 		setConnectionsWithSave,
+		viewportZoom,
 	);
 
 	// Create an enhanced version of addTextElement that centers elements
@@ -1262,6 +1274,11 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		arrowStart,
 		mousePosition,
 		canvasRef,
+		viewportOffset,
+		viewportZoom,
+		setViewportOffset,
+		setViewportZoom,
+		screenToWorld,
 
 		// Element operations
 		addTextElement,
