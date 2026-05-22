@@ -98,22 +98,6 @@ const CanvasContent = () => {
 		return () => clearTimeout(timer);
 	}, [elements]);
 
-	useEffect(() => {
-		const handleKeyDown = (e) => {
-			if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-			const active = document.activeElement;
-			if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) return;
-			if (selectedIds.size > 0) handleDeleteSelected();
-		};
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [selectedIds, handleDeleteSelected]);
-
-	const openPanelForGoal = React.useCallback((detection) => {
-		setPanelGoal({ goalType: detection.goalType, domain: detection.domain });
-		setPanelOpen(true);
-	}, []);
-
 	const handleDeleteSelected = React.useCallback(() => {
 		const items = [];
 
@@ -148,6 +132,22 @@ const CanvasContent = () => {
 		setDeletionSummary({ items, implicitCount });
 		setConfirmOpen(true);
 	}, [selectedIds, elements, connections, arrows]);
+
+	useEffect(() => {
+		const handleKeyDown = (e) => {
+			if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+			const active = document.activeElement;
+			if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) return;
+			if (selectedIds.size > 0) handleDeleteSelected();
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [selectedIds, handleDeleteSelected]);
+
+	const openPanelForGoal = React.useCallback((detection) => {
+		setPanelGoal({ goalType: detection.goalType, domain: detection.domain });
+		setPanelOpen(true);
+	}, []);
 
 	const handleDrop = (e) => {
 		e.preventDefault();
