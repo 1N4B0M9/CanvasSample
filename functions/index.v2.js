@@ -207,6 +207,7 @@ exports.getPathway = onCall({ secrets: [PERPLEXITY_API_KEY] }, async (request) =
 
   return {
     resources,
+    sonarResources: [],
     sonarUpdate,
     queriedAt: Date.now(),
   };
