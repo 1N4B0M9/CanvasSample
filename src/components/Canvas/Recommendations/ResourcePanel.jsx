@@ -96,6 +96,17 @@ const ResourcePanel = ({ goalType, domain, onClose, onSelectResource, selectedRe
                   </span>
                 )}
                 <p className="text-xs text-gray-500 mt-1 leading-snug">{resource.description}</p>
+                {resource.contact?.url && (
+                  <a
+                    href={resource.contact.url.startsWith('http') ? resource.contact.url : `https://${resource.contact.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-blue-500 hover:underline mt-1 block"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {resource.contact.url}
+                  </a>
+                )}
                 <p className="text-xs text-blue-400 mt-1">click to see path</p>
               </div>
             ))}
