@@ -627,20 +627,28 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			const originX = originElement ? originElement.x : 100;
 			const originY = originElement ? originElement.y : 100;
 
+			const baseId = Date.now();
+			const CELL_W = 220;
+			const CELL_H = 120;
+			const COLS = 4;
+			const slotPos = (n) => ({
+				x: originX + (n % COLS) * CELL_W,
+				y: originY + Math.floor(n / COLS) * CELL_H,
+			});
+
 			const newElements = [];
 			const newArrows = [];
 			const stepIds = [];
 
 			for (const step of resource.pathwaySteps) {
-				const stepId = `text-step-${Date.now()}-${step.order}`;
+				const stepId = `text-step-${baseId}-${step.order}`;
 				stepIds.push(stepId);
 				newElements.push({
 					id: stepId,
 					type: 'text',
-					content: `${step.order}. ${step.title}\n${step.detail}`,
+					content: `${step.order}. ${step.title}\n${step.detail}${step.url ? `\n${step.url}` : ''}`,
 					label: step.actionLabel,
-					x: originX + step.order * 200,
-					y: originY,
+					...slotPos(step.order),
 					width: 180,
 					height: 80,
 					rotation: 0,
@@ -658,12 +666,11 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				if (resource.contact.url) contactLines.push(resource.contact.url);
 
 				newElements.push({
-					id: `text-contact-${Date.now()}`,
+					id: `text-contact-${baseId}`,
 					type: 'text',
 					content: contactLines.join('\n'),
 					label: 'Contact',
-					x: originX + (resource.pathwaySteps.length + 1) * 200,
-					y: originY,
+					...slotPos(resource.pathwaySteps.length + 1),
 					width: 180,
 					height: 80,
 					rotation: 0,
@@ -676,11 +683,11 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			if (originElementId && stepIds[0]) {
 				newArrows.push({
-					id: `arrow-origin-${Date.now()}`,
+					id: `arrow-origin-${baseId}`,
 					startId: originElementId,
 					endId: stepIds[0],
 					type: 'arrow',
-					color: '#22c55e',
+					color: 'black',
 					thickness: 2,
 					label: 'step 1',
 				});
@@ -688,11 +695,11 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			for (let i = 0; i < stepIds.length - 1; i++) {
 				newArrows.push({
-					id: `arrow-step-${Date.now()}-${i}`,
+					id: `arrow-step-${baseId}-${i}`,
 					startId: stepIds[i],
 					endId: stepIds[i + 1],
 					type: 'arrow',
-					color: '#22c55e',
+					color: 'black',
 					thickness: 2,
 					label: resource.pathwaySteps[i + 1]?.actionLabel ?? '',
 				});
@@ -700,13 +707,13 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 			if (resource.logoUrl) {
 				newElements.push({
-					id: `image-logo-${Date.now()}`,
+					id: `image-logo-${baseId}`,
 					type: 'image',
 					src: resource.logoUrl,
 					alt: resource.name,
 					label: resource.contact?.hours ?? resource.contact?.phone ?? '',
-					x: originX + 200,
-					y: originY + 140,
+					x: originX,
+					y: originY + CELL_H,
 					width: 120,
 					height: 60,
 					rotation: 0,
@@ -714,10 +721,11 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				});
 			}
 
+			const firstId = newElements[0]?.id ?? null;
 			setElementsWithSave((prev) => [...prev, ...newElements]);
 			setArrowsWithSave((prev) => [...prev, ...newArrows]);
 			setSelectedIds(new Set(newElements.map((el) => el.id)));
-			setSelectedId(null);
+			setSelectedId(firstId);
 		},
 		[elements, setElementsWithSave, setArrowsWithSave],
 	);
