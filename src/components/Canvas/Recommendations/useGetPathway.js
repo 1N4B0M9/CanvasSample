@@ -1,12 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from '../../../firebase/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../../firebase/firebase';
 
 /**
  * Wraps the getPathway Firebase callable function.
  * Caches results in-memory for the session — same goalType = no refetch.
- *
- * @returns {{ fetchPathway: Function, data: object|null, loading: boolean, error: string|null }}
  */
 export default function useGetPathway() {
   const [data, setData] = useState(null);
@@ -26,11 +24,6 @@ export default function useGetPathway() {
     setError(null);
 
     try {
-      const functions = getFunctions(app);
-      if (process.env.NODE_ENV === 'development') {
-        const { connectFunctionsEmulator } = await import('firebase/functions');
-        connectFunctionsEmulator(functions, 'localhost', 5001);
-      }
       const getPathway = httpsCallable(functions, 'getPathway');
       const result = await getPathway({
         goalType,

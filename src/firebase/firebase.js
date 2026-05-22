@@ -3,11 +3,13 @@ import {
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
 	getAuth,
+	connectAuthEmulator,
 	sendPasswordResetEmail,
 	signOut,
 } from 'firebase/auth';
 import { getFirestore, doc, Timestamp } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { addData } from './firebaseReadWrite';
 
 // --- Firebase config (from your .env) ---
@@ -26,6 +28,12 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
+
+if (process.env.NODE_ENV === 'development') {
+	connectFunctionsEmulator(functions, 'localhost', 5001);
+	connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+}
 
 // --- Auth helper functions ---
 const registerWithEmailAndPassword = async (name, email, password) => {
