@@ -2,7 +2,7 @@
  * Updated CanvasElement Component with MentorElement integration
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ImageElement from './Elements/ImageElement';
 import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
@@ -35,43 +35,25 @@ const CanvasElement = ({
 	const contentRef = useRef(null);
 	const textRef = useRef(null);
 
+	const lastMeasuredRef = useRef({ w: 0, h: 0 });
+
+	const measureElementSize = useCallback(() => {
+		if (!elementRef.current) return;
+		// offsetWidth/offsetHeight are layout pixels, unaffected by CSS transforms
+		// on this element or any ancestor — safe to store as world coordinates.
+		const w = elementRef.current.offsetWidth;
+		const h = elementRef.current.offsetHeight;
+		if (w === lastMeasuredRef.current.w && h === lastMeasuredRef.current.h) return;
+		lastMeasuredRef.current = { w, h };
+		onUpdateSize(element.id, w, h);
+	}, [element.id, onUpdateSize]);
+
 	useEffect(() => {
-		const currentElement = elementRef.current;
-		if (!currentElement) return;
-
-		const measureElementSize = () => {
-			if (!elementRef.current) return;
-
-			try {
-				const originalTransform = elementRef.current.style.transform || '';
-				elementRef.current.style.transform = `rotate(${element.rotation}deg) scale(1)`;
-				const rect = elementRef.current.getBoundingClientRect();
-				elementRef.current.style.transform = originalTransform;
-				onUpdateSize(element.id, rect.width, rect.height);
-			} catch (error) {
-				console.warn('Error measuring element size:', error);
-			}
-		};
-
-		measureElementSize();
-
-		let debounceTimer;
-		const resizeObserver = new ResizeObserver(() => {
-			if (elementRef.current) {
-				clearTimeout(debounceTimer);
-				debounceTimer = setTimeout(() => {
-					measureElementSize();
-				}, 50);
-			}
-		});
-
-		resizeObserver.observe(currentElement);
-
-		return () => {
-			clearTimeout(debounceTimer);
-			resizeObserver.disconnect();
-		};
-	}, [element.id, element.content, element.type, element.rotation, onUpdateSize]);
+		if (!elementRef.current) return;
+		const observer = new ResizeObserver(measureElementSize);
+		observer.observe(elementRef.current);
+		return () => observer.disconnect();
+	}, [element.id]);
 
 	useEffect(() => {
 		if (!isSelected) setIsEditingLabel(false);

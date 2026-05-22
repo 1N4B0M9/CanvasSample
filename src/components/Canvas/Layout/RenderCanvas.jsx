@@ -316,10 +316,10 @@ const CanvasContent = () => {
 		}
 
 		const canvasRect = canvasRef.current.getBoundingClientRect();
-		const centerX = canvasRect.width / 2;
-		const centerY = canvasRect.height / 2;
-
-		addImageFromSearch(imageData, centerX, centerY);
+		const screenCenterX = canvasRect.width / 2;
+		const screenCenterY = canvasRect.height / 2;
+		const worldPos = screenToWorld(screenCenterX, screenCenterY);
+		addImageFromSearch(imageData, worldPos.x, worldPos.y);
 	};
 
 	// Handle background image upload

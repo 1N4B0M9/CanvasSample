@@ -246,9 +246,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			// If x and y are not provided, use the center of the canvas
 			if (x === undefined || y === undefined) {
 				if (canvasRef.current) {
-					const canvasRect = canvasRef.current.getBoundingClientRect();
-					x = canvasRect.width / 2;
-					y = canvasRect.height / 2;
+					const rect = canvasRef.current.getBoundingClientRect();
+					const worldPos = screenToWorld(rect.width / 2, rect.height / 2);
+					x = worldPos.x;
+					y = worldPos.y;
 				} else {
 					// Fallback values if canvas ref isn't available
 					x = window.innerWidth / 2;
@@ -289,7 +290,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave, setSelectedIdAndSync],
+		[setElementsWithSave, setSelectedIdAndSync, screenToWorld],
 	);
 
 	// For addImageFromSearch with screen-fitting dimensions
@@ -305,9 +306,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			// If x and y are not provided, use the center of the canvas
 			if (x === undefined || y === undefined) {
 				if (canvasRef.current) {
-					const canvasRect = canvasRef.current.getBoundingClientRect();
-					x = canvasRect.width / 2;
-					y = canvasRect.height / 2;
+					const rect = canvasRef.current.getBoundingClientRect();
+					const worldPos = screenToWorld(rect.width / 2, rect.height / 2);
+					x = worldPos.x;
+					y = worldPos.y;
 				} else {
 					// Fallback values if canvas ref isn't available
 					x = window.innerWidth / 2;
@@ -344,7 +346,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			setSelectedIdAndSync(newElement.id);
 			return newElement.id;
 		},
-		[setElementsWithSave, setSelectedIdAndSync],
+		[setElementsWithSave, setSelectedIdAndSync, screenToWorld],
 	);
 
 	// Add a new mentor element
