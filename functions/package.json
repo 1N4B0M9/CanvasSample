@@ -2,7 +2,7 @@
   "name": "functions",
   "description": "Firebase Cloud Functions for Project Rebound",
   "scripts": {
-    "serve": "firebase emulators:start --only functions",
+    "serve": "firebase emulators:start --only functions,auth --project project-rebound",
     "deploy": "firebase deploy --only functions"
   },
   "engines": {
