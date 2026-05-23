@@ -243,6 +243,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 	const handleWheel = useCallback(
 		(e) => {
 			if (!selectedId) return;
+			if (e.ctrlKey) return; // let RenderCanvas handle viewport zoom; do not compete
 			e.preventDefault();
 
 			setElements((prev) =>
