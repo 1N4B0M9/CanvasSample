@@ -53,6 +53,8 @@ export const calculateElementBorderIntersection = (element, targetX, targetY) =>
 	const dirY = distance !== 0 ? dy / distance : 0;
 
 	// Step 3: Calculate the unscaled half-width and half-height
+	// width/height are world-pixel base dimensions from element state, not screen pixels
+	// scale is element.scale — a CSS transform multiplier, not viewportZoom
 	const halfWidth = (width * scale) / 2;
 	const halfHeight = (height * scale) / 2;
 
@@ -111,10 +113,14 @@ export const calculateConnectionPoints = (elements, startId, endId) => {
 	if (!startElement || !endElement) return null;
 
 	// Calculate element centers
-	const startCenterX = startElement.x + startElement.width / 2;
-	const startCenterY = startElement.y + startElement.height / 2;
-	const endCenterX = endElement.x + endElement.width / 2;
-	const endCenterY = endElement.y + endElement.height / 2;
+	const startSafeWidth = Math.max(startElement.width || 0, 1);
+	const startSafeHeight = Math.max(startElement.height || 0, 1);
+	const endSafeWidth = Math.max(endElement.width || 0, 1);
+	const endSafeHeight = Math.max(endElement.height || 0, 1);
+	const startCenterX = startElement.x + startSafeWidth / 2;
+	const startCenterY = startElement.y + startSafeHeight / 2;
+	const endCenterX = endElement.x + endSafeWidth / 2;
+	const endCenterY = endElement.y + endSafeHeight / 2;
 
 	// Calculate the intersection points
 	const startPoint = calculateElementBorderIntersection(startElement, endCenterX, endCenterY);
