@@ -118,7 +118,7 @@ const CanvasElement = ({
 		});
 
 		for (let i = 0; i < newElements.length; i++) {
-			const el = { ...newElements[i], goalText };
+			const el = { ...newElements[i], goalText, ...(result.citations?.length && { citations: result.citations }) };
 			addElement(el);
 			addArrow(element.id, el.id, result.steps[i].label);
 		}
@@ -159,6 +159,10 @@ const CanvasElement = ({
 			e,
 		);
 	};
+
+	const detectedGoal = (element.type === 'text' || element.type === 'mentor') && element.content
+		? detectGoal(element.content)
+		: null;
 
 	return (
 		<div
@@ -204,10 +208,9 @@ const CanvasElement = ({
 				)}
 				{(element.type === 'text' || element.type === 'mentor') && element.content && !isConnecting && !isCreatingArrow && (
 					<SparkleHoverBadge
-						onFindResources={() => {
-							if (typeof onOpenPanel === 'function') onOpenPanel(detectGoal(element.content));
-						}}
+						onFindResources={detectedGoal ? () => { if (typeof onOpenPanel === 'function') onOpenPanel(detectedGoal, element.id); } : null}
 						onAsk={() => setShowAskBubble(true)}
+						citations={element.citations || []}
 					/>
 				)}
 				{showAskBubble && (
