@@ -41,7 +41,7 @@ const SparkleHoverBadge = ({ onFindResources, onAsk, citations = [] }) => {
           <p className="text-xs font-semibold text-gray-700 mb-2">Sources</p>
           {citations.map((url, i) => (
             <a
-              key={i}
+              key={url}
               href={url}
               target="_blank"
               rel="noreferrer"
