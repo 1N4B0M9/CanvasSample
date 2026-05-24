@@ -7,7 +7,11 @@ import ImageElement from './Elements/ImageElement';
 import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
 import { detectGoal } from '../Recommendations/useGoalDetection';
-import GoalPopup from '../Recommendations/GoalPopup';
+import { useCanvas } from '../Utils/CanvasContext';
+import SparkleHoverBadge from '../Recommendations/SparkleHoverBadge';
+import AskBubble from '../Recommendations/AskBubble';
+import useSubSteps from '../Recommendations/useSubSteps';
+import { placeSubSteps } from '../Utils/placeSubSteps';
 
 const CanvasElement = ({
 	element,
@@ -30,7 +34,9 @@ const CanvasElement = ({
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
-	const [detectedGoal, setDetectedGoal] = useState(null);
+	const [showAskBubble, setShowAskBubble] = useState(false);
+	const { elements, addElement, addArrow } = useCanvas();
+	const { fetchSubSteps } = useSubSteps();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
 	const textRef = useRef(null);
@@ -59,10 +65,6 @@ const CanvasElement = ({
 		if (!isSelected) setIsEditingLabel(false);
 	}, [isSelected]);
 
-	useEffect(() => {
-		if (!isSelected) setDetectedGoal(null);
-	}, [isSelected]);
-
 	const handleDoubleClick = () => {
 		if (element.type === 'text' || element.type === 'mentor') {
 			setIsEditing(true);
@@ -85,12 +87,6 @@ const CanvasElement = ({
 			onCompleteArrow(element.id);
 		} else {
 			onSelect(element.id, e.shiftKey);
-			if (element.type === 'text' && element.content) {
-				const goal = detectGoal(element.content);
-				setDetectedGoal(goal);
-			} else {
-				setDetectedGoal(null);
-			}
 		}
 	};
 
@@ -107,6 +103,25 @@ const CanvasElement = ({
 			onStartArrow(element.id);
 		}
 	};
+
+	const handleAskSubmit = useCallback(async ({ stepText, goalText, userQuery }) => {
+		const result = await fetchSubSteps({ goalText, stepText, userQuery });
+		if (!result?.steps?.length) return;
+
+		const newElements = placeSubSteps({
+			parentElement: element,
+			steps: result.steps,
+			existingElements: elements,
+		});
+
+		for (let i = 0; i < newElements.length; i++) {
+			const el = { ...newElements[i], goalText };
+			addElement(el);
+			addArrow(element.id, el.id, result.steps[i].label);
+		}
+
+		setShowAskBubble(false);
+	}, [fetchSubSteps, element, elements, addElement, addArrow]);
 
 	const getScaleHandleStyle = (corner) => {
 		const base = 'absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full';
@@ -158,16 +173,6 @@ const CanvasElement = ({
 			data-element-id={element.id}
 		>
 			<div ref={contentRef} className="relative">
-				{detectedGoal && !isConnecting && !isCreatingArrow && (
-					<GoalPopup
-						goalType={detectedGoal.goalType}
-						domain={detectedGoal.domain}
-						onFindResources={() => {
-							if (typeof onOpenPanel === 'function') onOpenPanel(detectedGoal);
-						}}
-						onDismiss={() => setDetectedGoal(null)}
-					/>
-				)}
 				{/* Render the appropriate element type */}
 				{element.type === 'image' ? (
 					<ImageElement
@@ -192,6 +197,22 @@ const CanvasElement = ({
 						isEditing={isEditing}
 						setIsEditing={setIsEditing}
 						textRef={textRef}
+					/>
+				)}
+				{(element.type === 'text' || element.type === 'mentor') && element.content && !isConnecting && !isCreatingArrow && (
+					<SparkleHoverBadge
+						onFindResources={() => {
+							if (typeof onOpenPanel === 'function') onOpenPanel(detectGoal(element.content));
+						}}
+						onAsk={() => setShowAskBubble(true)}
+					/>
+				)}
+				{showAskBubble && (
+					<AskBubble
+						stepText={element.content}
+						goalText={element.goalText ?? element.content}
+						onSubmit={handleAskSubmit}
+						onDismiss={() => setShowAskBubble(false)}
 					/>
 				)}
 			</div>
