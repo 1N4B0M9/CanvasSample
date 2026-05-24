@@ -36,7 +36,7 @@ const CanvasElement = ({
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
 	const [showAskBubble, setShowAskBubble] = useState(false);
 	const { elements, addElement, addArrow } = useCanvas();
-	const { fetchSubSteps } = useSubSteps();
+	const { fetchSubSteps, loading: subStepsLoading } = useSubSteps();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
 	const textRef = useRef(null);
@@ -106,7 +106,10 @@ const CanvasElement = ({
 
 	const handleAskSubmit = useCallback(async ({ stepText, goalText, userQuery }) => {
 		const result = await fetchSubSteps({ goalText, stepText, userQuery });
-		if (!result?.steps?.length) return;
+		if (!result?.steps?.length) {
+			setShowAskBubble(false);
+			return;
+		}
 
 		const newElements = placeSubSteps({
 			parentElement: element,
@@ -213,6 +216,7 @@ const CanvasElement = ({
 						goalText={element.goalText ?? element.content}
 						onSubmit={handleAskSubmit}
 						onDismiss={() => setShowAskBubble(false)}
+						loading={subStepsLoading}
 					/>
 				)}
 			</div>

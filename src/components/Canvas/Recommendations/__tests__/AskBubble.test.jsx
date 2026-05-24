@@ -61,3 +61,9 @@ test('calls onDismiss on Escape key', () => {
   fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
   expect(onDismiss).toHaveBeenCalledTimes(1);
 });
+
+test('disables input and submit when loading', () => {
+  render(<AskBubble {...defaultProps} loading={true} />);
+  expect(screen.getByRole('textbox')).toBeDisabled();
+  expect(screen.getByRole('button', { name: /Submit/i })).toBeDisabled();
+});

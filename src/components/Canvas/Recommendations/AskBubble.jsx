@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const AskBubble = ({ stepText, goalText, onSubmit, onDismiss }) => {
+const AskBubble = ({ stepText, goalText, onSubmit, onDismiss, loading = false }) => {
   const [query, setQuery] = useState('');
 
   const handleSubmit = () => {
@@ -38,13 +38,15 @@ const AskBubble = ({ stepText, goalText, onSubmit, onDismiss }) => {
           placeholder="What should I expect?"
           className="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-gray-400"
           autoFocus
+          disabled={loading}
         />
         <button
           onClick={handleSubmit}
-          className="px-2 py-1.5 bg-gray-900 text-white rounded text-xs font-semibold hover:bg-gray-700"
+          disabled={loading}
+          className="px-2 py-1.5 bg-gray-900 text-white rounded text-xs font-semibold hover:bg-gray-700 disabled:opacity-50"
           aria-label="Submit"
         >
-          →
+          {loading ? '⟳' : '→'}
         </button>
       </div>
     </div>
