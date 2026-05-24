@@ -211,6 +211,23 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		[elementOps],
 	);
 
+	const addElement = useCallback((element) => {
+		setElementsWithSave((prev) => [...prev, element]);
+	}, [setElementsWithSave]);
+
+	const addArrow = useCallback((startId, endId, label) => {
+		const newArrow = {
+			id: `arrow-substep-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+			startId,
+			endId,
+			type: 'arrow',
+			color: 'black',
+			thickness: 2,
+			...(label && { label }),
+		};
+		setArrowsWithSave((prev) => [...prev, newArrow]);
+	}, [setArrowsWithSave]);
+
 	const connectionOps = useConnectionOperations(
 		elements,
 		connections,
@@ -1294,6 +1311,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		// Element operations
 		addTextElement,
 		addImageElement,
+		addElement,
+		addArrow,
 		updateElement: elementOps?.updateElement,
 		updateElementSize: elementOps?.updateElementSize,
 		deleteElement,
