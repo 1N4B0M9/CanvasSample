@@ -61,6 +61,7 @@ const CanvasContent = () => {
 	const [panelGoal, setPanelGoal] = React.useState({ goalType: null, domain: null });
 	const [selectedResource, setSelectedResource] = React.useState(null);
 	const [resourceCount, setResourceCount] = React.useState(0);
+	const [panelAnchorId, setPanelAnchorId] = React.useState(null);
 
 	const [isPanning, setIsPanning] = React.useState(false);
 	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
@@ -185,9 +186,10 @@ const CanvasContent = () => {
 		return () => { if (el) el.removeEventListener('wheel', handleWheel); };
 	}, [handleWheel]);
 
-	const openPanelForGoal = React.useCallback((detection) => {
-		setPanelGoal({ goalType: detection.goalType, domain: detection.domain });
+	const openPanelForGoal = React.useCallback((detection, triggeredByElementId = null) => {
+		setPanelGoal({ goalType: detection?.goalType ?? null, domain: detection?.domain ?? null });
 		setPanelOpen(true);
+		setPanelAnchorId(triggeredByElementId);
 	}, []);
 
 	const handleDrop = (e) => {
@@ -505,6 +507,7 @@ const CanvasContent = () => {
 					domain={panelGoal.domain}
 					onClose={() => {
 						setPanelOpen(false);
+						setPanelAnchorId(null);
 						setSelectedResource(null);
 					}}
 					onSelectResource={(resource) => setSelectedResource(resource)}
@@ -549,7 +552,7 @@ const CanvasContent = () => {
 					}}
 				>
 					<RenderConnections />
-					<RenderElements onOpenPanel={openPanelForGoal} />
+					<RenderElements onOpenPanel={openPanelForGoal} panelAnchorId={panelOpen ? panelAnchorId : null} />
 				</div>
 
 				{/* Recommendations: pathway overlay on resource card hover */}
@@ -565,6 +568,7 @@ const CanvasContent = () => {
 							);
 							savePathwayToBoard(selectedResource, originEl?.id);
 							setPanelOpen(false);
+							setPanelAnchorId(null);
 							setSelectedResource(null);
 						}}
 					/>

@@ -31,6 +31,7 @@ const CanvasElement = ({
 	onStartArrow,
 	onCompleteArrow,
 	onOpenPanel,
+	isPanelAnchor = false,
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
@@ -174,6 +175,7 @@ const CanvasElement = ({
 				transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
 				transformOrigin: 'center',
 				cursor: isEditing ? 'text' : 'move',
+				boxShadow: isPanelAnchor ? '0 0 0 3px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.35)' : undefined,
 			}}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
