@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 
-const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections, viewportZoom = 1, viewportOffset = { x: 0, y: 0 }) => {
+const DEFAULT_OFFSET = { x: 0, y: 0 };
+
+const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections, viewportZoom = 1, viewportOffset = DEFAULT_OFFSET) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 	const [isScaling, setIsScaling] = useState(false);
@@ -110,8 +112,8 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 				elementId,
 				corner: scaleInfo.corner,
 				// world-space center derived from element state (not screen pixels)
-				centerX: element ? element.x + (element.width || 0) / 2 : scaleInfo.centerX,
-				centerY: element ? element.y + (element.height || 0) / 2 : scaleInfo.centerY,
+				centerX: element ? element.x + (element.width || 0) * (element.scale || 1) / 2 : scaleInfo.centerX,
+				centerY: element ? element.y + (element.height || 0) * (element.scale || 1) / 2 : scaleInfo.centerY,
 				initialScale: element ? element.scale || 1 : scaleInfo.initialScale,
 				// world-space dimensions (stable, not affected by zoom)
 				initialWidth: element ? element.width || 0 : scaleInfo.initialWidth,
