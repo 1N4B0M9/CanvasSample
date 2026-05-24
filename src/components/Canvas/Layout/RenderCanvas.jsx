@@ -152,11 +152,37 @@ const CanvasContent = () => {
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [selectedIds, handleDeleteSelected]);
 
+	const handleWheel = React.useCallback(
+		(e) => {
+			if (!e.ctrlKey) {
+				handleElementWheel(e);
+				return;
+			}
+			e.preventDefault();
+
+			const currentZoom = viewportZoomRef.current;
+			const currentOffset = viewportOffsetRef.current;
+			const zoomDelta = e.deltaY < 0 ? 0.1 : -0.1;
+			const newZoom = Math.max(0.1, Math.min(5, currentZoom + zoomDelta));
+
+			const canvasRect = canvasRef.current.getBoundingClientRect();
+			const cursorX = e.clientX - canvasRect.left;
+			const cursorY = e.clientY - canvasRect.top;
+
+			setViewportOffset({
+				x: cursorX - (cursorX - currentOffset.x) * (newZoom / currentZoom),
+				y: cursorY - (cursorY - currentOffset.y) * (newZoom / currentZoom),
+			});
+			setViewportZoom(newZoom);
+		},
+		[handleElementWheel, canvasRef],
+	);
+
 	useEffect(() => {
 		const el = canvasRef.current;
 		if (!el) return;
 		el.addEventListener('wheel', handleWheel, { passive: false });
-		return () => el.removeEventListener('wheel', handleWheel);
+		return () => { if (el) el.removeEventListener('wheel', handleWheel); };
 	}, [handleWheel]);
 
 	const openPanelForGoal = React.useCallback((detection) => {
@@ -278,32 +304,6 @@ const CanvasContent = () => {
 		setIsPanning(false);
 		handleElementMouseUp(e);
 	};
-
-	const handleWheel = React.useCallback(
-		(e) => {
-			if (!e.ctrlKey) {
-				handleElementWheel(e);
-				return;
-			}
-			e.preventDefault();
-
-			const currentZoom = viewportZoomRef.current;
-			const currentOffset = viewportOffsetRef.current;
-			const zoomDelta = e.deltaY < 0 ? 0.1 : -0.1;
-			const newZoom = Math.max(0.1, Math.min(5, currentZoom + zoomDelta));
-
-			const canvasRect = canvasRef.current.getBoundingClientRect();
-			const cursorX = e.clientX - canvasRect.left;
-			const cursorY = e.clientY - canvasRect.top;
-
-			setViewportOffset({
-				x: cursorX - (cursorX - currentOffset.x) * (newZoom / currentZoom),
-				y: cursorY - (cursorY - currentOffset.y) * (newZoom / currentZoom),
-			});
-			setViewportZoom(newZoom);
-		},
-		[handleElementWheel, canvasRef],
-	);
 
 	// Handlers for SidePanel actions
 	const handleAddText = () => {
