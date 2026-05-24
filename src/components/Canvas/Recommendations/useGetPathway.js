@@ -1,11 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../../firebase/firebase';
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db } from '../../../firebase/firebase';
 
-/**
- * Wraps the getPathway Firebase callable function.
- * Caches results in-memory for the session — same goalType = no refetch.
- */
+const WORKER_URL = process.env.REACT_APP_PATHWAY_WORKER_URL || 'https://project-rebound-getpathway.<your-subdomain>.workers.dev';
+
 export default function useGetPathway() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -24,17 +22,40 @@ export default function useGetPathway() {
     setError(null);
 
     try {
-      const getPathway = httpsCallable(functions, 'getPathway');
-      const result = await getPathway({
-        goalType,
-        domain,
-        location: 'Pittsburgh PA',
-        year: new Date().getFullYear(),
+      // Query Firestore client-side — authenticated users can read `resources`
+      const q = query(
+        collection(db, 'resources'),
+        where('active', '==', true),
+        where('goalTypes', 'array-contains', goalType),
+        orderBy('lastVerified', 'desc'),
+        limit(5),
+      );
+      const snapshot = await getDocs(q);
+      const resources = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      const response = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goalType, resources }),
       });
 
-      cache.current[goalType] = result.data;
-      setData(result.data);
-      return result.data;
+      if (!response.ok) throw new Error(`Worker error: ${response.status}`);
+      const { enrichments, sonarResources } = await response.json();
+
+      const enrichedResources = resources.map((r) => ({
+        ...r,
+        sonarEnrichment: enrichments?.[r.name] ?? null,
+      }));
+
+      const result = {
+        resources: enrichedResources,
+        sonarResources: sonarResources ?? [],
+        queriedAt: Date.now(),
+      };
+
+      cache.current[goalType] = result;
+      setData(result);
+      return result;
     } catch (err) {
       setError(err.message || 'Failed to load resources');
       return null;
