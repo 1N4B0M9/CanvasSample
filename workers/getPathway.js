@@ -20,6 +20,8 @@ const CORS_HEADERS = {
 };
 
 async function callSonarEnrichment(resources, goalType, apiKey) {
+  if (resources.length === 0) return {};
+
   const orgNames = resources.map((r) => r.name).join('\n');
   const year = new Date().getFullYear();
 
@@ -44,7 +46,8 @@ async function callSonarEnrichment(resources, goalType, apiKey) {
 
   if (!response.ok) return {};
   const data = await response.json();
-  const raw = data.choices[0].message.content.trim();
+  const raw = data?.choices?.[0]?.message?.content?.trim();
+  if (!raw) return {};
   try {
     return JSON.parse(raw);
   } catch {
@@ -54,7 +57,7 @@ async function callSonarEnrichment(resources, goalType, apiKey) {
 
 async function callSonarDiscovery(goalType, existingNames, apiKey) {
   const year = new Date().getFullYear();
-  const knownList = existingNames.join(', ');
+  const knownList = existingNames.length > 0 ? existingNames.join(', ') : 'none listed';
 
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
@@ -77,9 +80,11 @@ async function callSonarDiscovery(goalType, existingNames, apiKey) {
 
   if (!response.ok) return [];
   const data = await response.json();
-  const raw = data.choices[0].message.content.trim();
+  const raw = data?.choices?.[0]?.message?.content?.trim();
+  if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
     return parsed.slice(0, 3).map((org, i) => ({
       ...org,
       id: `sonar-${goalType}-${i}`,
