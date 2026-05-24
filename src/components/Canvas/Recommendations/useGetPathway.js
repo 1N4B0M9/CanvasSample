@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebase/firebase';
 
-const WORKER_URL = process.env.REACT_APP_PATHWAY_WORKER_URL || 'https://project-rebound-getpathway.<your-subdomain>.workers.dev';
+const WORKER_URL = process.env.REACT_APP_PATHWAY_WORKER_URL;
 
 export default function useGetPathway() {
   const [data, setData] = useState(null);
@@ -21,6 +21,14 @@ export default function useGetPathway() {
     setLoading(true);
     setError(null);
 
+    if (!WORKER_URL) {
+      setError('REACT_APP_PATHWAY_WORKER_URL is not configured');
+      setLoading(false);
+      return null;
+    }
+
+    // domain was forwarded to the old Cloud Function but is not used by the Cloudflare Worker
+
     try {
       // Query Firestore client-side — authenticated users can read `resources`
       const q = query(
@@ -37,6 +45,7 @@ export default function useGetPathway() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ goalType, resources }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!response.ok) throw new Error(`Worker error: ${response.status}`);
