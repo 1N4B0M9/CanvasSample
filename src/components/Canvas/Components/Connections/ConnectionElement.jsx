@@ -107,7 +107,7 @@ const BaseConnection = ({
 	const displayDashArray = isSelected ? '5,3' : dashArray;
 
 	return (
-		<svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: 0 }} pointerEvents="none" {...svgProps}>
+		<svg className="absolute top-0 left-0 w-full h-full" overflow="visible" style={{ zIndex: 0 }} pointerEvents="none" {...svgProps}>
 			{/* Visible connection line */}
 			<line
 				x1={startX}
@@ -150,7 +150,7 @@ export const FullConnection = ({ connection, elements, isSelected = false, onSel
 	return (
 		<>
 			{/* Invisible wider line for easier selection */}
-			<svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: 0 }} pointerEvents="none">
+			<svg className="absolute top-0 left-0 w-full h-full" overflow="visible" style={{ zIndex: 0 }} pointerEvents="none">
 				<line
 					x1={startX}
 					y1={startY}
@@ -300,7 +300,7 @@ export const Arrow = ({ connection, elements, isSelected = false, onSelect, onDe
 	return (
 		<>
 			{/* Invisible wider line for easier selection */}
-			<svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: 0 }} pointerEvents="none">
+			<svg className="absolute top-0 left-0 w-full h-full" overflow="visible" style={{ zIndex: 0 }} pointerEvents="none">
 				<line
 					x1={startX}
 					y1={startY}
