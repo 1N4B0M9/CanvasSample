@@ -127,26 +127,32 @@ async function callSubSteps({ goalText, stepText, userQuery }, apiKey) {
     }),
   });
 
-  if (!response.ok) throw new Error(`Perplexity error: ${response.status}`);
+  if (!response.ok) throw new Error('Upstream service unavailable');
 
   const data = await response.json();
   const raw = data?.choices?.[0]?.message?.content?.trim();
   if (!raw) throw new Error('Empty response from Perplexity');
 
-  const parsed = JSON.parse(raw);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error('Perplexity returned non-JSON content');
+  }
   if (!parsed?.steps || !Array.isArray(parsed.steps)) {
     throw new Error('Invalid response shape from Perplexity');
   }
 
-  return {
-    steps: parsed.steps
-      .slice(0, 5)
-      .map((s) => ({
-        text: String(s.text ?? '').trim(),
-        label: VALID_LABELS.has(s.label) ? s.label : 'then',
-      }))
-      .filter((s) => s.text),
-  };
+  const steps = parsed.steps
+    .slice(0, 5)
+    .map((s) => ({
+      text: String(s.text ?? '').trim(),
+      label: VALID_LABELS.has(s.label) ? s.label : 'then',
+    }))
+    .filter((s) => s.text);
+
+  if (steps.length === 0) throw new Error('Perplexity returned no usable steps');
+  return { steps };
 }
 
 async function handleSubSteps(request, env) {
@@ -162,7 +168,12 @@ async function handleSubSteps(request, env) {
 
   const { goalText, stepText, userQuery } = body;
 
-  if (!goalText || !stepText || !userQuery) {
+  const missingField =
+    typeof goalText !== 'string' || !goalText.trim() ||
+    typeof stepText !== 'string' || !stepText.trim() ||
+    typeof userQuery !== 'string' || !userQuery.trim();
+
+  if (missingField) {
     return new Response(
       JSON.stringify({ error: 'goalText, stepText, and userQuery are required' }),
       { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
