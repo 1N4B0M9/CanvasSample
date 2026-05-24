@@ -67,6 +67,11 @@ const CanvasContent = () => {
 	const isSpaceDownRef = useRef(false);
 	const panStartRef = React.useRef(null);
 
+	const viewportZoomRef = useRef(viewportZoom);
+	const viewportOffsetRef = useRef(viewportOffset);
+	useEffect(() => { viewportZoomRef.current = viewportZoom; }, [viewportZoom]);
+	useEffect(() => { viewportOffsetRef.current = viewportOffset; }, [viewportOffset]);
+
 	React.useEffect(() => {
 		const onKeyDown = (e) => {
 			if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
@@ -146,6 +151,13 @@ const CanvasContent = () => {
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [selectedIds, handleDeleteSelected]);
+
+	useEffect(() => {
+		const el = canvasRef.current;
+		if (!el) return;
+		el.addEventListener('wheel', handleWheel, { passive: false });
+		return () => el.removeEventListener('wheel', handleWheel);
+	}, [handleWheel]);
 
 	const openPanelForGoal = React.useCallback((detection) => {
 		setPanelGoal({ goalType: detection.goalType, domain: detection.domain });
@@ -275,7 +287,8 @@ const CanvasContent = () => {
 			}
 			e.preventDefault();
 
-			const currentZoom = viewportZoom;   // snapshot before updates
+			const currentZoom = viewportZoomRef.current;
+			const currentOffset = viewportOffsetRef.current;
 			const zoomDelta = e.deltaY < 0 ? 0.1 : -0.1;
 			const newZoom = Math.max(0.1, Math.min(5, currentZoom + zoomDelta));
 
@@ -284,12 +297,12 @@ const CanvasContent = () => {
 			const cursorY = e.clientY - canvasRect.top;
 
 			setViewportOffset({
-				x: cursorX - (cursorX - viewportOffset.x) * (newZoom / currentZoom),
-				y: cursorY - (cursorY - viewportOffset.y) * (newZoom / currentZoom),
+				x: cursorX - (cursorX - currentOffset.x) * (newZoom / currentZoom),
+				y: cursorY - (cursorY - currentOffset.y) * (newZoom / currentZoom),
 			});
 			setViewportZoom(newZoom);
 		},
-		[handleElementWheel, viewportZoom, viewportOffset, canvasRef],
+		[handleElementWheel, canvasRef],
 	);
 
 	// Handlers for SidePanel actions
@@ -520,7 +533,6 @@ const CanvasContent = () => {
 				onMouseMove={handleMouseMove}
 				onMouseUp={handleMouseUp}
 				onMouseLeave={handleMouseUp}
-				onWheel={handleWheel}
 			>
 				{/* Semi-transparent overlay when background is present to improve element visibility */}
 				{backgroundImage && (
@@ -565,7 +577,7 @@ const CanvasContent = () => {
 				<div style={{ position: 'absolute', bottom: '1rem', left: '1rem', zIndex: 50 }}>
 					<ViewportHUD
 						zoom={viewportZoom}
-						onZoomIn={() => setViewportZoom((z) => Math.min(3, parseFloat((z * 1.1).toFixed(3))))}
+						onZoomIn={() => setViewportZoom((z) => Math.min(5, parseFloat((z * 1.1).toFixed(3))))}
 						onZoomOut={() => setViewportZoom((z) => Math.max(0.1, parseFloat((z * 0.9).toFixed(3))))}
 						onReset={() => {
 							setViewportZoom(1);
