@@ -170,6 +170,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 		connections,
 		setConnectionsWithSave,
 		viewportZoom,
+		viewportOffset,
 	);
 
 	// Create an enhanced version of addTextElement that centers elements
