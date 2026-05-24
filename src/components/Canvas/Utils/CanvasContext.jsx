@@ -217,7 +217,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 	const addArrow = useCallback((startId, endId, label) => {
 		const newArrow = {
-			id: `arrow-substep-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+			id: `arrow-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
 			startId,
 			endId,
 			type: 'arrow',

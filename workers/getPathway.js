@@ -97,11 +97,97 @@ async function callSonarDiscovery(goalType, existingNames, apiKey) {
   }
 }
 
-function handleSubSteps(request, env) {
-  return new Response(JSON.stringify({ error: 'Not implemented yet' }), {
-    status: 501,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+const VALID_LABELS = new Set(['then', 'requires', 'leads to', 'first', 'finally']);
+
+async function callSubSteps({ goalText, stepText, userQuery }, apiKey) {
+  const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'sonar',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a recovery coach helping people re-entering society. Return only valid JSON, no markdown.',
+        },
+        {
+          role: 'user',
+          content:
+            `A person is working toward this goal: "${goalText}". ` +
+            `They are on this step: "${stepText}". ` +
+            `They asked: "${userQuery}". ` +
+            `Return 3–5 concrete, actionable sub-steps that help them achieve this specific step. ` +
+            `For each sub-step, include a short relationship label (one of: then, requires, leads to, first, finally) ` +
+            `describing how it follows from the previous step.\n\n` +
+            `Reply ONLY as JSON: { "steps": [{ "text": string, "label": string }] }`,
+        },
+      ],
+      max_tokens: 600,
+    }),
   });
+
+  if (!response.ok) throw new Error(`Perplexity error: ${response.status}`);
+
+  const data = await response.json();
+  const raw = data?.choices?.[0]?.message?.content?.trim();
+  if (!raw) throw new Error('Empty response from Perplexity');
+
+  const parsed = JSON.parse(raw);
+  if (!parsed?.steps || !Array.isArray(parsed.steps)) {
+    throw new Error('Invalid response shape from Perplexity');
+  }
+
+  return {
+    steps: parsed.steps
+      .slice(0, 5)
+      .map((s) => ({
+        text: String(s.text ?? '').trim(),
+        label: VALID_LABELS.has(s.label) ? s.label : 'then',
+      }))
+      .filter((s) => s.text),
+  };
+}
+
+async function handleSubSteps(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { goalText, stepText, userQuery } = body;
+
+  if (!goalText || !stepText || !userQuery) {
+    return new Response(
+      JSON.stringify({ error: 'goalText, stepText, and userQuery are required' }),
+      { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    );
+  }
+
+  const apiKey = env.PERPLEXITY_API_KEY;
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+      status: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    const result = await callSubSteps({ goalText, stepText, userQuery }, apiKey);
+    return new Response(JSON.stringify(result), {
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: err.message || 'Failed to generate sub-steps' }),
+      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    );
+  }
 }
 
 async function handlePathway(request, env) {
