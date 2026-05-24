@@ -97,7 +97,7 @@ async function callSonarDiscovery(goalType, existingNames, apiKey) {
   }
 }
 
-async function handleSubSteps(request, env) {
+function handleSubSteps(request, env) {
   return new Response(JSON.stringify({ error: 'Not implemented yet' }), {
     status: 501,
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
@@ -166,6 +166,13 @@ export default {
 
     if (pathname === '/substeps') {
       return handleSubSteps(request, env);
+    }
+
+    if (pathname !== '/' && pathname !== '/pathway') {
+      return new Response(JSON.stringify({ error: 'Not found' }), {
+        status: 404,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
     }
 
     return handlePathway(request, env);
