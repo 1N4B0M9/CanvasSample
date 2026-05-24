@@ -97,6 +97,61 @@ async function callSonarDiscovery(goalType, existingNames, apiKey) {
   }
 }
 
+async function handleSubSteps(request, env) {
+  return new Response(JSON.stringify({ error: 'Not implemented yet' }), {
+    status: 501,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  });
+}
+
+async function handlePathway(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { goalType, resources } = body;
+
+  if (!goalType || !VALID_GOAL_TYPES.has(goalType)) {
+    return new Response(JSON.stringify({ error: `Invalid goalType: "${goalType}"` }), {
+      status: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!Array.isArray(resources)) {
+    return new Response(JSON.stringify({ error: 'resources must be an array' }), {
+      status: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const apiKey = env.PERPLEXITY_API_KEY;
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+      status: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const existingNames = resources.map((r) => r.name);
+
+  const [enrichments, sonarResources] = await Promise.all([
+    callSonarEnrichment(resources, goalType, apiKey).catch(() => ({})),
+    callSonarDiscovery(goalType, existingNames, apiKey).catch(() => []),
+  ]);
+
+  return new Response(
+    JSON.stringify({ enrichments, sonarResources, queriedAt: Date.now() }),
+    { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+  );
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
@@ -107,50 +162,12 @@ export default {
       return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
     }
 
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      });
+    const { pathname } = new URL(request.url);
+
+    if (pathname === '/substeps') {
+      return handleSubSteps(request, env);
     }
 
-    const { goalType, resources } = body;
-
-    if (!goalType || !VALID_GOAL_TYPES.has(goalType)) {
-      return new Response(JSON.stringify({ error: `Invalid goalType: "${goalType}"` }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!Array.isArray(resources)) {
-      return new Response(JSON.stringify({ error: 'resources must be an array' }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const apiKey = env.PERPLEXITY_API_KEY;
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
-        status: 500,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const existingNames = resources.map((r) => r.name);
-
-    const [enrichments, sonarResources] = await Promise.all([
-      callSonarEnrichment(resources, goalType, apiKey).catch(() => ({})),
-      callSonarDiscovery(goalType, existingNames, apiKey).catch(() => []),
-    ]);
-
-    return new Response(
-      JSON.stringify({ enrichments, sonarResources, queriedAt: Date.now() }),
-      { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    );
+    return handlePathway(request, env);
   },
 };
