@@ -267,23 +267,30 @@ const CanvasContent = () => {
 		handleElementMouseUp(e);
 	};
 
-	const handleWheel = (e) => {
-		if (e.ctrlKey) {
+	const handleWheel = React.useCallback(
+		(e) => {
+			if (!e.ctrlKey) {
+				handleElementWheel(e);
+				return;
+			}
 			e.preventDefault();
-			const rect = canvasRef.current.getBoundingClientRect();
-			const mouseX = e.clientX - rect.left;
-			const mouseY = e.clientY - rect.top;
-			const factor = e.deltaY > 0 ? 0.9 : 1.1;
-			const newZoom = Math.min(3, Math.max(0.1, viewportZoom * factor));
+
+			const currentZoom = viewportZoom;   // snapshot before updates
+			const zoomDelta = e.deltaY < 0 ? 0.1 : -0.1;
+			const newZoom = Math.max(0.1, Math.min(5, currentZoom + zoomDelta));
+
+			const canvasRect = canvasRef.current.getBoundingClientRect();
+			const cursorX = e.clientX - canvasRect.left;
+			const cursorY = e.clientY - canvasRect.top;
+
+			setViewportOffset({
+				x: cursorX - (cursorX - viewportOffset.x) * (newZoom / currentZoom),
+				y: cursorY - (cursorY - viewportOffset.y) * (newZoom / currentZoom),
+			});
 			setViewportZoom(newZoom);
-			setViewportOffset((prev) => ({
-				x: mouseX - (mouseX - prev.x) * (newZoom / viewportZoom),
-				y: mouseY - (mouseY - prev.y) * (newZoom / viewportZoom),
-			}));
-			return;
-		}
-		handleElementWheel(e);
-	};
+		},
+		[handleElementWheel, viewportZoom, viewportOffset, canvasRef],
+	);
 
 	// Handlers for SidePanel actions
 	const handleAddText = () => {
