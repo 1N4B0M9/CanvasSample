@@ -4,7 +4,7 @@
  * This version ensures the canvas uses only the available space and exports correctly
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { CanvasProvider, useCanvas } from '../Utils/CanvasContext';
 import RenderElements from './RenderElements';
@@ -64,17 +64,20 @@ const CanvasContent = () => {
 
 	const [isPanning, setIsPanning] = React.useState(false);
 	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
+	const isSpaceDownRef = useRef(false);
 	const panStartRef = React.useRef(null);
 
 	React.useEffect(() => {
 		const onKeyDown = (e) => {
 			if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
 				e.preventDefault();
+				isSpaceDownRef.current = true;
 				setIsSpaceDown(true);
 			}
 		};
 		const onKeyUp = (e) => {
 			if (e.code === 'Space') {
+				isSpaceDownRef.current = false;
 				setIsSpaceDown(false);
 				setIsPanning(false);
 			}
@@ -176,7 +179,8 @@ const CanvasContent = () => {
 	};
 
 	const handleMouseDown = (e) => {
-		if (isSpaceDown) {
+		if (isSpaceDownRef.current) {
+			e.stopPropagation();
 			setIsPanning(true);
 			panStartRef.current = {
 				mouseX: e.clientX,
