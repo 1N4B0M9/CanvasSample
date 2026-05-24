@@ -496,6 +496,7 @@ const CanvasContent = () => {
 						? detectGoal(goalEl.content)
 						: { goalType: null, domain: null };
 					setPanelGoal({ goalType: detected.goalType, domain: detected.domain });
+					setPanelAnchorId(null);
 					setPanelOpen(true);
 				}}
 			/>
