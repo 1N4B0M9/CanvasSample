@@ -41,12 +41,20 @@ export default function useGetPathway() {
       const snapshot = await getDocs(q);
       const resources = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-      const response = await fetch(WORKER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goalType, resources }),
-        signal: AbortSignal.timeout(15_000),
-      });
+      const controller = new AbortController();
+      // AbortSignal.timeout() is not supported in Safari < 17.4 — use controller + setTimeout
+      const timeoutId = setTimeout(() => controller.abort(), 15_000);
+      let response;
+      try {
+        response = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ goalType, resources }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) throw new Error(`Worker error: ${response.status}`);
       const { enrichments, sonarResources } = await response.json();
