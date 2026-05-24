@@ -525,7 +525,10 @@ const CanvasContent = () => {
 						transform: `translate(${viewportOffset.x}px, ${viewportOffset.y}px) scale(${viewportZoom})`,
 						transformOrigin: '0 0',
 						position: 'absolute',
-						inset: 0,
+						width: 10000,
+						height: 10000,
+						left: -5000,
+						top: -5000,
 						pointerEvents: isPanning ? 'none' : 'auto',
 					}}
 				>
