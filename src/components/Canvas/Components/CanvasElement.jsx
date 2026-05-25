@@ -118,10 +118,18 @@ const CanvasElement = ({
 			existingElements: elements,
 		});
 
+		const addedEls = [];
 		for (let i = 0; i < newElements.length; i++) {
 			const el = { ...newElements[i], goalText, ...(result.citations?.length && { citations: result.citations }) };
 			addElement(el);
-			addArrow(element.id, el.id, result.steps[i].label);
+			addedEls.push(el);
+		}
+
+		if (addedEls.length > 0) {
+			addArrow(element.id, addedEls[0].id, result.steps[0]?.label ?? '');
+			for (let i = 0; i < addedEls.length - 1; i++) {
+				addArrow(addedEls[i].id, addedEls[i + 1].id, result.steps[i + 1]?.label ?? '');
+			}
 		}
 
 		setShowAskBubble(false);
