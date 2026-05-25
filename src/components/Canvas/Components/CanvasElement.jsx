@@ -126,7 +126,7 @@ const CanvasElement = ({
 		}
 
 		if (addedEls.length > 0) {
-			addArrow(element.id, addedEls[0].id, result.steps[0]?.label ?? '');
+			addArrow(element.id, addedEls[0].id, '');
 			for (let i = 0; i < addedEls.length - 1; i++) {
 				addArrow(addedEls[i].id, addedEls[i + 1].id, result.steps[i + 1]?.label ?? '');
 			}
