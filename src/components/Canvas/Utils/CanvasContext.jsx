@@ -676,6 +676,13 @@ export const CanvasProvider = ({ children, canvasId }) => {
 					fontSize: 13,
 					fontFamily: 'Arial',
 					color: '#111827',
+					...(
+						step.citations?.length
+							? { citations: step.citations }
+							: resource.citations?.length
+							? { citations: resource.citations }
+							: {}
+					),
 				});
 			}
 
