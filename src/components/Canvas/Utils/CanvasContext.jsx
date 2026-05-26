@@ -663,6 +663,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			const newElements = [];
 			const newArrows = [];
 			const stepIds = [];
+			const citationSource = resource.source === 'sonar' ? 'sonar' : 'local';
 
 			for (const step of resource.pathwaySteps) {
 				const stepId = `text-step-${baseId}-${step.order}`;
@@ -680,13 +681,17 @@ export const CanvasProvider = ({ children, canvasId }) => {
 					fontSize: 13,
 					fontFamily: 'Arial',
 					color: '#111827',
-					...(
-						step.citations?.length
-							? { citations: step.citations }
-							: resource.citations?.length
-							? { citations: resource.citations }
-							: {}
-					),
+					...((() => {
+						const raw = step.citations ?? resource.citations ?? [];
+						if (!raw.length) return {};
+						return {
+							citations: raw.map((c) =>
+								typeof c === 'string'
+									? { url: c, title: c, date: null, source: citationSource }
+									: { ...c, source: citationSource }
+							),
+						};
+					})()),
 				});
 			}
 
@@ -755,10 +760,19 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			const firstId = newElements[0]?.id ?? null;
 			setElementsWithSave((prev) => [...prev, ...newElements]);
 			setArrowsWithSave((prev) => [...prev, ...newArrows]);
+			setBoardResources((prev) => [
+				...prev,
+				{
+					id: `${resource.id ?? 'res'}-${baseId}`,
+					name: resource.name,
+					source: resource.source ?? 'local',
+					stepIds: [...stepIds],
+				},
+			]);
 			setSelectedIds(new Set(newElements.map((el) => el.id)));
 			setSelectedId(firstId);
 		},
-		[elements, setElementsWithSave, setArrowsWithSave],
+		[elements, setElementsWithSave, setArrowsWithSave, setBoardResources],
 	);
 
 	// Toggle arrow creation mode
