@@ -15,6 +15,8 @@ import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
 import DeleteConfirmModal from '../Components/DeleteConfirmModal';
 import SparkleButton from '../Recommendations/SparkleButton';
 import ResourcePanel from '../Recommendations/ResourcePanel';
+import BoardResourcesSidebar from '../Recommendations/BoardResourcesSidebar';
+import FindResourcesModal from '../Recommendations/FindResourcesModal';
 import PathwayOverlay from '../Recommendations/PathwayOverlay';
 import { detectGoal } from '../Recommendations/useGoalDetection';
 import ViewportHUD from './ViewportHUD';
@@ -46,6 +48,7 @@ const CanvasContent = () => {
 		selectedIds,
 		deleteSelected,
 		savePathwayToBoard,
+		boardResources,
 		viewportOffset,
 		viewportZoom,
 		setViewportOffset,
@@ -60,8 +63,8 @@ const CanvasContent = () => {
 	const [panelOpen, setPanelOpen] = React.useState(false);
 	const [panelGoal, setPanelGoal] = React.useState({ goalType: null, domain: null });
 	const [selectedResource, setSelectedResource] = React.useState(null);
-	const [resourceCount, setResourceCount] = React.useState(0);
 	const [panelAnchorId, setPanelAnchorId] = React.useState(null);
+	const [boardSidebarOpen, setBoardSidebarOpen] = React.useState(false);
 
 	const [isPanning, setIsPanning] = React.useState(false);
 	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
@@ -95,17 +98,6 @@ const CanvasContent = () => {
 			window.removeEventListener('keyup', onKeyUp);
 		};
 	}, []);
-
-	// Debounced count of text elements that contain a detectable goal (3s delay)
-	React.useEffect(() => {
-		const timer = setTimeout(() => {
-			const count = elements.filter(
-				(el) => el.type === 'text' && el.content && detectGoal(el.content) !== null,
-			).length;
-			setResourceCount(count);
-		}, 3000);
-		return () => clearTimeout(timer);
-	}, [elements]);
 
 	const handleDeleteSelected = React.useCallback(() => {
 		const items = [];
@@ -487,23 +479,13 @@ const CanvasContent = () => {
 
 			{/* Recommendations: floating sparkle button */}
 			<SparkleButton
-				resourceCount={resourceCount}
-				onOpen={() => {
-					const goalEl = [...elements].reverse().find(
-						(el) => el.type === 'text' && el.content && detectGoal(el.content),
-					);
-					const detected = goalEl
-						? detectGoal(goalEl.content)
-						: { goalType: null, domain: null };
-					setPanelGoal({ goalType: detected.goalType, domain: detected.domain });
-					setPanelAnchorId(null);
-					setPanelOpen(true);
-				}}
+				resourceCount={boardResources.length}
+				onOpen={() => setBoardSidebarOpen(true)}
 			/>
 
-			{/* Recommendations: slide-in resource panel */}
+			{/* Find Resources modal — triggered by ✦ Find resources on element */}
 			{panelOpen && (
-				<ResourcePanel
+				<FindResourcesModal
 					goalType={panelGoal.goalType}
 					domain={panelGoal.domain}
 					onClose={() => {
@@ -514,6 +496,11 @@ const CanvasContent = () => {
 					onSelectResource={(resource) => setSelectedResource(resource)}
 					selectedResourceId={selectedResource?.id}
 				/>
+			)}
+
+			{/* Board resources sidebar — triggered by Resources button */}
+			{boardSidebarOpen && (
+				<BoardResourcesSidebar onClose={() => setBoardSidebarOpen(false)} />
 			)}
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
