@@ -25,7 +25,8 @@ const BoardResourcesSidebar = ({ onClose }) => {
             No resources on your board yet. Tap ✦ on any element to find and add resources.
           </p>
         ) : (
-          boardResources.map((br) => (
+          <div role="list" className="flex flex-col gap-2">
+            {boardResources.map((br) => (
             <div
               key={br.id}
               role="listitem"
@@ -48,7 +49,8 @@ const BoardResourcesSidebar = ({ onClose }) => {
                 </span>
               </div>
             </div>
-          ))
+          ))}
+          </div>
         )}
       </div>
     </div>
