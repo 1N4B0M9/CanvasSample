@@ -120,7 +120,14 @@ const CanvasElement = ({
 
 		const addedEls = [];
 		for (let i = 0; i < newElements.length; i++) {
-			const el = { ...newElements[i], goalText, ...(result.citations?.length && { citations: result.citations }) };
+			const taggedCitations = (result.searchResults ?? []).map(
+				({ title, url, date }) => ({ url, title, date: date ?? null, source: 'sonar' })
+			);
+			const el = {
+				...newElements[i],
+				goalText,
+				...(taggedCitations.length && { citations: taggedCitations }),
+			};
 			addElement(el);
 			addedEls.push(el);
 		}
