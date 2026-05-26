@@ -44,7 +44,7 @@ const BoardResourcesSidebar = ({ onClose }) => {
                       : { background: '#eff6ff', color: '#1e40af' }
                   }
                 >
-                  {br.source === 'sonar' ? '⚡ Sonar' : '🗄 Local'}
+                  {br.source === 'sonar' ? '⚡ Live' : '🗄 Local'}
                 </span>
               </div>
             </div>

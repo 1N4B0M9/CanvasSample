@@ -40,7 +40,7 @@ test('shows Local badge for local source', () => {
 
 test('shows Live badge for sonar source', () => {
   useCanvas.mockReturnValue({
-    boardResources: [{ id: 'r1', name: 'Live Agency', source: 'sonar', stepIds: ['s1'] }],
+    boardResources: [{ id: 'r1', name: 'Sonar Agency', source: 'sonar', stepIds: ['s1'] }],
     setHighlightedStepIds: mockSetHighlightedStepIds,
   });
   render(<BoardResourcesSidebar onClose={jest.fn()} />);
