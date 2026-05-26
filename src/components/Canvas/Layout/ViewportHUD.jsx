@@ -2,8 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 // small HUD showing current zoom level with zoom in/out/reset controls
-const ViewportHUD = ({ zoom, onZoomIn, onZoomOut, onReset }) => {
-	return (
+const ViewportHUD = ({ zoom, onZoomIn, onZoomOut, onReset }) => (
 		<div className="bg-white rounded-lg shadow border border-gray-200 px-2 py-1 flex items-center gap-1" style={{ zIndex: 50 }}>
 			<button
 				className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 text-sm font-semibold"
@@ -29,7 +28,6 @@ const ViewportHUD = ({ zoom, onZoomIn, onZoomOut, onReset }) => {
 			<span className="ml-2 text-xs text-gray-400 hidden sm:block">Space+drag · Ctrl+scroll</span>
 		</div>
 	);
-};
 
 ViewportHUD.propTypes = {
 	zoom: PropTypes.number.isRequired,

@@ -52,7 +52,7 @@ const ConnectionLabel = ({ id, label, isSelected, midX, midY, color, onLabelChan
 	if (!label) return null;
 
 	// truncate long labels so they don't blow out the pill
-	const display = label.length > 18 ? label.substring(0, 18) + '…' : label;
+	const display = label.length > 18 ? `${label.substring(0, 18)  }…` : label;
 
 	return (
 		<g pointerEvents="auto">

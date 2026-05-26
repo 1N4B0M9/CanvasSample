@@ -23,7 +23,7 @@ test('shows input when isEditingLabel is true', () => {
   render(
     <ImageElement
       element={base}
-      isEditingLabel={true}
+      isEditingLabel
       setIsEditingLabel={jest.fn()}
       onUpdate={jest.fn()}
     />,
@@ -37,7 +37,7 @@ test('calls onUpdate with trimmed label on blur', () => {
   render(
     <ImageElement
       element={base}
-      isEditingLabel={true}
+      isEditingLabel
       setIsEditingLabel={setIsEditingLabel}
       onUpdate={onUpdate}
     />,
@@ -54,7 +54,7 @@ test('calls onUpdate with undefined when label is cleared', () => {
   render(
     <ImageElement
       element={{ ...base, label: 'old label' }}
-      isEditingLabel={true}
+      isEditingLabel
       setIsEditingLabel={jest.fn()}
       onUpdate={onUpdate}
     />,

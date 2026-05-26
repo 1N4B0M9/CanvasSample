@@ -37,7 +37,7 @@ test('FullConnection: shows input when selected', () => {
       <FullConnection
         connection={conn}
         elements={elements}
-        isSelected={true}
+        isSelected
         onSelect={jest.fn()}
         onDelete={jest.fn()}
         onLabelChange={jest.fn()}
@@ -54,7 +54,7 @@ test('FullConnection: calls onLabelChange with trimmed value on blur', () => {
       <FullConnection
         connection={conn}
         elements={elements}
-        isSelected={true}
+        isSelected
         onSelect={jest.fn()}
         onDelete={jest.fn()}
         onLabelChange={onLabelChange}
@@ -90,7 +90,7 @@ test('Arrow: calls onLabelChange with undefined when input is cleared', () => {
       <Arrow
         connection={{ ...conn, label: 'old' }}
         elements={elements}
-        isSelected={true}
+        isSelected
         onSelect={jest.fn()}
         onDelete={jest.fn()}
         onLabelChange={onLabelChange}
