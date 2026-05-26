@@ -28,18 +28,9 @@ const ResourcePanel = ({ goalType, domain, onClose, onSelectResource, selectedRe
   ];
 
   return (
-    <>
-      {/* Canvas dim layer */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'rgba(0,0,0,0.15)', zIndex: 40 }}
-      />
-
-      {/* Panel */}
-      <div
-        className="absolute top-0 right-0 h-full bg-white shadow-xl flex flex-col"
-        style={{ width: 240, zIndex: 50 }}
-      >
+    <div
+      className="h-full bg-white flex flex-col"
+    >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <span className="font-semibold text-sm text-gray-900">✨ Resources for you</span>
@@ -111,8 +102,7 @@ const ResourcePanel = ({ goalType, domain, onClose, onSelectResource, selectedRe
               </div>
             ))}
         </div>
-      </div>
-    </>
+    </div>
   );
 };
 
