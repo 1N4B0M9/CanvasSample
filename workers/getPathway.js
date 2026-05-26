@@ -124,6 +124,7 @@ async function callSubSteps({ goalText, stepText, userQuery }, apiKey) {
         },
       ],
       max_tokens: 600,
+      return_citations: true,
     }),
   });
 
@@ -152,7 +153,7 @@ async function callSubSteps({ goalText, stepText, userQuery }, apiKey) {
     .filter((s) => s.text);
 
   if (steps.length === 0) throw new Error('Perplexity returned no usable steps');
-  return { steps };
+  return { steps, searchResults: data.search_results ?? [] };
 }
 
 async function handleSubSteps(request, env) {
