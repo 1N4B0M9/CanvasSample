@@ -2,31 +2,40 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const SparkleHoverBadge = ({ onFindResources, onAsk, citations = [] }) => {
   const [sparkleOpen, setSparkleOpen] = useState(false);
-  const [citationsOpen, setCitationsOpen] = useState(false);
+  const [citationPanel, setCitationPanel] = useState(null); // null | 'sonar' | 'local'
   const containerRef = useRef(null);
 
-  // close both panels on outside click
   useEffect(() => {
-    if (!sparkleOpen && !citationsOpen) return;
+    if (!sparkleOpen && !citationPanel) return;
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setSparkleOpen(false);
-        setCitationsOpen(false);
+        setCitationPanel(null);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [sparkleOpen, citationsOpen]);
+  }, [sparkleOpen, citationPanel]);
 
   const toggleSparkle = () => {
     setSparkleOpen((prev) => !prev);
-    setCitationsOpen(false);
+    setCitationPanel(null);
   };
 
-  const toggleCitations = () => {
-    setCitationsOpen((prev) => !prev);
+  const toggleCitationPanel = (type) => {
+    setCitationPanel((prev) => (prev === type ? null : type));
     setSparkleOpen(false);
   };
+
+  const normalized = citations.map((c) =>
+    typeof c === 'string'
+      ? { url: c, title: c, date: null, source: 'local' }
+      : c
+  );
+  const sonarCitations = normalized.filter((c) => c.source === 'sonar');
+  const localCitations = normalized.filter((c) => c.source === 'local');
+
+  const activeCitations = citationPanel === 'sonar' ? sonarCitations : localCitations;
 
   return (
     <div
@@ -35,19 +44,26 @@ const SparkleHoverBadge = ({ onFindResources, onAsk, citations = [] }) => {
       style={{ top: -10, right: -10, zIndex: 40 }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Citations panel */}
-      {citationsOpen && citations.length > 0 && (
+      {/* Citation panel dropdown */}
+      {citationPanel && activeCitations.length > 0 && (
         <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-64">
-          <p className="text-xs font-semibold text-gray-700 mb-2">Sources</p>
-          {citations.map((url, i) => (
+          <p className="text-xs font-semibold text-gray-700 mb-2">
+            {citationPanel === 'sonar' ? '🌐 Live Sources' : '🗄️ Local Sources'}
+          </p>
+          {activeCitations.map((c) => (
             <a
-              key={url}
-              href={url}
+              key={c.url}
+              href={c.url}
               target="_blank"
               rel="noreferrer"
-              className="block text-xs text-blue-600 truncate hover:underline mb-1"
+              className="block text-xs text-blue-600 hover:underline mb-1"
             >
-              {url}
+              <span className="font-medium">
+                {c.title && c.title !== c.url ? c.title : c.url}
+              </span>
+              {c.date && (
+                <span className="text-gray-400 ml-1">· {c.date}</span>
+              )}
             </a>
           ))}
         </div>
@@ -76,18 +92,33 @@ const SparkleHoverBadge = ({ onFindResources, onAsk, citations = [] }) => {
         </div>
       )}
 
-      {/* Paperclip button — only when element has citations */}
-      {citations.length > 0 && (
+      {/* Local (database) source button */}
+      {localCitations.length > 0 && (
         <button
-          title="View sources"
+          title="Local sources"
           className={`w-5 h-5 flex items-center justify-center rounded-full border shadow-sm text-xs ${
-            citationsOpen
+            citationPanel === 'local'
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+          }`}
+          onClick={() => toggleCitationPanel('local')}
+        >
+          🗄️
+        </button>
+      )}
+
+      {/* Sonar (globe) source button */}
+      {sonarCitations.length > 0 && (
+        <button
+          title="Live sources"
+          className={`w-5 h-5 flex items-center justify-center rounded-full border shadow-sm text-xs ${
+            citationPanel === 'sonar'
               ? 'bg-green-600 border-green-600 text-white'
               : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
           }`}
-          onClick={toggleCitations}
+          onClick={() => toggleCitationPanel('sonar')}
         >
-          📎
+          🌐
         </button>
       )}
 
