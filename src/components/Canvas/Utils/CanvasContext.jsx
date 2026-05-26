@@ -54,6 +54,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 	const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
 	const [viewportZoom, setViewportZoom] = useState(1);
+	const [boardResources, setBoardResources] = useState([]);
+	const [highlightedStepIds, setHighlightedStepIds] = useState([]);
 
 	// convert screen px coords to world coords
 	const screenToWorld = useCallback(
@@ -93,6 +95,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			if (canvas.data.backgroundScale !== undefined) {
 				setBackgroundScale(canvas.data.backgroundScale);
 			}
+			setBoardResources(canvas.data.boardResources ?? []);
 		}
 	}, [canvasId, canvasDataContext]);
 
@@ -111,6 +114,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				arrows,
 				backgroundImage,
 				backgroundScale,
+				boardResources,
 			};
 
 			console.log('Saving canvas data:', canvasData);
@@ -123,7 +127,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				clearTimeout(saveTimeoutRef.current);
 			}
 		};
-	}, [elements, connections, arrows, backgroundImage, backgroundScale, canvasId, updateCanvas]);
+	}, [elements, connections, arrows, backgroundImage, backgroundScale, boardResources, canvasId, updateCanvas]);
 
 	// Create enhanced versions of setters that ensure updates are saved
 	const setElementsWithSave = useCallback((newElementsOrFn) => {
@@ -1373,6 +1377,10 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 		// Recommendations
 		savePathwayToBoard,
+		boardResources,
+		setBoardResources,
+		highlightedStepIds,
+		setHighlightedStepIds,
 
 		// Mouse tracking
 		updateMousePosition,
