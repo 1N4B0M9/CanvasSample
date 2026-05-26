@@ -34,11 +34,10 @@ const BoardResourcesSidebar = ({ onClose }) => {
               onMouseEnter={() => setHighlightedStepIds(br.stepIds)}
               onMouseLeave={() => setHighlightedStepIds([])}
             >
-              <p className="text-xs font-semibold text-gray-900 leading-tight">{br.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-gray-400">{br.stepIds.length} steps</span>
+              <div className="flex items-start justify-between gap-1">
+                <p className="text-xs font-semibold text-gray-900 leading-tight">{br.name}</p>
                 <span
-                  className="text-xs rounded-full px-2 py-0.5 font-medium"
+                  className="shrink-0 text-xs rounded-full px-2 py-0.5 font-medium"
                   style={
                     br.source === 'sonar'
                       ? { background: '#f0fdf4', color: '#166534' }
@@ -48,6 +47,24 @@ const BoardResourcesSidebar = ({ onClose }) => {
                   {br.source === 'sonar' ? '⚡ Live' : '🗄 Local'}
                 </span>
               </div>
+              {br.description && (
+                <p className="text-xs text-gray-500 mt-1 leading-snug">{br.description}</p>
+              )}
+              {br.phone && (
+                <p className="text-xs text-gray-500 mt-1">{br.phone}</p>
+              )}
+              {br.url && (
+                <a
+                  href={br.url.startsWith('http') ? br.url : `https://${br.url}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-blue-500 hover:underline mt-1 block"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {br.url}
+                </a>
+              )}
+              <p className="text-xs text-gray-400 mt-1">{br.stepIds.length} steps on board</p>
             </div>
           ))}
           </div>

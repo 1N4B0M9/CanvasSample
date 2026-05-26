@@ -765,6 +765,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				{
 					id: `${resource.id ?? 'res'}-${baseId}`,
 					name: resource.name,
+					description: resource.description ?? null,
+					phone: resource.contact?.phone ?? null,
+					url: resource.contact?.url ?? null,
 					source: resource.source ?? 'local',
 					stepIds: [...stepIds],
 				},
@@ -1213,7 +1216,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 							ctx.fillRect(0, element.height - overlayHeight, element.width, overlayHeight);
 							ctx.fillStyle = '#ffffff';
 							ctx.font = '12px Arial';
-							const labelText = element.label.length > 40 ? element.label.substring(0, 40) + '…' : element.label;
+							const labelText = element.label.length > 40 ? `${element.label.substring(0, 40)  }…` : element.label;
 							ctx.fillText(labelText, 6, element.height - overlayHeight + 16);
 						}
 					} else if (element.type === 'mentor') {

@@ -483,7 +483,7 @@ const CanvasContent = () => {
 				onOpen={() => setBoardSidebarOpen(true)}
 			/>
 
-			{/* Find Resources modal — triggered by ✦ Find resources on element */}
+			{/* Find Resources panel — triggered by ✦ Find resources on element */}
 			{panelOpen && (
 				<FindResourcesModal
 					goalType={panelGoal.goalType}
@@ -493,8 +493,18 @@ const CanvasContent = () => {
 						setPanelAnchorId(null);
 						setSelectedResource(null);
 					}}
-					onSelectResource={(resource) => setSelectedResource(resource)}
-					selectedResourceId={selectedResource?.id}
+					onAddToBoard={(resource) => {
+						const originEl = elements.find(
+							(el) =>
+								el.type === 'text' &&
+								el.content &&
+								detectGoal(el.content)?.goalType === panelGoal.goalType,
+						);
+						savePathwayToBoard(selectedResource ?? resource, originEl?.id);
+						setPanelOpen(false);
+						setPanelAnchorId(null);
+						setSelectedResource(null);
+					}}
 				/>
 			)}
 
@@ -544,7 +554,7 @@ const CanvasContent = () => {
 				</div>
 
 				{/* Recommendations: pathway overlay on resource card hover */}
-				{selectedResource && (
+				{selectedResource && !panelOpen && (
 					<PathwayOverlay
 						resource={selectedResource}
 						onAddToBoard={() => {
