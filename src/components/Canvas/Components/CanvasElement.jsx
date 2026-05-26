@@ -36,7 +36,7 @@ const CanvasElement = ({
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
 	const [showAskBubble, setShowAskBubble] = useState(false);
-	const { elements, addElement, addArrow } = useCanvas();
+	const { elements, addElement, addArrow, highlightedStepIds } = useCanvas();
 	const { fetchSubSteps, loading: subStepsLoading } = useSubSteps();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
@@ -183,7 +183,9 @@ const CanvasElement = ({
 				transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
 				transformOrigin: 'center',
 				cursor: isEditing ? 'text' : 'move',
-				boxShadow: isPanelAnchor ? '0 0 0 3px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.35)' : undefined,
+				boxShadow: (isPanelAnchor || highlightedStepIds.includes(element.id))
+				? '0 0 0 3px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.35)'
+				: undefined,
 			}}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
