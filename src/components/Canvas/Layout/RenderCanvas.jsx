@@ -443,7 +443,7 @@ const CanvasContent = () => {
 	};
 
 	return (
-		<div className="relative w-full h-full overflow-hidden">
+		<div className="relative w-full h-full">
 			{/* <p>Hi there</p> */}
 			{/* Side panel with integrated handlers */}
 			{/* <SidePanel
