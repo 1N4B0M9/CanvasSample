@@ -4,7 +4,7 @@ import { IoClose, IoChevronBack, IoChevronForward } from 'react-icons/io5';
 // List of all images in VB Magazine JPEGs folder (sorted by filename)
 const VB_MAGAZINE_IMAGES = [
 	'2.jpeg',
-	//'3.jpeg', //commeent this out later
+	'3.jpeg',
 	'4.jpeg',
 	'5.jpeg',
 	'6.jpg',
@@ -20,7 +20,7 @@ const VB_MAGAZINE_IMAGES = [
 	'17.jpeg',
 	'18.jpeg',
 	'19.jpeg',
-	//'20.jpeg', //coment out later
+	'20.jpeg',
 	'21.jpeg',
 	'22.jpeg',
 	'23.jpeg',
@@ -38,15 +38,14 @@ const VB_MAGAZINE_IMAGES = [
 	'35.jpeg',
 	'36.jpeg',
 	'37.jpeg',
-	//'38.jpeg', //commemt
+	'38.jpeg',
 	'39.jpeg',
 	'40.jpeg',
 	'41.jpeg',
 	'42.jpeg',
-	//'43.jpeg', //comment
+	'43.jpeg',
 	'44.jpeg',
 	'45.jpeg',
-	'46.jpeg'
 ];
 
 const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }) => {
@@ -65,8 +64,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 	useEffect(() => {
 		const loadVBMagazineImages = async () => {
 			const loadedPages = await Promise.all(
-				VB_MAGAZINE_IMAGES.map((filename, index) => {
-					return new Promise((resolve) => {
+				VB_MAGAZINE_IMAGES.map((filename, index) => new Promise((resolve) => {
 						const img = new Image();
 						img.onload = () => {
 							resolve({
@@ -82,8 +80,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 							});
 						};
 						img.src = `/VB Magazine JPEGs/${filename}`;
-					});
-				})
+					}))
 			);
 
 			setPages(loadedPages);
@@ -174,7 +171,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 	// Improved image detection using edge detection and contour analysis
 	const detectImageRegions = (imageData, width, height) => {
 		const regions = [];
-		const data = imageData.data;
+		const {data} = imageData;
 
 		// Convert to grayscale and detect edges
 		const grayscale = new Uint8Array(width * height);
@@ -256,10 +253,10 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 	// Flood fill algorithm to find connected edge regions
 	const floodFill = (edges, visited, startX, startY, width, height) => {
 		const stack = [{ x: startX, y: startY }];
-		let minX = startX,
-			maxX = startX,
-			minY = startY,
-			maxY = startY;
+		let minX = startX;
+			let maxX = startX;
+			let minY = startY;
+			let maxY = startY;
 		let pixelCount = 0;
 
 		while (stack.length > 0) {
@@ -296,7 +293,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 		const regions = [];
 		const aspectRatio = width / height;
 
-		let cols, rows;
+		let cols; let rows;
 		if (aspectRatio > 1.5) {
 			cols = 4;
 			rows = 3;
@@ -397,7 +394,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 				// Create element bank entry
 				const elementBankItem = {
 					id: `magazine-${Date.now()}-${region.id}`,
-					file: file,
+					file,
 					fileUrl: URL.createObjectURL(blob),
 					page: currentPage + 1,
 					regionId: region.id,

@@ -32,6 +32,8 @@ const ToolBar = ({
 	handleExport,
 	handleExportJSON,
 	handleImport,
+	selectedCount = 0,
+	onDeleteSelected,
 	apiBaseUrl = process.env.REACT_APP_API_BASE_URL, // Updated API base URL
 }) => {
 	const { currentUser } = useAuth();
@@ -226,6 +228,38 @@ const ToolBar = ({
 						);
 					})}
 				</div>
+				{/* divider */}
+				<div className="mx-2 border-l border-gray-300 h-8 self-center" />
+
+				{/* trash button — faded when nothing selected, solid red when active */}
+				<div className="relative group">
+					<div
+						className={`rounded-md p-2 transition-colors duration-150 flex items-center gap-1 ${
+							selectedCount > 0
+								? 'cursor-pointer bg-red-500 hover:bg-red-600 text-white'
+								: 'cursor-not-allowed opacity-40 border border-red-300 text-red-300'
+						}`}
+						role="button"
+						tabIndex={selectedCount > 0 ? 0 : -1}
+						title={selectedCount > 0 ? `Delete ${selectedCount} selected item${selectedCount !== 1 ? 's' : ''}` : 'Select items to delete'}
+						onClick={() => selectedCount > 0 && onDeleteSelected()}
+						onKeyDown={(e) => {
+							if (selectedCount > 0 && (e.key === 'Enter' || e.key === ' ')) {
+								e.preventDefault();
+								onDeleteSelected();
+							}
+						}}
+					>
+						<RiDeleteBin5Line className="text-xl" />
+						{selectedCount > 0 && (
+							<span className="text-xs font-semibold leading-none">{selectedCount}</span>
+						)}
+					</div>
+					<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+						{selectedCount > 0 ? `Delete ${selectedCount} item${selectedCount !== 1 ? 's' : ''}` : 'Select items to delete'}
+					</span>
+				</div>
+
 				{/* Will Bring back additional util tools in the future if needed */}
 				{/* <div className="mx-2 border-l border-gray-300 h-8 self-center" /> */}
 				{/* <div className="flex flex-row items-center">
@@ -381,12 +415,16 @@ ToolBar.propTypes = {
 	handleExport: PropTypes.func.isRequired,
 	handleExportJSON: PropTypes.func.isRequired,
 	handleImport: PropTypes.func.isRequired,
+	selectedCount: PropTypes.number,
+	onDeleteSelected: PropTypes.func,
 	apiBaseUrl: PropTypes.string,
 };
 
 ToolBar.defaultProps = {
 	backgroundImage: null,
 	updateBackgroundScale: null,
+	selectedCount: 0,
+	onDeleteSelected: () => {},
 	apiBaseUrl: process.env.REACT_APP_API_BASE_URL,
 };
 
