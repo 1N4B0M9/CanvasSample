@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "resources",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "goalTypes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "lastVerified", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

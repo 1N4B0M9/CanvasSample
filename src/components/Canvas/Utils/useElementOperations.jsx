@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 
-const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections) => {
+const DEFAULT_OFFSET = { x: 0, y: 0 };
+
+const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections, viewportZoom = 1, viewportOffset = DEFAULT_OFFSET) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 	const [isScaling, setIsScaling] = useState(false);
@@ -98,16 +100,28 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 	);
 
 	// Start scaling an element
-	const handleScaleStart = useCallback((elementId, scaleInfo, event) => {
-		event.preventDefault();
-		event.stopPropagation();
+	const handleScaleStart = useCallback(
+		(elementId, scaleInfo, event) => {
+			event.preventDefault();
+			event.stopPropagation();
 
-		setIsScaling(true);
-		scaleRef.current = {
-			elementId,
-			...scaleInfo,
-		};
-	}, []);
+			const element = elements.find((el) => el.id === elementId);
+
+			setIsScaling(true);
+			scaleRef.current = {
+				elementId,
+				corner: scaleInfo.corner,
+				// world-space center derived from element state (not screen pixels)
+				centerX: element ? element.x + (element.width || 0) * (element.scale || 1) / 2 : scaleInfo.centerX,
+				centerY: element ? element.y + (element.height || 0) * (element.scale || 1) / 2 : scaleInfo.centerY,
+				initialScale: element ? element.scale || 1 : scaleInfo.initialScale,
+				// world-space dimensions (stable, not affected by zoom)
+				initialWidth: element ? element.width || 0 : scaleInfo.initialWidth,
+				initialHeight: element ? element.height || 0 : scaleInfo.initialHeight,
+			};
+		},
+		[elements],
+	);
 
 	// Handle mouse down for dragging
 	const handleMouseDown = useCallback(
@@ -145,16 +159,18 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 
 			// If we found an element ID, set it as selected and prepare for dragging
 			if (elementId) {
-				console.log(`Found element with ID: ${elementId}, selecting it`);
-				setSelectedId(elementId);
-
-				if (!isScaling) {
-					const rect = canvasRef.current.getBoundingClientRect();
-					setIsDragging(true);
-					setDragStart({
-						x: e.clientX - rect.left,
-						y: e.clientY - rect.top,
-					});
+				// only reset selection on a plain click, not shift+click
+				// shift+click selection is handled by CanvasElement's onClick
+				if (!e.shiftKey) {
+					setSelectedId(elementId);
+					if (!isScaling) {
+						const rect = canvasRef.current.getBoundingClientRect();
+						setIsDragging(true);
+						setDragStart({
+							x: e.clientX - rect.left,
+							y: e.clientY - rect.top,
+						});
+					}
 				}
 			} else {
 				// Clicked somewhere but not on an element
@@ -181,8 +197,8 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 						el.id === selectedId
 							? {
 									...el,
-									x: el.x + (x - dragStart.x),
-									y: el.y + (y - dragStart.y),
+									x: el.x + (x - dragStart.x) / viewportZoom,
+									y: el.y + (y - dragStart.y) / viewportZoom,
 								}
 							: el,
 					),
@@ -198,10 +214,12 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 				const currentX = e.clientX;
 				const currentY = e.clientY;
 
-				// Calculate distance from center to current mouse position
-				const dx = currentX - centerX;
-				const dy = currentY - centerY;
-				const distance = Math.sqrt(dx * dx + dy * dy);
+				// Convert cursor from screen space to world space before computing distance
+				const worldX = (currentX - viewportOffset.x) / viewportZoom;
+				const worldY = (currentY - viewportOffset.y) / viewportZoom;
+				const worldDx = worldX - centerX;
+				const worldDy = worldY - centerY;
+				const distance = Math.sqrt(worldDx * worldDx + worldDy * worldDy);
 
 				// Calculate initial distance from center to corner
 				const initialDx = corner.includes('e') ? initialWidth / 2 : -initialWidth / 2;
@@ -227,7 +245,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 				setConnections((prev) => [...prev]); // Force connection redraw
 			}
 		},
-		[isDragging, isScaling, selectedId, dragStart, setElements, setConnections],
+		[isDragging, isScaling, selectedId, dragStart, viewportZoom, viewportOffset, setElements, setConnections],
 	);
 
 	// Handle mouse up to end dragging or scaling
@@ -241,6 +259,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 	const handleWheel = useCallback(
 		(e) => {
 			if (!selectedId) return;
+			if (e.ctrlKey) return; // let RenderCanvas handle viewport zoom; do not compete
 			e.preventDefault();
 
 			setElements((prev) =>

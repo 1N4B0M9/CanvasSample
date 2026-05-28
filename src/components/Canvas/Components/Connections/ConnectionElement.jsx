@@ -16,6 +16,71 @@ import {
 	calculateArrowHead,
 } from '../../Utils/ConnectionUtils';
 
+// renders the label at a midpoint — input when selected, text pill otherwise
+const ConnectionLabel = ({ id, label, isSelected, midX, midY, color, onLabelChange }) => {
+	const handleBlur = (e) => {
+		const val = e.target.value.trim();
+		onLabelChange?.(id, val || undefined);
+	};
+
+	if (isSelected) {
+		return (
+			<foreignObject x={midX - 60} y={midY + 18} width={120} height={26} style={{ pointerEvents: 'auto' }}>
+				<input
+					defaultValue={label || ''}
+					placeholder="add label..."
+					onBlur={handleBlur}
+					onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+					onClick={(e) => e.stopPropagation()}
+					onMouseDown={(e) => e.stopPropagation()}
+					style={{
+						width: '100%',
+						height: '100%',
+						fontSize: 12,
+						textAlign: 'center',
+						border: '1px solid #3b82f6',
+						borderRadius: 4,
+						padding: '2px 4px',
+						outline: 'none',
+						boxSizing: 'border-box',
+					}}
+				/>
+			</foreignObject>
+		);
+	}
+
+	if (!label) return null;
+
+	// truncate long labels so they don't blow out the pill
+	const display = label.length > 18 ? `${label.substring(0, 18)  }…` : label;
+
+	return (
+		<g pointerEvents="auto">
+			<rect
+				x={midX - 60}
+				y={midY - 12}
+				width={120}
+				height={22}
+				rx={4}
+				ry={4}
+				fill="white"
+				stroke={color || 'black'}
+				strokeWidth={0.5}
+			/>
+			<text
+				x={midX}
+				y={midY + 5}
+				textAnchor="middle"
+				fontSize={12}
+				fill={color || 'black'}
+				style={{ userSelect: 'none', pointerEvents: 'none' }}
+			>
+				{display}
+			</text>
+		</g>
+	);
+};
+
 /**
  * BaseConnection Component
  *
@@ -42,7 +107,7 @@ const BaseConnection = ({
 	const displayDashArray = isSelected ? '5,3' : dashArray;
 
 	return (
-		<svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: 0 }} pointerEvents="none" {...svgProps}>
+		<svg className="absolute top-0 left-0 w-full h-full" overflow="visible" style={{ zIndex: 0 }} pointerEvents="none" {...svgProps}>
 			{/* Visible connection line */}
 			<line
 				x1={startX}
@@ -69,7 +134,7 @@ const BaseConnection = ({
  *
  * Renders a permanent standard connection between two elements.
  */
-export const FullConnection = ({ connection, elements, isSelected = false, onSelect, onDelete }) => {
+export const FullConnection = ({ connection, elements, isSelected = false, onSelect, onDelete, onLabelChange }) => {
 	if (!connection || !elements) return null;
 
 	// Calculate connection points
@@ -85,7 +150,7 @@ export const FullConnection = ({ connection, elements, isSelected = false, onSel
 	return (
 		<>
 			{/* Invisible wider line for easier selection */}
-			<svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: 0 }} pointerEvents="none">
+			<svg className="absolute top-0 left-0 w-full h-full" overflow="visible" style={{ zIndex: 0 }} pointerEvents="none">
 				<line
 					x1={startX}
 					y1={startY}
@@ -165,6 +230,16 @@ export const FullConnection = ({ connection, elements, isSelected = false, onSel
 					</g>
 				)}
 
+				<ConnectionLabel
+					id={connection.id}
+					label={connection.label}
+					isSelected={isSelected}
+					midX={midX}
+					midY={midY}
+					color={connection.color}
+					onLabelChange={onLabelChange}
+				/>
+
 				{/* Data Display Label (if connection has data payload) */}
 				{connection.data && (
 					<g>
@@ -206,7 +281,7 @@ export const FullConnection = ({ connection, elements, isSelected = false, onSel
  *
  * Renders a permanent arrow connection between two elements.
  */
-export const Arrow = ({ connection, elements, isSelected = false, onSelect, onDelete }) => {
+export const Arrow = ({ connection, elements, isSelected = false, onSelect, onDelete, onLabelChange }) => {
 	if (!connection || !elements) return null;
 
 	// Calculate connection points
@@ -225,7 +300,7 @@ export const Arrow = ({ connection, elements, isSelected = false, onSelect, onDe
 	return (
 		<>
 			{/* Invisible wider line for easier selection */}
-			<svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: 0 }} pointerEvents="none">
+			<svg className="absolute top-0 left-0 w-full h-full" overflow="visible" style={{ zIndex: 0 }} pointerEvents="none">
 				<line
 					x1={startX}
 					y1={startY}
@@ -317,6 +392,16 @@ export const Arrow = ({ connection, elements, isSelected = false, onSelect, onDe
 						/>
 					</g>
 				)}
+
+				<ConnectionLabel
+					id={connection.id}
+					label={connection.label}
+					isSelected={isSelected}
+					midX={midX}
+					midY={midY}
+					color={connection.color}
+					onLabelChange={onLabelChange}
+				/>
 
 				{/* Data Display Label (if connection has data payload) */}
 				{connection.data && (

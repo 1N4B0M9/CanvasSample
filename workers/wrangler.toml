@@ -1,0 +1,4 @@
+name = "project-rebound-getpathway"
+main = "getPathway.js"
+compatibility_date = "2024-01-01"
+workers_dev = true
