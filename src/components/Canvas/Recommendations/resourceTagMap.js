@@ -143,6 +143,7 @@ const TAG_MAP = {
   'peer support': { goalType: 'peer_support', domain: 'social_belonging' },
   'support group': { goalType: 'peer_support', domain: 'social_belonging' },
   sisterhood:   { goalType: 'peer_support', domain: 'social_belonging' },
+  brotherhood:  { goalType: 'peer_support', domain: 'social_belonging' },
   mentoring:    { goalType: 'peer_support', domain: 'social_belonging' },
   community:    { goalType: 'peer_support', domain: 'social_belonging' },
   network:      { goalType: 'peer_support', domain: 'social_belonging' },
