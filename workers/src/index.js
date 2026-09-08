@@ -13,7 +13,7 @@ import { getCatalog, syncCatalog } from './catalog.js';
 import { planCacheKey, getCachedPlan, putCachedPlan } from './cache.js';
 import { checkRateLimit, RATE_LIMIT_MESSAGE } from './ratelimit.js';
 import { HOTLINES } from './crisis.js';
-import { handleVerifyBatch } from './verify.js';
+import { handleVerifyBatch, sweepSuggestions } from './verify.js';
 import { verifyAdmin } from './adminauth.js';
 import { claudeCall, extractToolInput, extractSearchCitations, webSearchTool, MODELS } from './claude.js';
 
@@ -294,11 +294,18 @@ export default {
 
 	async scheduled(event, env, ctx) {
 		ctx.waitUntil(
-			syncCatalog(env).then((count) => {
-				console.log(
-					count == null ? 'catalog sync failed (missing key or rules?)' : `catalog synced: ${count} resources`,
-				);
-			}),
+			Promise.all([
+				syncCatalog(env).then((count) => {
+					console.log(
+						count == null ? 'catalog sync failed (missing key or rules?)' : `catalog synced: ${count} resources`,
+					);
+				}),
+				sweepSuggestions(env)
+					.then(({ checked, removed, kept }) =>
+						console.log(`suggestion sweep: ${checked} links checked, ${removed} dead removed, ${kept} kept`),
+					)
+					.catch((err) => console.error('suggestion sweep failed:', err.message)),
+			]),
 		);
 	},
 };
