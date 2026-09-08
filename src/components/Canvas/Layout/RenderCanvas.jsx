@@ -13,12 +13,7 @@ import SidePanel from '../Components/Elements/SidePanel';
 import ToolBar from '../Components/Elements/ToolBar/ToolBar';
 import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
 import DeleteConfirmModal from '../Components/DeleteConfirmModal';
-import SparkleButton from '../Recommendations/SparkleButton';
-import ResourcePanel from '../Recommendations/ResourcePanel';
-import BoardResourcesSidebar from '../Recommendations/BoardResourcesSidebar';
-import FindResourcesModal from '../Recommendations/FindResourcesModal';
-import PathwayOverlay from '../Recommendations/PathwayOverlay';
-import { detectGoal } from '../Recommendations/useGoalDetection';
+import PathPanel from '../Path/PathPanel';
 import ViewportHUD from './ViewportHUD';
 
 const CanvasContent = () => {
@@ -48,7 +43,6 @@ const CanvasContent = () => {
 		selectedIds,
 		deleteSelected,
 		savePathwayToBoard,
-		boardResources,
 		viewportOffset,
 		viewportZoom,
 		setViewportOffset,
@@ -59,12 +53,10 @@ const CanvasContent = () => {
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
 	const [deletionSummary, setDeletionSummary] = React.useState(null);
 
-	// Recommendations state
-	const [panelOpen, setPanelOpen] = React.useState(false);
-	const [panelGoal, setPanelGoal] = React.useState({ goalType: null, domain: null });
-	const [selectedResource, setSelectedResource] = React.useState(null);
-	const [panelAnchorId, setPanelAnchorId] = React.useState(null);
-	const [boardSidebarOpen, setBoardSidebarOpen] = React.useState(false);
+	// My Path panel state
+	const [pathOpen, setPathOpen] = React.useState(false);
+	const [pathPrefill, setPathPrefill] = React.useState('');
+	const [pathAnchorId, setPathAnchorId] = React.useState(null);
 
 	const [isPanning, setIsPanning] = React.useState(false);
 	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
@@ -73,8 +65,12 @@ const CanvasContent = () => {
 
 	const viewportZoomRef = useRef(viewportZoom);
 	const viewportOffsetRef = useRef(viewportOffset);
-	useEffect(() => { viewportZoomRef.current = viewportZoom; }, [viewportZoom]);
-	useEffect(() => { viewportOffsetRef.current = viewportOffset; }, [viewportOffset]);
+	useEffect(() => {
+		viewportZoomRef.current = viewportZoom;
+	}, [viewportZoom]);
+	useEffect(() => {
+		viewportOffsetRef.current = viewportOffset;
+	}, [viewportOffset]);
 
 	React.useEffect(() => {
 		const onKeyDown = (e) => {
@@ -120,14 +116,14 @@ const CanvasContent = () => {
 		}
 
 		const selectedElementIds = new Set(
-			items.filter((i) => ['text', 'image', 'mentor'].includes(i.type)).map((i) => i.id)
+			items.filter((i) => ['text', 'image', 'mentor'].includes(i.type)).map((i) => i.id),
 		);
 		const implicitCount =
 			connections.filter(
-				(c) => !selectedIds.has(c.id) && (selectedElementIds.has(c.startId) || selectedElementIds.has(c.endId))
+				(c) => !selectedIds.has(c.id) && (selectedElementIds.has(c.startId) || selectedElementIds.has(c.endId)),
 			).length +
 			arrows.filter(
-				(a) => !selectedIds.has(a.id) && (selectedElementIds.has(a.startId) || selectedElementIds.has(a.endId))
+				(a) => !selectedIds.has(a.id) && (selectedElementIds.has(a.startId) || selectedElementIds.has(a.endId)),
 			).length;
 
 		setDeletionSummary({ items, implicitCount });
@@ -175,14 +171,38 @@ const CanvasContent = () => {
 		const el = canvasRef.current;
 		if (!el) return;
 		el.addEventListener('wheel', handleWheel, { passive: false });
-		return () => { if (el) el.removeEventListener('wheel', handleWheel); };
+		return () => {
+			if (el) el.removeEventListener('wheel', handleWheel);
+		};
 	}, [handleWheel]);
 
-	const openPanelForGoal = React.useCallback((detection, triggeredByElementId = null) => {
-		setPanelGoal({ goalType: detection?.goalType ?? null, domain: detection?.domain ?? null });
-		setPanelOpen(true);
-		setPanelAnchorId(triggeredByElementId);
+	// Entry door 2: "Build a path for this →" pill on a board element
+	const openPathForElement = React.useCallback((content, triggeredByElementId = null) => {
+		setPathPrefill(content ?? '');
+		setPathAnchorId(triggeredByElementId);
+		setPathOpen(true);
 	}, []);
+
+	// "Put this path on my board" — Phase 1 reuses text elements via savePathwayToBoard
+	const handlePlacePathOnBoard = React.useCallback(
+		({ goalSummary, steps, resourcesByStep }) => {
+			const pathwaySteps = steps.map((step) => {
+				const topOrg = (resourcesByStep[step.id] ?? [])[0];
+				const helpLine = topOrg ? `\nWho can help: ${topOrg.name}${topOrg.phone ? ` — ${topOrg.phone}` : ''}` : '';
+				return {
+					order: step.order,
+					title: step.title,
+					detail: `${step.why}${helpLine}`,
+					actionLabel: '',
+					citations: topOrg?.citations ?? [],
+				};
+			});
+			savePathwayToBoard({ name: `My path: ${goalSummary}`, source: 'path', pathwaySteps }, pathAnchorId);
+			setPathOpen(false);
+			setPathAnchorId(null);
+		},
+		[savePathwayToBoard, pathAnchorId],
+	);
 
 	const handleDrop = (e) => {
 		e.preventDefault();
@@ -475,43 +495,23 @@ const CanvasContent = () => {
 				handleImport={handleImport}
 				selectedCount={selectedIds.size}
 				onDeleteSelected={handleDeleteSelected}
+				onOpenPath={() => {
+					setPathPrefill('');
+					setPathAnchorId(null);
+					setPathOpen(true);
+				}}
 			/>
 
-			{/* Recommendations: floating sparkle button */}
-			<SparkleButton
-				resourceCount={boardResources.length}
-				onOpen={() => setBoardSidebarOpen(true)}
+			{/* My Path — the single surface replacing the old recommendation UI */}
+			<PathPanel
+				open={pathOpen}
+				prefillQuery={pathPrefill}
+				onClose={() => {
+					setPathOpen(false);
+					setPathAnchorId(null);
+				}}
+				onPlaceOnBoard={handlePlacePathOnBoard}
 			/>
-
-			{/* Find Resources panel — triggered by ✦ Find resources on element */}
-			{panelOpen && (
-				<FindResourcesModal
-					goalType={panelGoal.goalType}
-					domain={panelGoal.domain}
-					onClose={() => {
-						setPanelOpen(false);
-						setPanelAnchorId(null);
-						setSelectedResource(null);
-					}}
-					onAddToBoard={(resource) => {
-						const originEl = elements.find(
-							(el) =>
-								el.type === 'text' &&
-								el.content &&
-								detectGoal(el.content)?.goalType === panelGoal.goalType,
-						);
-						savePathwayToBoard(selectedResource ?? resource, originEl?.id);
-						setPanelOpen(false);
-						setPanelAnchorId(null);
-						setSelectedResource(null);
-					}}
-				/>
-			)}
-
-			{/* Board resources sidebar — triggered by Resources button */}
-			{boardSidebarOpen && (
-				<BoardResourcesSidebar onClose={() => setBoardSidebarOpen(false)} />
-			)}
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
 			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
@@ -529,7 +529,6 @@ const CanvasContent = () => {
 				}}
 				onDrop={handleDrop}
 				onDragOver={(e) => e.preventDefault()}
-				onClick={() => setSelectedResource(null)}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
 				onMouseUp={handleMouseUp}
@@ -550,27 +549,8 @@ const CanvasContent = () => {
 					}}
 				>
 					<RenderConnections />
-					<RenderElements onOpenPanel={openPanelForGoal} panelAnchorId={panelOpen ? panelAnchorId : null} />
+					<RenderElements onOpenPanel={openPathForElement} panelAnchorId={pathOpen ? pathAnchorId : null} />
 				</div>
-
-				{/* Recommendations: pathway overlay on resource card hover */}
-				{selectedResource && !panelOpen && (
-					<PathwayOverlay
-						resource={selectedResource}
-						onAddToBoard={() => {
-							const originEl = elements.find(
-								(el) =>
-									el.type === 'text' &&
-									el.content &&
-									detectGoal(el.content)?.goalType === panelGoal.goalType,
-							);
-							savePathwayToBoard(selectedResource, originEl?.id);
-							setPanelOpen(false);
-							setPanelAnchorId(null);
-							setSelectedResource(null);
-						}}
-					/>
-				)}
 
 				{/* zoom HUD — sits outside the transform wrapper so it stays fixed on screen */}
 				<div style={{ position: 'absolute', bottom: '1rem', left: '1rem', zIndex: 50 }}>

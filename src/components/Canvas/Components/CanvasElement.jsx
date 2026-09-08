@@ -6,12 +6,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ImageElement from './Elements/ImageElement';
 import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
-import { detectGoal } from '../Recommendations/useGoalDetection';
 import { useCanvas } from '../Utils/CanvasContext';
-import SparkleHoverBadge from '../Recommendations/SparkleHoverBadge';
-import AskBubble from '../Recommendations/AskBubble';
-import useSubSteps from '../Recommendations/useSubSteps';
-import { placeSubSteps } from '../Utils/placeSubSteps';
 
 const CanvasElement = ({
 	element,
@@ -35,9 +30,7 @@ const CanvasElement = ({
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
-	const [showAskBubble, setShowAskBubble] = useState(false);
-	const { elements, addElement, addArrow, highlightedStepIds } = useCanvas();
-	const { fetchSubSteps, loading: subStepsLoading } = useSubSteps();
+	const { highlightedStepIds } = useCanvas();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
 	const textRef = useRef(null);
@@ -105,43 +98,6 @@ const CanvasElement = ({
 		}
 	};
 
-	const handleAskSubmit = useCallback(async ({ stepText, goalText, userQuery }) => {
-		const result = await fetchSubSteps({ goalText, stepText, userQuery });
-		if (!result?.steps?.length) {
-			setShowAskBubble(false);
-			return;
-		}
-
-		const newElements = placeSubSteps({
-			parentElement: element,
-			steps: result.steps,
-			existingElements: elements,
-		});
-
-		const addedEls = [];
-		for (let i = 0; i < newElements.length; i++) {
-			const taggedCitations = (result.searchResults ?? []).map(
-				({ title, url, date }) => ({ url, title, date: date ?? null, source: 'sonar' })
-			);
-			const el = {
-				...newElements[i],
-				goalText,
-				...(taggedCitations.length && { citations: taggedCitations }),
-			};
-			addElement(el);
-			addedEls.push(el);
-		}
-
-		if (addedEls.length > 0) {
-			addArrow(element.id, addedEls[0].id, '');
-			for (let i = 0; i < addedEls.length - 1; i++) {
-				addArrow(addedEls[i].id, addedEls[i + 1].id, result.steps[i + 1]?.label ?? '');
-			}
-		}
-
-		setShowAskBubble(false);
-	}, [fetchSubSteps, element, elements, addElement, addArrow]);
-
 	const getScaleHandleStyle = (corner) => {
 		const base = 'absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full';
 		const cursors = {
@@ -176,10 +132,6 @@ const CanvasElement = ({
 		);
 	};
 
-	const detectedGoal = (element.type === 'text' || element.type === 'mentor') && element.content
-		? detectGoal(element.content)
-		: null;
-
 	return (
 		<div
 			ref={elementRef}
@@ -190,9 +142,10 @@ const CanvasElement = ({
 				transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
 				transformOrigin: 'center',
 				cursor: isEditing ? 'text' : 'move',
-				boxShadow: (isPanelAnchor || highlightedStepIds.includes(element.id))
-				? '0 0 0 3px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.35)'
-				: undefined,
+				boxShadow:
+					isPanelAnchor || highlightedStepIds.includes(element.id)
+						? '0 0 0 3px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.35)'
+						: undefined,
 			}}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
@@ -225,21 +178,63 @@ const CanvasElement = ({
 						textRef={textRef}
 					/>
 				)}
-				{(element.type === 'text' || element.type === 'mentor') && element.content && !isConnecting && !isCreatingArrow && (
-					<SparkleHoverBadge
-						onFindResources={detectedGoal ? () => { if (typeof onOpenPanel === 'function') onOpenPanel(detectedGoal, element.id); } : null}
-						onAsk={() => setShowAskBubble(true)}
-						citations={element.citations || []}
-					/>
-				)}
-				{showAskBubble && (
-					<AskBubble
-						stepText={element.content}
-						goalText={element.goalText ?? element.content}
-						onSubmit={handleAskSubmit}
-						onDismiss={() => setShowAskBubble(false)}
-						loading={subStepsLoading}
-					/>
+				{/* Below-element row: path pill (selected only, so full boards stay quiet) +
+				    always-visible clickable source icons. Never hover-only. */}
+				{(element.type === 'text' || element.type === 'mentor') && (
+					<div className="absolute left-0 top-full z-20 mt-1 flex flex-col items-start gap-1">
+						{isSelected &&
+							element.content &&
+							element.content.trim().length >= 8 &&
+							!isEditing &&
+							!isConnecting &&
+							!isCreatingArrow && (
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										if (typeof onOpenPanel === 'function') onOpenPanel(element.content, element.id);
+									}}
+									onMouseDown={(e) => e.stopPropagation()}
+									className="whitespace-nowrap rounded-full bg-[#053254] px-4 py-2 text-[15px] font-bold text-white shadow hover:bg-[#0a4a78]"
+								>
+									Build a path for this →
+								</button>
+							)}
+						{Array.isArray(element.citations) && element.citations.length > 0 && (
+							<div className="flex items-center gap-1">
+								{element.citations.slice(0, 4).map((citation) => {
+									let host = null;
+									try {
+										host = new URL(citation.url).host;
+									} catch {
+										host = null;
+									}
+									return (
+										<a
+											key={citation.url}
+											href={citation.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											title={citation.title || citation.url}
+											onClick={(e) => e.stopPropagation()}
+											onMouseDown={(e) => e.stopPropagation()}
+											className="flex h-7 w-7 items-center justify-center rounded-full border border-[#D3D3D3] bg-white shadow-sm hover:bg-[#ECF4FA]"
+										>
+											{host ? (
+												<img
+													src={`https://www.google.com/s2/favicons?domain=${host}&sz=32`}
+													alt={host}
+													className="h-4 w-4 rounded-sm"
+												/>
+											) : (
+												<span className="text-xs">🔗</span>
+											)}
+										</a>
+									);
+								})}
+							</div>
+						)}
+					</div>
 				)}
 			</div>
 

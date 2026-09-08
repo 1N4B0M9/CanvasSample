@@ -1,4 +1,31 @@
 name = "project-rebound-getpathway"
-main = "getPathway.js"
-compatibility_date = "2024-01-01"
+main = "src/index.js" # pathway v2 (legacy single-file getPathway.js kept until cutover is verified)
+compatibility_date = "2026-06-01" # modern date required for the Secrets Store binding's native .get()
 workers_dev = true
+
+[[kv_namespaces]]
+binding = "PATHWAYS_KV"
+id = "0f6a2b7165fe459fa389ffd6c16227d7"
+
+[[secrets_store_secrets]]
+binding = "ANTHROPIC_API_KEY"
+store_id = "7db525dce94147e49cf2e3e4421c129c" # default_secrets_store
+secret_name = "ANTHROPIC_API_KEY"
+
+[[queues.producers]]
+binding = "VERIFY_QUEUE"
+queue = "resource-verify"
+
+[[queues.consumers]]
+queue = "resource-verify"
+max_batch_size = 5
+max_retries = 3
+dead_letter_queue = "resource-verify-dlq"
+
+[triggers]
+crons = ["0 6 * * *"] # nightly catalog sync Firestore -> KV
+
+[vars]
+FIREBASE_PROJECT_ID = "project-rebound"
+ADMIN_UID = "h9IvP69YaPfmcNFiqx78VUnwJ0v2" # same account as REACT_APP_ADMIN_UID; gates /suggestions
+FIREBASE_API_KEY = "AIzaSyBq45D6KyboCvnimkw__kAu_l9G_FMsdbs" # Firebase web API key (public identifier, not a secret)

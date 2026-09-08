@@ -34,6 +34,7 @@ const ToolBar = ({
 	handleImport,
 	selectedCount = 0,
 	onDeleteSelected,
+	onOpenPath,
 	apiBaseUrl = process.env.REACT_APP_API_BASE_URL, // Updated API base URL
 }) => {
 	const { currentUser } = useAuth();
@@ -172,22 +173,22 @@ const ToolBar = ({
 			Icon: GrUndo,
 			label: 'Undo Action',
 			action: 'direct',
-			handler: () => { },
-			disabled: () => { },
+			handler: () => {},
+			disabled: () => {},
 		},
 		{
 			Icon: GrRedo,
 			label: 'Redo Action',
 			action: 'direct',
-			handler: () => { },
-			disabled: () => { },
+			handler: () => {},
+			disabled: () => {},
 		},
 		{
 			Icon: RiDeleteBin5Line,
 			label: 'Delete Element',
 			action: 'direct',
-			handler: () => { },
-			disabled: () => { },
+			handler: () => {},
+			disabled: () => {},
 			isDelete: true,
 		},
 	];
@@ -205,9 +206,11 @@ const ToolBar = ({
 						return (
 							<div
 								key={label}
-								className={`group relative rounded-md p-2 transition-colors duration-150 ${isDisabled
-										? 'opacity-50 cursor-not-allowed' : `cursor-pointer ${isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'}`
-									}`}
+								className={`group relative rounded-md p-2 transition-colors duration-150 ${
+									isDisabled
+										? 'opacity-50 cursor-not-allowed'
+										: `cursor-pointer ${isActive ? 'bg-blue-200 hover:bg-blue-300' : 'hover:bg-blue-100'}`
+								}`}
 								title={isDisabled ? `${label} (Login required)` : label}
 								role="button"
 								tabIndex={isDisabled ? -1 : 0}
@@ -241,7 +244,11 @@ const ToolBar = ({
 						}`}
 						role="button"
 						tabIndex={selectedCount > 0 ? 0 : -1}
-						title={selectedCount > 0 ? `Delete ${selectedCount} selected item${selectedCount !== 1 ? 's' : ''}` : 'Select items to delete'}
+						title={
+							selectedCount > 0
+								? `Delete ${selectedCount} selected item${selectedCount !== 1 ? 's' : ''}`
+								: 'Select items to delete'
+						}
 						onClick={() => selectedCount > 0 && onDeleteSelected()}
 						onKeyDown={(e) => {
 							if (selectedCount > 0 && (e.key === 'Enter' || e.key === ' ')) {
@@ -251,14 +258,28 @@ const ToolBar = ({
 						}}
 					>
 						<RiDeleteBin5Line className="text-xl" />
-						{selectedCount > 0 && (
-							<span className="text-xs font-semibold leading-none">{selectedCount}</span>
-						)}
+						{selectedCount > 0 && <span className="text-xs font-semibold leading-none">{selectedCount}</span>}
 					</div>
 					<span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-						{selectedCount > 0 ? `Delete ${selectedCount} item${selectedCount !== 1 ? 's' : ''}` : 'Select items to delete'}
+						{selectedCount > 0
+							? `Delete ${selectedCount} item${selectedCount !== 1 ? 's' : ''}`
+							: 'Select items to delete'}
 					</span>
 				</div>
+
+				{/* My Path — persistent front door, labeled (never icon-only) */}
+				{onOpenPath && (
+					<>
+						<div className="mx-2 border-l border-gray-300 h-8 self-center" />
+						<button
+							type="button"
+							onClick={onOpenPath}
+							className="self-center whitespace-nowrap rounded-full bg-[#053254] px-4 py-2 text-[15px] font-bold text-white transition-colors hover:bg-[#0a4a78]"
+						>
+							✨ Get help with a goal
+						</button>
+					</>
+				)}
 
 				{/* Will Bring back additional util tools in the future if needed */}
 				{/* <div className="mx-2 border-l border-gray-300 h-8 self-center" /> */}
@@ -346,9 +367,7 @@ const ToolBar = ({
 							type="button"
 							onClick={handlePauseResume}
 							className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-95 ${
-								isPaused
-									? 'bg-green-600 text-white hover:bg-green-700'
-									: 'bg-yellow-500 text-white hover:bg-yellow-600'
+								isPaused ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'
 							}`}
 						>
 							{isPaused ? (
@@ -378,12 +397,8 @@ const ToolBar = ({
 			{/* Warning Notification - shown when recording reaches 4:30 */}
 			{isRecording && showWarning && (
 				<div className="absolute right-4 top-24 z-50 bg-yellow-500 bg-opacity-90 border border-yellow-600 rounded-xl shadow-lg p-4 w-64 animate-pulse">
-					<p className="text-sm font-semibold text-white text-center">
-						⏰ Time's almost up!
-					</p>
-					<p className="text-xs text-white text-center mt-1">
-						Please wrap up your story in 30 seconds
-					</p>
+					<p className="text-sm font-semibold text-white text-center">⏰ Time's almost up!</p>
+					<p className="text-xs text-white text-center mt-1">Please wrap up your story in 30 seconds</p>
 				</div>
 			)}
 
