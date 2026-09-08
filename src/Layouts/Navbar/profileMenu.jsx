@@ -68,6 +68,10 @@ const ProfileMenu = ({ isMobile, isCanvas }) => {
 						name: 'Help Manager',
 						href: PATHS.helpManager,
 					},
+					{
+						name: 'Resource Manager',
+						href: PATHS.resourceManager,
+					},
 				]);
 			} else {
 				setSettings([
