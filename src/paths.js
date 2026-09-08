@@ -18,6 +18,7 @@ const PATHS = {
 	restoreVideos: '/restoreVideos',
 	updateVideo: '/updateVideo/:videoId/:editType',
 	helpManager: '/helpManager',
+	resourceManager: '/resourceManager',
 	addQuizQuestions: '/addQuizQuestions',
 	futureEnvisioning: '/FutureEnvisioning',
 };

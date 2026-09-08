@@ -19,6 +19,7 @@ import Help from './pages/QuestionsPage';
 import QuestionDisplay from './Layouts/Main/FAQ/QuestionDisplay/index';
 import AddQuizQuestions from './pages/AddQuizQuestions';
 import Canvas from './pages/Canvas';
+import ResourceManager from './pages/ResourceManager';
 
 const components = {
 	home: Home,
@@ -40,6 +41,7 @@ const components = {
 	restoreVideos: RestoreVideos,
 	updateVideo: UpdateVideo,
 	helpManager: HelpManager,
+	resourceManager: ResourceManager,
 	addQuizQuestions: AddQuizQuestions,
 	futureEnvisioning: Canvas,
 };
