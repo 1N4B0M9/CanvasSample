@@ -50,7 +50,7 @@ const GROUND_TOOL = {
 };
 
 const GROUND_SYSTEM = `You match each step of a personal plan to real Pittsburgh-area organizations that can help.
-The reader is an adult rebuilding her life after coming home; phone numbers matter more than websites.
+The reader is an adult of any gender rebuilding their life after coming home; phone numbers matter more than websites.
 
 For each step:
 1. First check the curated catalog (provided). Pick the 0-3 entries that GENUINELY fit the step's need — say none fit rather than stretching.
