@@ -79,6 +79,11 @@ const ResourceManager = () => {
 				});
 				if (!res.ok) throw new Error(`Worker error: ${res.status}`);
 				setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
+				if (status === 'approved') {
+					// Best-effort: re-mirror the catalog so the next plan sees this org as verified right away
+					// (otherwise it waits for the nightly cron). Failure here must not undo the approval.
+					authedFetch('/catalog/sync', { method: 'POST' }).catch(() => {});
+				}
 			} catch (err) {
 				setError(err.message || 'Something went wrong');
 			} finally {

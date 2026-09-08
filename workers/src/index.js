@@ -249,6 +249,16 @@ async function handleSuggestionResolve(request, env) {
 	return json({ ok: true, id, status });
 }
 
+// ------------------------------------------------- /catalog/sync (admin only)
+
+/** Re-mirror Firestore `resources` → KV now, so a just-approved org reaches the next plan immediately. */
+async function handleCatalogSync(request, env) {
+	if (!(await verifyAdmin(env, request))) return json({ message: 'Not authorized' }, 401);
+	const count = await syncCatalog(env);
+	if (count == null) return json({ message: 'Catalog sync failed' }, 502);
+	return json({ ok: true, count });
+}
+
 // ---------------------------------------------------------------- entrypoints
 
 export default {
@@ -270,6 +280,9 @@ export default {
 		}
 		if (request.method === 'POST' && pathname === '/suggestions/resolve') {
 			return handleSuggestionResolve(request, env);
+		}
+		if (request.method === 'POST' && pathname === '/catalog/sync') {
+			return handleCatalogSync(request, env);
 		}
 
 		return json({ message: 'Not found' }, 404);

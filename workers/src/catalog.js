@@ -7,6 +7,28 @@
 const CATALOG_KEY = 'catalog:v1';
 const CATALOG_MAX_AGE_MS = 24 * 60 * 60 * 1000; // lazy refresh if cron hasn't run
 
+/**
+ * Make a website value safe to use as an absolute link. Catalog entries (and some web finds)
+ * arrive scheme-less ("ccac.edu"), which a browser resolves RELATIVE to the app — the Website
+ * button then lands on the app's own home page. Returns an https://… string or null.
+ */
+export function normalizeUrl(raw) {
+	if (raw == null) return null;
+	let value = String(raw).trim();
+	if (!value) return null;
+	if (!/^https?:\/\//i.test(value)) {
+		if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return null; // mailto:, tel:, etc. are not websites
+		value = `https://${value.replace(/^\/+/, '')}`;
+	}
+	try {
+		const parsed = new URL(value);
+		if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname.includes('.')) return null;
+		return parsed.href;
+	} catch {
+		return null;
+	}
+}
+
 function fsValue(v) {
 	if (v == null) return null;
 	if ('stringValue' in v) return v.stringValue;
@@ -54,7 +76,7 @@ async function fetchCatalogFromFirestore(env) {
 			name: fsValue(fields.name) ?? id,
 			desc: fsValue(fields.description) ?? '',
 			phone: contact.phone ?? fsValue(fields.phone) ?? null,
-			url: contact.url ?? fsValue(fields.url) ?? null,
+			url: normalizeUrl(contact.url ?? fsValue(fields.url)),
 			goalTypes: fsValue(fields.goalTypes) ?? [],
 			domains: fsValue(fields.domains) ?? [],
 			lastVerified: fsValue(fields.lastVerified) ?? null,

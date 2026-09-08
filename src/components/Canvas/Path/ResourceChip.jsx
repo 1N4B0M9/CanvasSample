@@ -1,6 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+/** Scheme-less sites ("ccac.edu") would resolve relative to the app; force an absolute https link. */
+function toAbsoluteHref(raw) {
+	if (!raw) return null;
+	const value = String(raw).trim();
+	if (!value) return null;
+	if (/^https?:\/\//i.test(value)) return value;
+	if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return null; // mailto:, tel:, etc. are not websites
+	return `https://${value.replace(/^\/+/, '')}`;
+}
+
 function formatVerifiedDate(iso) {
 	if (!iso) return null;
 	const date = new Date(iso);
@@ -15,6 +25,7 @@ function formatVerifiedDate(iso) {
 const ResourceChip = ({ resource }) => {
 	const { name, blurb, phone, url, trust, verifiedAt, citations } = resource;
 	const checkedDate = formatVerifiedDate(verifiedAt);
+	const href = toAbsoluteHref(url);
 
 	return (
 		<div className="rounded-xl border border-[#D3D3D3] bg-white p-4 shadow-sm">
@@ -40,9 +51,9 @@ const ResourceChip = ({ resource }) => {
 						📞 Call {phone}
 					</a>
 				)}
-				{url && (
+				{href && (
 					<a
-						href={url}
+						href={href}
 						target="_blank"
 						rel="noopener noreferrer"
 						className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-[10px] border border-[#053254] bg-white px-4 text-[16px] font-bold text-[#053254] hover:bg-[#ECF4FA]"

@@ -5,6 +5,7 @@
  */
 
 import { claudeCall, extractToolInput, extractSearchCitations, webSearchTool, MODELS } from './claude.js';
+import { normalizeUrl } from './catalog.js';
 
 const GROUND_TOOL = {
 	name: 'report_grounding',
@@ -110,9 +111,10 @@ export async function groundSteps(env, { intent, steps, catalog }) {
 				};
 			}
 			// web find — attach citations whose host matches, else all search citations as provenance
+			const itemUrl = normalizeUrl(item.url);
 			let citations = [];
 			try {
-				const host = item.url ? new URL(item.url).host : null;
+				const host = itemUrl ? new URL(itemUrl).host : null;
 				citations = host ? searchCitations.filter((c) => c.url.includes(host)) : [];
 			} catch {
 				citations = [];
@@ -122,7 +124,7 @@ export async function groundSteps(env, { intent, steps, catalog }) {
 				name: item.name,
 				blurb: item.blurb,
 				phone: item.phone ?? null,
-				url: item.url ?? null,
+				url: itemUrl,
 				trust: 'web',
 				citations,
 			};
