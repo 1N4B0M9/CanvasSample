@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+	match /databases/{database}/documents {
+		// Admin = the account behind REACT_APP_ADMIN_UID (gates the admin pages in the app)
+		function isAdmin() {
+			return request.auth != null && request.auth.uid == 'h9IvP69YaPfmcNFiqx78VUnwJ0v2';
+		}
+		function isSignedIn() {
+			return request.auth != null;
+		}
+
+		// Profiles, resume data, help-request flags. helpManager (admin) lists all users
+		// and toggles helpResolved on any of them.
+		match /users/{uid} {
+			allow read, write: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+		}
+
+		// FAQ: anyone can read; signed-in users post questions and append answers.
+		// Deleting is admin-only.
+		match /questions/{id} {
+			allow read: if true;
+			allow create, update: if isSignedIn();
+			allow delete: if isAdmin();
+		}
+
+		// Public content, edited only through the admin pages.
+		match /youtube-videos/{id} {
+			allow read: if true;
+			allow write: if isAdmin();
+		}
+		match /youtube-topics/{id} {
+			allow read: if true;
+			allow write: if isAdmin();
+		}
+		match /youtube-transcripts/{id} {
+			allow read: if true;
+			allow write: if isAdmin();
+		}
+
+		// Archive used only by the admin restore page.
+		match /youtube-deleted-history/{id} {
+			allow read, write: if isAdmin();
+		}
+
+		// Quiz tree: quiz/{platform}/difficulty/{difficulty}/questions/{id}
+		match /quiz/{document=**} {
+			allow read: if true;
+			allow write: if isAdmin();
+		}
+
+		// Curated org directory (no PII). Public read so the pathway worker's cron can
+		// sync it over REST without a service account. Curated only by the admin.
+		match /resources/{id} {
+			allow read: if true;
+			allow write: if isAdmin();
+		}
+
+		// Pathway v2 flywheel (Phase 3): signed-in users may suggest orgs; review is admin-only.
+		match /resource_suggestions/{id} {
+			allow create: if isSignedIn();
+			allow read, update, delete: if isAdmin();
+		}
+
+		// Legacy cache for the dormant Cloud Function — nothing client-side should touch it.
+		match /pathway_cache/{id} {
+			allow read, write: if isAdmin();
+		}
+
+		// Everything else: denied (rules deny by default; this makes it explicit).
+		match /{document=**} {
+			allow read, write: if false;
+		}
+	}
+}
