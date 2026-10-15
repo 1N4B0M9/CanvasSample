@@ -57,6 +57,7 @@ const CanvasContent = () => {
 	const [pathOpen, setPathOpen] = React.useState(false);
 	const [pathPrefill, setPathPrefill] = React.useState('');
 	const [pathAnchorId, setPathAnchorId] = React.useState(null);
+	const [activeToolPanel, setActiveToolPanel] = React.useState(null);
 
 	const [isPanning, setIsPanning] = React.useState(false);
 	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
@@ -178,9 +179,18 @@ const CanvasContent = () => {
 
 	// Entry door 2: "Build a path for this →" pill on a board element
 	const openPathForElement = React.useCallback((content, triggeredByElementId = null) => {
+		setActiveToolPanel(null);
 		setPathPrefill(content ?? '');
 		setPathAnchorId(triggeredByElementId);
 		setPathOpen(true);
+	}, []);
+
+	const handleToolPanelChange = React.useCallback((panel) => {
+		if (panel) {
+			setPathOpen(false);
+			setPathAnchorId(null);
+		}
+		setActiveToolPanel(panel);
 	}, []);
 
 	// "Put this path on my board" — Phase 1 reuses text elements via savePathwayToBoard
@@ -495,7 +505,10 @@ const CanvasContent = () => {
 				handleImport={handleImport}
 				selectedCount={selectedIds.size}
 				onDeleteSelected={handleDeleteSelected}
+				activePanel={activeToolPanel}
+				onActivePanelChange={handleToolPanelChange}
 				onOpenPath={() => {
+					setActiveToolPanel(null);
 					setPathPrefill('');
 					setPathAnchorId(null);
 					setPathOpen(true);

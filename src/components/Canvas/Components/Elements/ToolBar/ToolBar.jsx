@@ -35,10 +35,11 @@ const ToolBar = ({
 	selectedCount = 0,
 	onDeleteSelected,
 	onOpenPath,
+	activePanel,
+	onActivePanelChange,
 	apiBaseUrl = process.env.REACT_APP_API_BASE_URL, // Updated API base URL
 }) => {
 	const { currentUser } = useAuth();
-	const [activePanel, setActivePanel] = useState(null);
 	const [backgroundScale, setBackgroundScale] = useState(100);
 	const [isRecording, setIsRecording] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
@@ -58,7 +59,7 @@ const ToolBar = ({
 
 	// Close panel function
 	const closePanel = () => {
-		setActivePanel(null);
+		onActivePanelChange(null);
 	};
 
 	// Handle recording start
@@ -104,7 +105,7 @@ const ToolBar = ({
 			tool.handler();
 		} else if (tool.action === 'panel') {
 			// Toggle panel - close if same panel is clicked, otherwise open new panel
-			setActivePanel(activePanel === tool.panelType ? null : tool.panelType);
+			onActivePanelChange(activePanel === tool.panelType ? null : tool.panelType);
 		}
 	};
 
@@ -432,6 +433,8 @@ ToolBar.propTypes = {
 	handleImport: PropTypes.func.isRequired,
 	selectedCount: PropTypes.number,
 	onDeleteSelected: PropTypes.func,
+	activePanel: PropTypes.string,
+	onActivePanelChange: PropTypes.func,
 	apiBaseUrl: PropTypes.string,
 };
 
@@ -440,6 +443,8 @@ ToolBar.defaultProps = {
 	updateBackgroundScale: null,
 	selectedCount: 0,
 	onDeleteSelected: () => {},
+	activePanel: null,
+	onActivePanelChange: () => {},
 	apiBaseUrl: process.env.REACT_APP_API_BASE_URL,
 };
 
