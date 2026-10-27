@@ -138,7 +138,8 @@ const CanvasElement = ({
 	return (
 		<div
 			ref={elementRef}
-			className={`absolute ${isConnecting ? 'cursor-crosshair' : isCreatingArrow ? 'cursor-crosshair' : ''}`}
+			className={`absolute select-none ${isConnecting ? 'cursor-crosshair' : isCreatingArrow ? 'cursor-crosshair' : ''}`}
+			draggable={false}
 			style={{
 				left: element.x,
 				top: element.y,
@@ -152,6 +153,7 @@ const CanvasElement = ({
 			}}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
+			onDragStart={(e) => e.preventDefault()}
 			data-element-id={element.id}
 		>
 			<div ref={contentRef} className="relative">

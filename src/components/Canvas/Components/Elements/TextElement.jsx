@@ -21,12 +21,14 @@ const TextElement = ({ element, onUpdate, isEditing, setIsEditing, textRef }) =>
 					value={element.content}
 					onChange={handleTextChange}
 					onBlur={handleBlur}
-					className="bg-transparent resize-none outline-none"
+					className="bg-transparent resize-none outline-none select-text"
 					style={{
 						fontSize: `${element.fontSize || 16}px`,
 						fontFamily: element.fontFamily || 'inherit',
 						color: element.color || 'black',
+						userSelect: 'text',
 					}}
+					onMouseDown={(e) => e.stopPropagation()}
 					data-element-id={element.id}
 				/>
 			) : (

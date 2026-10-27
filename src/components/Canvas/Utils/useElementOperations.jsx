@@ -104,6 +104,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 		(elementId, scaleInfo, event) => {
 			event.preventDefault();
 			event.stopPropagation();
+			window.getSelection()?.removeAllRanges();
 
 			const element = elements.find((el) => el.id === elementId);
 
@@ -129,6 +130,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 	const handleMouseDown = useCallback(
 		(e, canvasRef) => {
 			if (!canvasRef.current) return;
+			if (e.target?.closest?.('textarea, input, [contenteditable="true"]')) return;
 
 			if (e.target === canvasRef.current) {
 				// Clicked on empty canvas - deselect current element
@@ -164,6 +166,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 				// only reset selection on a plain click, not shift+click
 				// shift+click selection is handled by CanvasElement's onClick
 				if (!e.shiftKey) {
+					window.getSelection()?.removeAllRanges();
 					setSelectedId(elementId);
 					if (!isScaling) {
 						const rect = canvasRef.current.getBoundingClientRect();

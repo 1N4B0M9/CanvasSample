@@ -256,8 +256,13 @@ const CanvasContent = () => {
 	};
 
 	const handleMouseDown = (e) => {
+		if (e.target?.closest?.('textarea, input, [contenteditable="true"]')) {
+			return;
+		}
+
 		if (isSpaceDownRef.current) {
 			e.stopPropagation();
+			window.getSelection()?.removeAllRanges();
 			setIsPanning(true);
 			panStartRef.current = {
 				mouseX: e.clientX,
@@ -545,7 +550,7 @@ const CanvasContent = () => {
 			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
 			<div
 				ref={canvasRef}
-				className={`w-full h-full relative ${supportsOverflowClip ? 'overflow-clip' : 'overflow-hidden'}`}
+				className={`w-full h-full relative select-none ${supportsOverflowClip ? 'overflow-clip' : 'overflow-hidden'}`}
 				style={{
 					backgroundColor: backgroundImage ? 'transparent' : '#ffffff', // white background
 					border: '1px solid #d1d5db', // gray-300
@@ -575,6 +580,7 @@ const CanvasContent = () => {
 						inset: 0,
 						pointerEvents: isPanning ? 'none' : 'auto',
 					}}
+					className="select-none"
 				>
 					<RenderConnections />
 					<RenderElements onOpenPanel={openPathForElement} panelAnchorId={pathOpen ? pathAnchorId : null} />
