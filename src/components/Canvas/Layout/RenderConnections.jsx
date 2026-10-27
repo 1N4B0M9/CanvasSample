@@ -54,6 +54,7 @@ const RenderConnections = () => {
 
 		// Shared
 		mousePosition,
+		screenToWorld,
 	} = useCanvas();
 
 	return (
@@ -89,6 +90,7 @@ const RenderConnections = () => {
 				isCreating={isConnecting}
 				startElement={connectionStart?.element}
 				mousePosition={mousePosition}
+				screenToWorld={screenToWorld}
 				color="black"
 				thickness={2}
 				dashArray="5,5"
@@ -99,6 +101,7 @@ const RenderConnections = () => {
 				isCreating={isCreatingArrow}
 				startElement={arrowStart?.element}
 				mousePosition={mousePosition}
+				screenToWorld={screenToWorld}
 				color="black"
 				thickness={2}
 				dashArray="5,5"

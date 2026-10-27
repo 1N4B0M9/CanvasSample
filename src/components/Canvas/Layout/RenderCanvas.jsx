@@ -48,6 +48,8 @@ const CanvasContent = () => {
 		setViewportOffset,
 		setViewportZoom,
 		screenToWorld,
+		isConnecting,
+		isCreatingArrow,
 	} = useCanvas();
 	const supportsOverflowClip = typeof CSS !== 'undefined' && CSS.supports('overflow', 'clip');
 
@@ -96,6 +98,18 @@ const CanvasContent = () => {
 			window.removeEventListener('keyup', onKeyUp);
 		};
 	}, []);
+
+	useEffect(() => {
+		const onKeyDown = (e) => {
+			if (e.key === 'Escape' && (isConnecting || isCreatingArrow)) {
+				e.preventDefault();
+				resetSelection();
+			}
+		};
+
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [isConnecting, isCreatingArrow, resetSelection]);
 
 	const handleDeleteSelected = React.useCallback(() => {
 		const items = [];

@@ -448,22 +448,22 @@ export const TempConnection = ({
 	isCreating = false,
 	startElement,
 	mousePosition,
+	screenToWorld,
 	color = 'black',
 	thickness = 2,
 	dashArray = '5,5',
 }) => {
 	if (!isCreating || !mousePosition) return null;
 
-	// Get current mouse position
-	const mouseX = mousePosition.x;
-	const mouseY = mousePosition.y;
+	// mousePosition is canvas-local screen space; the SVG is in world space.
+	const { x: mouseX, y: mouseY } = screenToWorld(mousePosition.x, mousePosition.y);
 
 	// If no element is selected yet, just show a line from cursor position
 	if (!startElement) {
 		return (
 			<BaseConnection
-				startX={mousePosition.x}
-				startY={mousePosition.y}
+				startX={mouseX}
+				startY={mouseY}
 				endX={mouseX}
 				endY={mouseY}
 				color={color}
@@ -501,25 +501,25 @@ export const TempArrow = ({
 	isCreating = false,
 	startElement,
 	mousePosition,
+	screenToWorld,
 	color = 'black',
 	thickness = 2,
 	dashArray = '5,5',
 }) => {
 	if (!isCreating || !mousePosition) return null;
 
-	// Get current mouse position
-	const mouseX = mousePosition.x;
-	const mouseY = mousePosition.y;
+	// mousePosition is canvas-local screen space; the SVG is in world space.
+	const { x: mouseX, y: mouseY } = screenToWorld(mousePosition.x, mousePosition.y);
 
 	// If no element is selected yet, just show a line from cursor position
 	if (!startElement) {
-		const angle = Math.atan2(mouseY - mousePosition.y, mouseX - mousePosition.x);
+		const angle = 0;
 		const arrowHead = calculateArrowHead(mouseX, mouseY, angle, 14);
 
 		return (
 			<BaseConnection
-				startX={mousePosition.x}
-				startY={mousePosition.y}
+				startX={mouseX}
+				startY={mouseY}
 				endX={mouseX}
 				endY={mouseY}
 				color={color}

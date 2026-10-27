@@ -87,14 +87,14 @@ const CanvasElement = ({
 	const handleStartConnection = (e) => {
 		e.stopPropagation();
 		e.preventDefault();
-		onStartConnection(element.id);
+		onStartConnection(element.id, e);
 	};
 
 	const handleStartArrow = (e) => {
 		e.stopPropagation();
 		e.preventDefault();
 		if (typeof onStartArrow === 'function') {
-			onStartArrow(element.id);
+			onStartArrow(element.id, e);
 		}
 	};
 
