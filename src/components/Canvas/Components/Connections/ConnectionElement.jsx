@@ -469,6 +469,7 @@ export const TempConnection = ({
 				color={color}
 				thickness={thickness}
 				dashArray={dashArray}
+				pointerEvents="none"
 			/>
 		);
 	}
@@ -488,6 +489,7 @@ export const TempConnection = ({
 			color={color}
 			thickness={thickness}
 			dashArray={dashArray}
+			pointerEvents="none"
 		/>
 	);
 };

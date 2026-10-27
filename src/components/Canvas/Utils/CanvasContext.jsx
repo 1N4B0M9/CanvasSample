@@ -233,10 +233,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	}, [setArrowsWithSave]);
 
 	const connectionOps = useConnectionOperations(
-		elements,
 		connections,
 		setConnectionsWithSave,
-		selectedConnectionId,
 		setSelectedConnectionId,
 	);
 
