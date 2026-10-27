@@ -111,13 +111,15 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 			scaleRef.current = {
 				elementId,
 				corner: scaleInfo.corner,
-				// world-space center derived from element state (not screen pixels)
-				centerX: element ? element.x + (element.width || 0) * (element.scale || 1) / 2 : scaleInfo.centerX,
-				centerY: element ? element.y + (element.height || 0) * (element.scale || 1) / 2 : scaleInfo.centerY,
+				// CSS scaling uses the element's unscaled center as its transform origin.
+				centerX: element ? element.x + (element.width || 0) / 2 : scaleInfo.centerX,
+				centerY: element ? element.y + (element.height || 0) / 2 : scaleInfo.centerY,
 				initialScale: element ? element.scale || 1 : scaleInfo.initialScale,
-				// world-space dimensions (stable, not affected by zoom)
-				initialWidth: element ? element.width || 0 : scaleInfo.initialWidth,
-				initialHeight: element ? element.height || 0 : scaleInfo.initialHeight,
+				// Include the existing element scale in the starting corner distance.
+				initialWidth: element ? (element.width || 0) * (element.scale || 1) : scaleInfo.initialWidth,
+				initialHeight: element ? (element.height || 0) * (element.scale || 1) : scaleInfo.initialHeight,
+				canvasLeft: scaleInfo.canvasLeft || 0,
+				canvasTop: scaleInfo.canvasTop || 0,
 			};
 		},
 		[elements],
@@ -209,14 +211,24 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 			}
 			// Handle element scaling
 			else if (isScaling && scaleRef.current) {
-				const { elementId, corner, centerX, centerY, initialScale, initialWidth, initialHeight } = scaleRef.current;
+				const {
+					elementId,
+					corner,
+					centerX,
+					centerY,
+					initialScale,
+					initialWidth,
+					initialHeight,
+					canvasLeft,
+					canvasTop,
+				} = scaleRef.current;
 
 				const currentX = e.clientX;
 				const currentY = e.clientY;
 
 				// Convert cursor from screen space to world space before computing distance
-				const worldX = (currentX - viewportOffset.x) / viewportZoom;
-				const worldY = (currentY - viewportOffset.y) / viewportZoom;
+				const worldX = (currentX - canvasLeft - viewportOffset.x) / viewportZoom;
+				const worldY = (currentY - canvasTop - viewportOffset.y) / viewportZoom;
 				const worldDx = worldX - centerX;
 				const worldDy = worldY - centerY;
 				const distance = Math.sqrt(worldDx * worldDx + worldDy * worldDy);
