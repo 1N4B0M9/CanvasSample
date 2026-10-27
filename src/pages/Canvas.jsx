@@ -1,63 +1,55 @@
-/**
- * Canvas.jsx - Fixed to Account for Navbar/Footer Layout
- */
-import React, { useState, useEffect, useRef } from 'react';
-import { doc, getDoc, collection } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
 import RenderCanvas from '../components/Canvas/Layout/RenderCanvas';
 import { CanvasDataProvider, useCanvasData } from '../components/Canvas/Utils/CanvasDataContext';
-import { db } from '../firebase/firebase';
 import { useAuth } from '../firebase/AuthContext';
 
 const CanvasDataContent = () => {
 	const [activeTab, setActiveTab] = useState(0);
-	const [availableHeight, setAvailableHeight] = useState('100vh');
 	const { canvases, loading, loadError } = useCanvasData(); // ← use error flag
-	const contentRef = useRef(null);
-	const containerRef = useRef(null);
 
 	useEffect(() => {
-		const calculateHeight = () => {
-			const navbar =
-				document.querySelector('header[class*="MuiAppBar"]') ||
-				document.querySelector('nav') ||
-				document.querySelector('[class*="navbar"]');
-			const navbarHeight = navbar ? navbar.offsetHeight : 64;
-			const windowHeight = window.innerHeight;
-			const calculatedHeight = windowHeight - navbarHeight;
-			setAvailableHeight(`${calculatedHeight}px`);
+		const html = document.documentElement;
+		const body = document.body;
+		const previousHtmlOverflow = html.style.overflow;
+		const previousBodyOverflow = body.style.overflow;
+		const supportsOverflowClip = typeof CSS !== 'undefined' && CSS.supports('overflow', 'clip');
+		const overflowValue = supportsOverflowClip ? 'clip' : 'hidden';
+		const resetPageScroll = () => {
+			if (html.scrollLeft || html.scrollTop) {
+				html.scrollLeft = 0;
+				html.scrollTop = 0;
+			}
+			if (body.scrollLeft || body.scrollTop) {
+				body.scrollLeft = 0;
+				body.scrollTop = 0;
+			}
 		};
-		calculateHeight();
-		const handleResize = () => {
-			setTimeout(calculateHeight, 100);
-		};
-		window.addEventListener('resize', handleResize);
-		const observer = new MutationObserver(calculateHeight);
-		if (document.body) {
-			observer.observe(document.body, {
-				childList: true,
-				subtree: true,
-				attributes: true,
-				attributeFilter: ['class', 'style'],
-			});
+
+		html.style.overflow = overflowValue;
+		body.style.overflow = overflowValue;
+		if (!supportsOverflowClip) {
+			html.addEventListener('scroll', resetPageScroll, { passive: true });
+			body.addEventListener('scroll', resetPageScroll, { passive: true });
 		}
+
 		return () => {
-			window.removeEventListener('resize', handleResize);
-			observer.disconnect();
+			html.removeEventListener('scroll', resetPageScroll);
+			body.removeEventListener('scroll', resetPageScroll);
+			html.style.overflow = previousHtmlOverflow;
+			body.style.overflow = previousBodyOverflow;
 		};
 	}, []);
 
+	const supportsOverflowClip = typeof CSS !== 'undefined' && CSS.supports('overflow', 'clip');
+
 	const handleTabChange = (tabId) => {
 		setActiveTab(tabId);
-		window.scrollTo(0, 0);
-		if (contentRef.current) {
-			contentRef.current.scrollTop = 0;
-		}
 	};
 
 	// Initial loading UI
 	if (loading) {
 		return (
-			<div className="w-full h-screen flex items-center justify-center">
+			<div className="w-full h-[100dvh] flex items-center justify-center">
 				<span className="text-gray-600">Loading…</span>
 			</div>
 		);
@@ -66,7 +58,7 @@ const CanvasDataContent = () => {
 	// Cloud load failure UI (prevents immediate overwrite since autosave is gated by loadedFromStorage)
 	if (loadError) {
 		return (
-			<div className="w-full h-screen flex items-center justify-center">
+			<div className="w-full h-[100dvh] flex items-center justify-center">
 				<div className="text-center space-y-2">
 					<p className="text-red-600 font-medium">Failed to load from cloud.</p>
 					<p className="text-gray-600">Showing local/default copy. Try refresh when you’re back online.</p>
@@ -76,7 +68,7 @@ const CanvasDataContent = () => {
 	}
 
 	return (
-		<div ref={containerRef} className="flex flex-col w-full h-screen min-h-0">
+		<div className={`fixed inset-0 min-h-0 ${supportsOverflowClip ? 'overflow-clip' : 'overflow-hidden'}`}>
 			<div className="absolute top-4 right-4 flex space-x-2 z-40" data-ui-element="true" data-export-hide="true">
 				{canvases.map((canvas) => (
 					<button
@@ -93,7 +85,7 @@ const CanvasDataContent = () => {
 				))}
 			</div>
 
-			<div ref={contentRef} className="w-full h-full">
+			<div className="w-full h-full min-h-0">
 				{canvases.map((canvas) => (
 					<div key={canvas.id} className={`w-full h-full ${activeTab === canvas.id ? 'block' : 'hidden'}`}>
 						<RenderCanvas canvasId={canvas.id} />

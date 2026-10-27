@@ -49,6 +49,7 @@ const CanvasContent = () => {
 		setViewportZoom,
 		screenToWorld,
 	} = useCanvas();
+	const supportsOverflowClip = typeof CSS !== 'undefined' && CSS.supports('overflow', 'clip');
 
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
 	const [deletionSummary, setDeletionSummary] = React.useState(null);
@@ -176,6 +177,20 @@ const CanvasContent = () => {
 			if (el) el.removeEventListener('wheel', handleWheel);
 		};
 	}, [handleWheel]);
+
+	useEffect(() => {
+		if (supportsOverflowClip || !canvasRef.current) return undefined;
+
+		const resetCanvasScroll = () => {
+			if (canvasRef.current.scrollLeft || canvasRef.current.scrollTop) {
+				canvasRef.current.scrollLeft = 0;
+				canvasRef.current.scrollTop = 0;
+			}
+		};
+
+		canvasRef.current.addEventListener('scroll', resetCanvasScroll, { passive: true });
+		return () => canvasRef.current?.removeEventListener('scroll', resetCanvasScroll);
+	}, [canvasRef, supportsOverflowClip]);
 
 	// Entry door 2: "Build a path for this →" pill on a board element
 	const openPathForElement = React.useCallback((content, triggeredByElementId = null) => {
@@ -530,7 +545,7 @@ const CanvasContent = () => {
 			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
 			<div
 				ref={canvasRef}
-				className="w-full h-full relative"
+				className={`w-full h-full relative ${supportsOverflowClip ? 'overflow-clip' : 'overflow-hidden'}`}
 				style={{
 					backgroundColor: backgroundImage ? 'transparent' : '#ffffff', // white background
 					border: '1px solid #d1d5db', // gray-300
@@ -565,18 +580,19 @@ const CanvasContent = () => {
 					<RenderElements onOpenPanel={openPathForElement} panelAnchorId={pathOpen ? pathAnchorId : null} />
 				</div>
 
-				{/* zoom HUD — sits outside the transform wrapper so it stays fixed on screen */}
-				<div style={{ position: 'absolute', bottom: '1rem', left: '1rem', zIndex: 50 }}>
-					<ViewportHUD
-						zoom={viewportZoom}
-						onZoomIn={() => setViewportZoom((z) => Math.min(5, parseFloat((z * 1.1).toFixed(3))))}
-						onZoomOut={() => setViewportZoom((z) => Math.max(0.1, parseFloat((z * 0.9).toFixed(3))))}
-						onReset={() => {
-							setViewportZoom(1);
-							setViewportOffset({ x: 0, y: 0 });
-						}}
-					/>
-				</div>
+			</div>
+
+			{/* HUD is outside the clipped canvas viewport so it cannot move with board scrolling. */}
+			<div style={{ position: 'absolute', bottom: '1rem', left: '1rem', zIndex: 50 }}>
+				<ViewportHUD
+					zoom={viewportZoom}
+					onZoomIn={() => setViewportZoom((z) => Math.min(5, parseFloat((z * 1.1).toFixed(3))))}
+					onZoomOut={() => setViewportZoom((z) => Math.max(0.1, parseFloat((z * 0.9).toFixed(3))))}
+					onReset={() => {
+						setViewportZoom(1);
+						setViewportOffset({ x: 0, y: 0 });
+					}}
+				/>
 			</div>
 
 			<DeleteConfirmModal
