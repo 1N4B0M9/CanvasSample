@@ -30,7 +30,7 @@ const CanvasElement = ({
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
-	const { highlightedStepIds } = useCanvas();
+	const { highlightedStepIds, canvasRef } = useCanvas();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
 	const textRef = useRef(null);
@@ -87,14 +87,14 @@ const CanvasElement = ({
 	const handleStartConnection = (e) => {
 		e.stopPropagation();
 		e.preventDefault();
-		onStartConnection(element.id);
+		onStartConnection(element.id, e);
 	};
 
 	const handleStartArrow = (e) => {
 		e.stopPropagation();
 		e.preventDefault();
 		if (typeof onStartArrow === 'function') {
-			onStartArrow(element.id);
+			onStartArrow(element.id, e);
 		}
 	};
 
@@ -117,6 +117,7 @@ const CanvasElement = ({
 		const rect = elementRef.current.getBoundingClientRect();
 		const centerX = rect.left + rect.width / 2;
 		const centerY = rect.top + rect.height / 2;
+		const canvasRect = canvasRef.current?.getBoundingClientRect();
 
 		onScaleStart(
 			element.id,
@@ -127,6 +128,8 @@ const CanvasElement = ({
 				initialScale: element.scale,
 				initialWidth: rect.width,
 				initialHeight: rect.height,
+				canvasLeft: canvasRect?.left || 0,
+				canvasTop: canvasRect?.top || 0,
 			},
 			e,
 		);
@@ -135,7 +138,8 @@ const CanvasElement = ({
 	return (
 		<div
 			ref={elementRef}
-			className={`absolute ${isConnecting ? 'cursor-crosshair' : isCreatingArrow ? 'cursor-crosshair' : ''}`}
+			className={`absolute select-none ${isConnecting ? 'cursor-crosshair' : isCreatingArrow ? 'cursor-crosshair' : ''}`}
+			draggable={false}
 			style={{
 				left: element.x,
 				top: element.y,
@@ -149,6 +153,7 @@ const CanvasElement = ({
 			}}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
+			onDragStart={(e) => e.preventDefault()}
 			data-element-id={element.id}
 		>
 			<div ref={contentRef} className="relative">

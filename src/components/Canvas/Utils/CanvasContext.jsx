@@ -233,10 +233,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	}, [setArrowsWithSave]);
 
 	const connectionOps = useConnectionOperations(
-		elements,
 		connections,
 		setConnectionsWithSave,
-		selectedConnectionId,
 		setSelectedConnectionId,
 	);
 
@@ -446,9 +444,17 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 	// Start a connection from an element
 	const handleStartConnection = useCallback(
-		(elementId) => {
+		(elementId, event) => {
 			const element = elements.find((el) => el.id === elementId);
 			if (!element) return;
+
+			if (event && canvasRef.current) {
+				const rect = canvasRef.current.getBoundingClientRect();
+				setMousePosition({
+					x: event.clientX - rect.left,
+					y: event.clientY - rect.top,
+				});
+			}
 
 			setIsConnecting(true);
 			setConnectionStart({
@@ -456,7 +462,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				element,
 			});
 		},
-		[elements],
+		[elements, canvasRef],
 	);
 
 	// Complete a connection to another element
@@ -544,9 +550,17 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 	// Start creating an arrow from an element
 	const handleStartArrow = useCallback(
-		(elementId) => {
+		(elementId, event) => {
 			const element = elements.find((el) => el.id === elementId);
 			if (!element) return;
+
+			if (event && canvasRef.current) {
+				const rect = canvasRef.current.getBoundingClientRect();
+				setMousePosition({
+					x: event.clientX - rect.left,
+					y: event.clientY - rect.top,
+				});
+			}
 
 			setIsCreatingArrow(true);
 			setArrowStart({
@@ -554,7 +568,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				element,
 			});
 		},
-		[elements],
+		[elements, canvasRef],
 	);
 
 	// Complete an arrow to another element

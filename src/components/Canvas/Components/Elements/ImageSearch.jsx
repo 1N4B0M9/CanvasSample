@@ -24,6 +24,7 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const [page, setPage] = useState(1);
+	const [hasSearched, setHasSearched] = useState(false);
 
 	/**
 	 * Search for images on Unsplash with the given query
@@ -34,6 +35,7 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 	const searchImages = async (query, pageNum = 1) => {
 		if (!query.trim()) return;
 
+		setHasSearched(true);
 		setIsLoading(true);
 		setError(null);
 
@@ -311,7 +313,7 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 							</button>
 						)}
 					</>
-				) : searchTerm.trim() && !isLoading ? (
+				) : hasSearched && searchTerm.trim() && !isLoading ? (
 					<div className="text-gray-300 text-center py-4">No images found. Try a different search term.</div>
 				) : null}
 			</div>
