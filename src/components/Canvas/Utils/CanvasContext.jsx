@@ -1239,8 +1239,8 @@ export const CanvasProvider = ({ children, canvasId }) => {
 								ctx.fillStyle = index % 2 === 0 ? '#D9E9F5' : '#ECF4FA';
 								ctx.strokeStyle = '#9BB8CC';
 								ctx.lineWidth = 1;
-								ctx.fillRect(-offset, -offset, element.width, element.height);
-								ctx.strokeRect(-offset, -offset, element.width, element.height);
+								ctx.fillRect(offset, -offset, element.width, element.height);
+								ctx.strokeRect(offset, -offset, element.width, element.height);
 							});
 						}
 
