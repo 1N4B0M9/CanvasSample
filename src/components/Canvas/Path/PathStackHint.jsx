@@ -15,7 +15,7 @@ const PathStackHint = ({ cardCount }) => {
 						key={depth}
 						className="absolute inset-0 rounded border border-[#9BB8CC] shadow-sm"
 						style={{
-							transform: `translate(${-offset}px, ${-offset}px)`,
+							transform: `translate(${offset}px, ${-offset}px)`,
 							zIndex: index,
 							backgroundColor: index % 2 === 0 ? '#D9E9F5' : '#ECF4FA',
 						}}
