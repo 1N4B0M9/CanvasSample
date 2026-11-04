@@ -145,11 +145,20 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 				<div
 					className="absolute inset-0 z-30 overflow-hidden rounded-xl border border-[#D3D3D3] bg-white shadow-xl"
 					style={{
-						transform: `rotate(${-rotation}deg) scale(${1 / scale})`,
+						transform: `rotate(${-rotation}deg)`,
 						transformOrigin: 'center',
 					}}
 				>
-					<div className="flex h-full flex-col overflow-y-auto p-3">
+					<div
+						className="absolute left-1/2 top-1/2"
+						style={{
+							width: `${(element.width || 300) * scale}px`,
+							height: `${(element.height || 220) * scale}px`,
+							transform: `translate(-50%, -50%) scale(${1 / scale})`,
+							transformOrigin: 'center',
+						}}
+					>
+						<div className="flex h-full flex-col overflow-y-auto p-3">
 						<div className="flex items-center justify-between gap-2">
 							<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
 								{path.goalSummary || path.goal || 'Goal path'}
@@ -259,6 +268,7 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 								</ul>
 							</div>
 						)}
+						</div>
 					</div>
 				</div>
 			)}
