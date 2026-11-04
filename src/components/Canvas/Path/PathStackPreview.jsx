@@ -131,7 +131,12 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 			data-path-preview="true"
 		>
 			<div className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${isExpanded ? 'opacity-0' : 'opacity-100'}`}>
-				<PathStackHint cardCount={steps.length} />
+				<PathStackHint
+					cardCount={steps.length}
+					width={element.width || 300}
+					height={element.height || 220}
+					scale={scale}
+				/>
 			</div>
 			<div
 				className={`absolute inset-0 z-20 transition-all duration-200 ${
