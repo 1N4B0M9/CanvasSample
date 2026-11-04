@@ -12,7 +12,7 @@ import SavedPathView from './SavedPathView';
  * BoardResourcesSidebar. Full-height right panel on desktop, bottom sheet on mobile.
  * Owns the SSE connection via usePlanStream.
  */
-const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard }) => {
+const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard, onUpdatePath }) => {
 	const {
 		phase,
 		intent,
@@ -125,7 +125,7 @@ const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard 
 
 			<div className="flex-1 overflow-y-auto">
 				{showSavedPath && savedPath ? (
-					<SavedPathView path={savedPath} onRegenerate={handleRegenerate} />
+					<SavedPathView path={savedPath} onRegenerate={handleRegenerate} onUpdatePath={onUpdatePath} />
 				) : (
 					<>
 						{phase === 'idle' && (
@@ -207,6 +207,7 @@ PathPanel.propTypes = {
 	}),
 	onClose: PropTypes.func.isRequired,
 	onPlaceOnBoard: PropTypes.func.isRequired,
+	onUpdatePath: PropTypes.func.isRequired,
 };
 
 PathPanel.defaultProps = {
