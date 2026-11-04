@@ -22,17 +22,23 @@ const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) 
 		console.log('Image loaded successfully:', element);
 		setIsLoaded(true);
 
+		const naturalWidth = event.currentTarget.naturalWidth;
+		const naturalHeight = event.currentTarget.naturalHeight;
+		const imageAspectRatio = naturalWidth > 0 && naturalHeight > 0 ? naturalWidth / naturalHeight : null;
 		if (element.fitToImage) {
 			const { width, height } = fitImageDimensions(
-				event.currentTarget.naturalWidth,
-				event.currentTarget.naturalHeight,
+				naturalWidth,
+				naturalHeight,
 			);
 			onUpdate?.({
 				...element,
 				width,
 				height,
+				imageAspectRatio,
 				fitToImage: false,
 			});
+		} else if (imageAspectRatio && element.imageAspectRatio !== imageAspectRatio) {
+			onUpdate?.({ ...element, imageAspectRatio });
 		}
 	};
 

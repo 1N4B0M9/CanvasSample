@@ -70,10 +70,13 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	// Refs
 	const canvasRef = useRef(null);
 	const saveTimeoutRef = useRef(null);
+	const loadedCanvasIdRef = useRef(null);
 
-	// Load canvas data from CanvasDataContext on mount
+	// Load canvas data once per canvas after the provider has finished loading.
 	useEffect(() => {
-		const { canvases } = canvasDataContext;
+		const { canvases, loading } = canvasDataContext;
+		if (loading || loadedCanvasIdRef.current === canvasId) return;
+
 		const canvas = canvases.find((c) => c.id === canvasId);
 
 		if (canvas && canvas.data) {
@@ -84,7 +87,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 						const currentWidth = element.width || 1;
 						const currentHeight = element.height || 1;
-						const dimensions = getPathMinimumDimensions(currentWidth, currentHeight);
+						const dimensions = getPathMinimumDimensions(currentWidth, currentHeight, element.imageAspectRatio);
 						const dx = (dimensions.width - currentWidth) / 2;
 						const dy = (dimensions.height - currentHeight) / 2;
 						const scale = Math.max(element.scale || 1, getPathMinimumScale(dimensions.width, dimensions.height));
@@ -118,8 +121,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				setBackgroundScale(canvas.data.backgroundScale);
 			}
 			setBoardResources(canvas.data.boardResources ?? []);
+			loadedCanvasIdRef.current = canvasId;
 		}
-	}, [canvasId, canvasDataContext]);
+	}, [canvasId, canvasDataContext.canvases, canvasDataContext.loading]);
 
 	// Save to CanvasDataContext whenever data changes
 	useEffect(() => {
