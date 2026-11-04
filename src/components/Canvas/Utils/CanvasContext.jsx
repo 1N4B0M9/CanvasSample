@@ -1231,14 +1231,17 @@ export const CanvasProvider = ({ children, canvasId }) => {
 						});
 					} else if (element.type === 'image') {
 						if (Array.isArray(element.path?.steps) && element.path.steps.length > 0) {
-							ctx.fillStyle = '#D9E9F5';
-							ctx.strokeStyle = '#9BB8CC';
-							ctx.lineWidth = 1;
-							ctx.fillRect(-8, -8, element.width, element.height);
-							ctx.strokeRect(-8, -8, element.width, element.height);
-							ctx.fillStyle = '#ECF4FA';
-							ctx.fillRect(8, -4, element.width, element.height);
-							ctx.strokeRect(8, -4, element.width, element.height);
+							const previewCount = Math.min(3, element.path.steps.length);
+							Array.from({ length: previewCount }, (_, index) => {
+								const depth = previewCount - index;
+								return depth * 8;
+							}).forEach((offset, index) => {
+								ctx.fillStyle = index % 2 === 0 ? '#D9E9F5' : '#ECF4FA';
+								ctx.strokeStyle = '#9BB8CC';
+								ctx.lineWidth = 1;
+								ctx.fillRect(-offset, -offset, element.width, element.height);
+								ctx.strokeRect(-offset, -offset, element.width, element.height);
+							});
 						}
 
 						// Draw image element
