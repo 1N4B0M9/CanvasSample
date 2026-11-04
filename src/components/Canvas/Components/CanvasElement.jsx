@@ -246,7 +246,12 @@ const CanvasElement = ({
 					</div>
 				)}
 				{element.path && Array.isArray(element.path.steps) && (
-					<PathStackPreview element={element} path={element.path} onExpandedChange={setIsPathExpanded} />
+					<PathStackPreview
+						element={element}
+						path={element.path}
+						onExpandedChange={setIsPathExpanded}
+						onUpdatePath={(nextPath) => onUpdate({ ...element, path: nextPath })}
+					/>
 				)}
 			</div>
 

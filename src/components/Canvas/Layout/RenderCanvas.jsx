@@ -216,6 +216,14 @@ const CanvasContent = () => {
 		setPathOpen(true);
 	}, []);
 
+	const handleUpdatePath = React.useCallback(
+		(nextPath) => {
+			const anchorElement = elements.find((element) => element.id === pathAnchorId);
+			if (anchorElement) updateElement({ ...anchorElement, path: nextPath });
+		},
+		[elements, pathAnchorId, updateElement],
+	);
+
 	const handleToolPanelChange = React.useCallback((panel) => {
 		if (panel) {
 			setPathOpen(false);
@@ -590,6 +598,7 @@ const CanvasContent = () => {
 					setPathAnchorId(null);
 				}}
 				onPlaceOnBoard={handlePlacePathOnBoard}
+				onUpdatePath={handleUpdatePath}
 			/>
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
