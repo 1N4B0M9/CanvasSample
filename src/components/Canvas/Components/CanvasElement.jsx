@@ -302,7 +302,7 @@ const CanvasElement = ({
 
 					{selectedIds.size === 1 && (
 						<div
-							className="absolute -top-8 left-1/2 flex gap-2"
+							className="absolute -top-8 left-1/2 flex w-max items-center gap-2"
 							style={{
 								transform: `translateX(-50%) scale(${1 / element.scale})`,
 								transformOrigin: 'center',
@@ -311,7 +311,7 @@ const CanvasElement = ({
 							{element.type === 'image' && (
 								<button
 									type="button"
-									className="rounded bg-white p-1 shadow hover:bg-gray-100"
+									className="flex-none whitespace-nowrap rounded bg-white p-1 shadow hover:bg-gray-100"
 									onClick={(e) => {
 										e.stopPropagation();
 										if (hasPathStack) setIsPathExpanded(true);
