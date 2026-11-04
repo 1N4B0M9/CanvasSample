@@ -40,7 +40,7 @@ const CanvasElement = ({
 	const lastMeasuredRef = useRef({ w: 0, h: 0 });
 
 	const measureElementSize = useCallback(() => {
-		if (!elementRef.current) return;
+		if (!elementRef.current || element.type === 'image') return;
 		// offsetWidth/offsetHeight are layout pixels, unaffected by CSS transforms
 		// on this element or any ancestor — safe to store as world coordinates.
 		const w = elementRef.current.offsetWidth;
@@ -51,11 +51,11 @@ const CanvasElement = ({
 	}, [element.id, onUpdateSize]);
 
 	useEffect(() => {
-		if (!elementRef.current) return;
+		if (!elementRef.current || element.type === 'image') return;
 		const observer = new ResizeObserver(measureElementSize);
 		observer.observe(elementRef.current);
 		return () => observer.disconnect();
-	}, [element.id]);
+	}, [element.id, element.type, measureElementSize]);
 
 	useEffect(() => {
 		if (!isSelected) setIsEditingLabel(false);
