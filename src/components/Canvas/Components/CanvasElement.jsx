@@ -302,7 +302,7 @@ const CanvasElement = ({
 
 					{selectedIds.size === 1 && (
 						<div
-							className="absolute -top-8 left-1/2 flex w-max items-center gap-2"
+							className="absolute -top-10 left-1/2 z-40 flex w-max items-center gap-2"
 							style={{
 								transform: `translateX(-50%) scale(${1 / element.scale})`,
 								transformOrigin: 'center',
