@@ -31,6 +31,7 @@ const CanvasElement = ({
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
+	const [isPathExpanded, setIsPathExpanded] = useState(false);
 	const { highlightedStepIds, canvasRef } = useCanvas();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
@@ -146,6 +147,7 @@ const CanvasElement = ({
 				top: element.y,
 				transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
 				transformOrigin: 'center',
+				zIndex: isPathExpanded ? 40 : undefined,
 				cursor: isEditing ? 'text' : 'move',
 				boxShadow:
 					isPanelAnchor || highlightedStepIds.includes(element.id)
@@ -163,6 +165,7 @@ const CanvasElement = ({
 					<ImageElement
 						element={element}
 						onUpdate={onUpdate}
+						isPathExpanded={isPathExpanded}
 						isEditingLabel={isEditingLabel}
 						setIsEditingLabel={setIsEditingLabel}
 					/>
@@ -243,7 +246,7 @@ const CanvasElement = ({
 					</div>
 				)}
 				{element.path && Array.isArray(element.path.steps) && (
-					<PathStackPreview element={element} path={element.path} />
+					<PathStackPreview element={element} path={element.path} onExpandedChange={setIsPathExpanded} />
 				)}
 			</div>
 

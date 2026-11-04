@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fitImageDimensions } from '../../Utils/imageSizing';
 
-const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) => {
+const ImageElement = ({ element, onUpdate, isPathExpanded, isEditingLabel, setIsEditingLabel }) => {
 	const [imageError, setImageError] = useState(false);
 	const [isLoaded, setIsLoaded] = useState(false);
 
@@ -68,8 +68,15 @@ const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) 
 
 	return (
 		<div
-			className="relative overflow-hidden rounded border border-gray-300"
-			style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }}
+			className="relative overflow-hidden rounded border border-gray-300 transition-all duration-200"
+			style={{
+				width: `${width}px`,
+				height: `${height}px`,
+				maxWidth: '100%',
+				transform: isPathExpanded ? 'translateY(-12px) scale(1.03)' : undefined,
+				transformOrigin: 'center',
+				boxShadow: isPathExpanded ? '0 12px 24px rgba(5, 50, 84, 0.25)' : undefined,
+			}}
 		>
 			{!isLoaded && !imageError && (
 				<div className="absolute inset-0 flex items-center justify-center bg-gray-100">
