@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 const PathStackHint = ({ stepCount, onExpand }) => (
 	<button
 		type="button"
-		className="relative mt-2 flex min-h-[44px] w-[170px] items-center justify-center rounded-lg border border-[#9BB8CC] bg-white px-3 text-sm font-bold text-[#053254] shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
+		className="relative mt-2 flex min-h-[44px] w-[170px] items-center justify-center rounded-lg border border-[#9BB8CC] bg-white px-3 text-sm font-bold text-[#053254] shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
 		onClick={(event) => {
 			event.stopPropagation();
 			onExpand();

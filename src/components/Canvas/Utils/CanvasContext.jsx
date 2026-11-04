@@ -1264,6 +1264,22 @@ export const CanvasProvider = ({ children, canvasId }) => {
 						});
 					}
 
+					// Export the collapsed path hint only; expanded stack UI is temporary.
+					if (Array.isArray(element.path?.steps) && element.path.steps.length > 0) {
+						const hintWidth = Math.max(120, Math.min(170, element.width || 170));
+						const hintY = (element.height || 0) + 8;
+						ctx.fillStyle = '#ECF4FA';
+						ctx.fillRect(4, hintY - 3, hintWidth - 8, 4);
+						ctx.fillStyle = '#ffffff';
+						ctx.strokeStyle = '#9BB8CC';
+						ctx.lineWidth = 1;
+						ctx.fillRect(0, hintY, hintWidth, 28);
+						ctx.strokeRect(0, hintY, hintWidth, 28);
+						ctx.fillStyle = '#053254';
+						ctx.font = 'bold 12px Arial';
+						ctx.fillText(`✨ ${element.path.steps.length} path steps`, 8, hintY + 18);
+					}
+
 					ctx.restore();
 				}
 
