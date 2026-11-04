@@ -69,6 +69,19 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 		noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
 	};
 
+	const handleCardKeyDown = (event) => {
+		if (event.key === 'ArrowRight') {
+			event.preventDefault();
+			cycleTo((activeIndex + 1) % activeSteps.length, 1);
+		} else if (event.key === 'ArrowLeft') {
+			event.preventDefault();
+			cycleTo((activeIndex - 1 + activeSteps.length) % activeSteps.length, -1);
+		} else if (event.key === 'Escape') {
+			event.preventDefault();
+			setExpanded(false);
+		}
+	};
+
 	useEffect(() => {
 		setActiveIndex((index) => Math.min(index, Math.max(activeSteps.length - 1, 0)));
 	}, [path.createdAt, activeSteps.length]);
@@ -137,7 +150,7 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 							</p>
 							<button
 								type="button"
-								className="min-h-[36px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA]"
+								className="min-h-[36px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
 								onClick={() => setExpanded(false)}
 								aria-label="Collapse goal path"
 							>
@@ -157,7 +170,7 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 								<div className="mt-3 flex items-center justify-between gap-2">
 									<button
 										type="button"
-										className="min-h-[44px] min-w-[44px] rounded-full border border-[#D3D3D3] text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] disabled:opacity-40"
+										className="min-h-[44px] min-w-[44px] rounded-full border border-[#D3D3D3] text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
 										onClick={() =>
 											cycleTo((activeIndex - 1 + activeSteps.length) % activeSteps.length, -1)
 										}
@@ -173,9 +186,11 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 								</div>
 								<button
 									type="button"
-									className={`mt-3 w-full rounded-xl border border-[#D3D3D3] bg-[#F8FBFD] p-4 text-left shadow-sm transition-all duration-200 ${cardTransitionClass}`}
+									className={`mt-3 w-full rounded-xl border border-[#D3D3D3] bg-[#F8FBFD] p-4 text-left shadow-sm transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${cardTransitionClass}`}
 									onClick={() => cycleTo((activeIndex + 1) % activeSteps.length, 1)}
+									onKeyDown={handleCardKeyDown}
 									disabled={activeSteps.length < 2 || isCycling || isCompleting}
+									aria-label={`${activeStep.title}. Step ${activeStep.order} of ${steps.length}. Use arrow keys to change steps.`}
 								>
 									<p className="text-base font-bold text-[#053254]">{activeStep.title}</p>
 									{activeStep.why && <p className="mt-1 text-sm text-[#111827]">{activeStep.why}</p>}
@@ -205,7 +220,7 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 								</button>
 								<button
 									type="button"
-									className="mt-2 min-h-[44px] w-full rounded-lg bg-[#1B7A43] px-3 text-sm font-bold text-white hover:bg-[#166535] disabled:opacity-60"
+									className="mt-2 min-h-[44px] w-full rounded-lg bg-[#1B7A43] px-3 text-sm font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60"
 									onClick={completeActiveStep}
 									disabled={isCompleting}
 								>
@@ -229,7 +244,7 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 											<span className="line-through">{step.title}</span>
 											<button
 												type="button"
-												className="min-h-[36px] rounded px-2 font-bold underline hover:bg-white"
+												className="min-h-[36px] rounded px-2 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
 												onClick={() => undoStep(step.id, step.title)}
 											>
 												Undo
