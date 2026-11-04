@@ -19,6 +19,7 @@ export default function usePlanStream() {
 	const [hotlines, setHotlines] = useState([]);
 	const [planMeta, setPlanMeta] = useState(null);
 	const [error, setError] = useState(null);
+	const [query, setQuery] = useState('');
 
 	const queryRef = useRef('');
 	const boardContextRef = useRef(null);
@@ -35,6 +36,7 @@ export default function usePlanStream() {
 		setHotlines([]);
 		setPlanMeta(null);
 		setError(null);
+		setQuery('');
 		queryRef.current = '';
 		boardContextRef.current = null;
 		correctionsRef.current = [];
@@ -155,17 +157,34 @@ export default function usePlanStream() {
 
 	/** First call: just the query (+ optional board context). */
 	const ask = useCallback(
-		(query, boardContext = null) => {
-			queryRef.current = query;
+		(goalQuery, boardContext = null) => {
+			queryRef.current = goalQuery;
+			setQuery(goalQuery);
 			boardContextRef.current = boardContext;
 			correctionsRef.current = [];
 			setSteps([]);
 			setResourcesByStep({});
 			setPlanMeta(null);
-			stream({ query, boardContext: boardContext ?? undefined });
+			stream({ query: goalQuery, boardContext: boardContext ?? undefined });
 		},
 		[stream],
 	);
+
+	const loadFixture = useCallback((fixture) => {
+		if (process.env.NODE_ENV === 'production' || !fixture) return;
+
+		if (abortRef.current) abortRef.current.abort();
+		queryRef.current = fixture.query ?? '';
+		setQuery(fixture.query ?? '');
+		setIntent(fixture.intent ?? null);
+		setQuestions([]);
+		setSteps(fixture.steps ?? []);
+		setResourcesByStep(fixture.resourcesByStep ?? {});
+		setHotlines([]);
+		setPlanMeta(fixture.planMeta ?? null);
+		setError(null);
+		setPhase('done');
+	}, []);
 
 	/** Second call: same query plus the intake answers. */
 	const submitAnswers = useCallback(
@@ -203,6 +222,7 @@ export default function usePlanStream() {
 	return {
 		phase,
 		intent,
+		query,
 		questions,
 		steps,
 		resourcesByStep,
@@ -214,5 +234,6 @@ export default function usePlanStream() {
 		skipIntake,
 		sendCorrection,
 		reset,
+		loadFixture,
 	};
 }

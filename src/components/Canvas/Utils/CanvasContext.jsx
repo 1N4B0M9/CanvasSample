@@ -345,6 +345,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				type: 'image',
 				src: imageData.url,
 				alt: imageData.title || 'Unsplash image',
+				...(imageData.searchQuery ? { searchQuery: imageData.searchQuery } : {}),
 				attribution: {
 					photographer: imageData.photographer || 'Unknown',
 					photographerUrl: imageData.photographerUrl || '',
