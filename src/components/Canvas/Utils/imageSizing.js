@@ -12,14 +12,16 @@ export const getImageMaxDimensions = () => ({
 
 export const getInitialImageDimensions = () => getImageMaxDimensions();
 
-export const getPathMinimumDimensions = (width, height) => {
+export const getPathMinimumDimensions = (width, height, aspectRatio) => {
 	const safeWidth = Math.max(Number(width) || 1, 1);
 	const safeHeight = Math.max(Number(height) || 1, 1);
-	const scale = Math.max(1, PATH_MIN_WIDTH / safeWidth, PATH_MIN_HEIGHT / safeHeight);
+	const ratio = Number(aspectRatio) > 0 ? Number(aspectRatio) : safeWidth / safeHeight;
+	const baseHeight = safeWidth / ratio;
+	const scale = Math.max(1, PATH_MIN_WIDTH / safeWidth, PATH_MIN_HEIGHT / baseHeight);
 
 	return {
 		width: Math.round(safeWidth * scale),
-		height: Math.round(safeHeight * scale),
+		height: Math.round(baseHeight * scale),
 	};
 };
 

@@ -242,7 +242,11 @@ const CanvasContent = () => {
 				if (anchorElement?.type === 'image') {
 					const currentWidth = anchorElement.width || 1;
 					const currentHeight = anchorElement.height || 1;
-					const dimensions = getPathMinimumDimensions(currentWidth, currentHeight);
+					const dimensions = getPathMinimumDimensions(
+						currentWidth,
+						currentHeight,
+						anchorElement.imageAspectRatio,
+					);
 					const dx = (dimensions.width - currentWidth) / 2;
 					const dy = (dimensions.height - currentHeight) / 2;
 					updateElement({
