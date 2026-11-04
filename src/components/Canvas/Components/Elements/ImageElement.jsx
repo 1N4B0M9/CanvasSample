@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fitImageDimensions } from '../../Utils/imageSizing';
 
 const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) => {
 	const [imageError, setImageError] = useState(false);
@@ -17,9 +18,22 @@ const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) 
 		setImageError(true);
 	};
 
-	const handleImageLoad = () => {
+	const handleImageLoad = (event) => {
 		console.log('Image loaded successfully:', element);
 		setIsLoaded(true);
+
+		if (element.fitToImage) {
+			const { width, height } = fitImageDimensions(
+				event.currentTarget.naturalWidth,
+				event.currentTarget.naturalHeight,
+			);
+			onUpdate?.({
+				...element,
+				width,
+				height,
+				fitToImage: false,
+			});
+		}
 	};
 
 	let imageSource = null;

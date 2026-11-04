@@ -18,6 +18,7 @@ import { useCanvasData } from './CanvasDataContext';
 import useElementOperations from './useElementOperations';
 import useConnectionOperations from './useConnectionOperations';
 import { ConvertCanvasToJson, ConvertJsonToCanvas } from './CanvasIO';
+import { getInitialImageDimensions } from './imageSizing';
 
 // Create context
 const CanvasContext = createContext(null);
@@ -277,9 +278,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				}
 			}
 
-			// Calculate screen-fitting dimensions
-			const maxWidth = window.innerWidth * 0.3; // 30% of screen width
-			const maxHeight = window.innerHeight * 0.3; // 30% of screen height
+			const { maxWidth, maxHeight } = getInitialImageDimensions();
 
 			const newElement = {
 				id: `image-${Date.now()}`,
@@ -288,8 +287,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				alt: file.name || 'Uploaded image',
 				x,
 				y,
-				width: Math.min(300, maxWidth), // Responsive width
-				height: Math.min(200, maxHeight), // Responsive height
+				width: maxWidth,
+				height: maxHeight,
+				fitToImage: true,
 				rotation: 0,
 				scale: 1,
 			};
@@ -337,9 +337,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				}
 			}
 
-			// Calculate screen-fitting dimensions
-			const maxWidth = window.innerWidth * 0.3; // 30% of screen width
-			const maxHeight = window.innerHeight * 0.3; // 30% of screen height
+			const { maxWidth, maxHeight } = getInitialImageDimensions();
 
 			// Create element with responsive dimensions
 			const newElement = {
@@ -353,8 +351,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				},
 				x,
 				y,
-				width: Math.min(300, maxWidth), // Responsive width
-				height: Math.min(200, maxHeight), // Responsive height
+				width: maxWidth,
+				height: maxHeight,
+				fitToImage: true,
 				rotation: 0,
 				scale: 1,
 			};
