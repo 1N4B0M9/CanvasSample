@@ -324,6 +324,21 @@ const CanvasElement = ({
 									{hasPathStack ? 'View steps' : '✨'}
 								</button>
 							)}
+							{hasPathStack && (
+								<button
+									type="button"
+									className="rounded bg-white p-1 shadow hover:bg-gray-100"
+									onClick={(e) => {
+										e.stopPropagation();
+										onOpenPanel?.('', element.id);
+									}}
+									onMouseDown={(e) => e.stopPropagation()}
+									title="Regenerate path"
+									aria-label="Regenerate path"
+								>
+									↻
+								</button>
+							)}
 							<button
 								className="p-1 bg-white rounded shadow hover:bg-gray-100"
 								onClick={handleStartConnection}
