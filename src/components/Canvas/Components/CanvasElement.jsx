@@ -137,6 +137,12 @@ const CanvasElement = ({
 		);
 	};
 	const hasPathStack = element.type === 'image' && Array.isArray(element.path?.steps);
+	let pathButtonText = '✨';
+	let pathButtonLabel = 'Get help with this goal';
+	if (hasPathStack) {
+		pathButtonText = isPathExpanded ? '×' : 'View steps';
+		pathButtonLabel = isPathExpanded ? 'Close steps' : 'View steps';
+	}
 
 	return (
 		<div
@@ -315,14 +321,14 @@ const CanvasElement = ({
 									className="flex-none whitespace-nowrap rounded bg-white p-1 shadow hover:bg-gray-100"
 									onClick={(e) => {
 										e.stopPropagation();
-										if (hasPathStack) setIsPathExpanded(true);
+										if (hasPathStack) setIsPathExpanded((expanded) => !expanded);
 										else onOpenPanel?.('', element.id);
 									}}
 									onMouseDown={(e) => e.stopPropagation()}
-									title={hasPathStack ? 'View steps' : 'Get help with this goal'}
-									aria-label={hasPathStack ? 'View steps' : 'Get help with this goal'}
+									title={pathButtonLabel}
+									aria-label={pathButtonLabel}
 								>
-									{hasPathStack ? 'View steps' : '✨'}
+									{pathButtonText}
 								</button>
 							)}
 							{hasPathStack && (
