@@ -238,7 +238,7 @@ const CanvasContent = () => {
 		({ goal, goalSummary, planId, steps, resourcesByStep }) => {
 			if (pathAnchorId) {
 				const anchorElement = elements.find((element) => element.id === pathAnchorId);
-				if (anchorElement) {
+				if (anchorElement?.type === 'image') {
 					updateElement({
 						...anchorElement,
 						path: {
