@@ -28,6 +28,17 @@ export const getPathMinimumDimensions = (width, height, aspectRatio) => {
 export const getPathMinimumScale = (width, height) =>
 	Math.max(0.2, PATH_MIN_WIDTH / (Number(width) || 1), PATH_MIN_HEIGHT / (Number(height) || 1));
 
+export const getPathPreviewOffset = (depth, width, height, scale = 1) => {
+	const elementScale = Math.max(Number(scale) || 1, 0.1);
+	const footprintScale = Math.max(
+		elementScale,
+		(Number(width) || PATH_MIN_WIDTH) / PATH_MIN_WIDTH,
+		(Number(height) || PATH_MIN_HEIGHT) / PATH_MIN_HEIGHT,
+	);
+
+	return (depth * 8 * Math.sqrt(footprintScale)) / elementScale;
+};
+
 export const fitImageDimensions = (naturalWidth, naturalHeight) => {
 	const { maxWidth, maxHeight } = getImageMaxDimensions();
 

@@ -18,7 +18,12 @@ import { useCanvasData } from './CanvasDataContext';
 import useElementOperations from './useElementOperations';
 import useConnectionOperations from './useConnectionOperations';
 import { ConvertCanvasToJson, ConvertJsonToCanvas } from './CanvasIO';
-import { getInitialImageDimensions, getPathMinimumDimensions, getPathMinimumScale } from './imageSizing';
+import {
+	getInitialImageDimensions,
+	getPathMinimumDimensions,
+	getPathMinimumScale,
+	getPathPreviewOffset,
+} from './imageSizing';
 
 // Create context
 const CanvasContext = createContext(null);
@@ -1232,16 +1237,21 @@ export const CanvasProvider = ({ children, canvasId }) => {
 					} else if (element.type === 'image') {
 						if (Array.isArray(element.path?.steps) && element.path.steps.length > 0) {
 							const previewCount = Math.min(3, element.path.steps.length);
-							Array.from({ length: previewCount }, (_, index) => {
-								const depth = previewCount - index;
-								return depth * 8;
-							}).forEach((offset, index) => {
-								ctx.fillStyle = index % 2 === 0 ? '#D9E9F5' : '#ECF4FA';
-								ctx.strokeStyle = '#9BB8CC';
-								ctx.lineWidth = 1;
-								ctx.fillRect(offset, -offset, element.width, element.height);
-								ctx.strokeRect(offset, -offset, element.width, element.height);
-							});
+							Array.from({ length: previewCount }, (_, index) => previewCount - index).forEach(
+								(depth, index) => {
+									const offset = getPathPreviewOffset(
+										depth,
+										element.width,
+										element.height,
+										finalScale,
+									);
+									ctx.fillStyle = index % 2 === 0 ? '#D9E9F5' : '#ECF4FA';
+									ctx.strokeStyle = '#9BB8CC';
+									ctx.lineWidth = 1;
+									ctx.fillRect(offset, -offset, element.width, element.height);
+									ctx.strokeRect(offset, -offset, element.width, element.height);
+								},
+							);
 						}
 
 						// Draw image element

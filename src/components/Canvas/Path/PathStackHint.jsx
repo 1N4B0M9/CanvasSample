@@ -1,14 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { getPathPreviewOffset } from '../Utils/imageSizing';
 
-const PathStackHint = ({ cardCount }) => {
+const PathStackHint = ({ cardCount, width, height, scale }) => {
 	const visibleCount = Math.min(3, cardCount);
 
 	return (
 		<div className="pointer-events-none absolute inset-0" aria-hidden="true">
 			{Array.from({ length: visibleCount }, (_, index) => {
 				const depth = visibleCount - index;
-				const offset = depth * 8;
+				const offset = getPathPreviewOffset(depth, width, height, scale);
 
 				return (
 					<div
@@ -28,6 +29,9 @@ const PathStackHint = ({ cardCount }) => {
 
 PathStackHint.propTypes = {
 	cardCount: PropTypes.number.isRequired,
+	width: PropTypes.number.isRequired,
+	height: PropTypes.number.isRequired,
+	scale: PropTypes.number.isRequired,
 };
 
 export default PathStackHint;
