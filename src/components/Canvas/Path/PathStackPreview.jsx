@@ -202,7 +202,15 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 									<p className="text-xs font-bold text-[#44546A]">
 										Step {activeStep.order} of {steps.length}
 									</p>
-									<span className="w-9" aria-hidden="true" />
+									<button
+										type="button"
+										className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
+										onClick={() => cycleTo((activeIndex + 1) % activeSteps.length, 1)}
+										disabled={activeSteps.length < 2 || isCycling || isCompleting}
+										aria-label="Next goal step"
+									>
+										→
+									</button>
 								</div>
 								<button
 									type="button"
