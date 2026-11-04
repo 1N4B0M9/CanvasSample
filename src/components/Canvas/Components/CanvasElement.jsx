@@ -421,6 +421,7 @@ const CanvasElement = ({
 										else onOpenPanel?.('', element.id);
 									}}
 									onMouseDown={(e) => e.stopPropagation()}
+									data-path-toggle="true"
 									title={pathButtonLabel}
 									aria-label={pathButtonLabel}
 								>

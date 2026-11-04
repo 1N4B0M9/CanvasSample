@@ -90,6 +90,7 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 		if (!isExpanded) return undefined;
 
 		const handleOutsidePointerDown = (event) => {
+			if (event.target.closest?.('[data-path-toggle="true"]')) return;
 			if (!rootRef.current?.contains(event.target)) onExpandedChange(false);
 		};
 		const handleEscape = (event) => {
