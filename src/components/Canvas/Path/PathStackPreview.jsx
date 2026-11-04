@@ -120,8 +120,6 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 			style={{
 				width: element.width || 300,
 				height: element.height || 220,
-				transform: `rotate(${-rotation}deg) scale(${1 / scale})`,
-				transformOrigin: 'center',
 			}}
 			onMouseDown={(event) => {
 				if (isExpanded) event.stopPropagation();
@@ -144,7 +142,13 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 				{children}
 			</div>
 			{isExpanded && (
-				<div className="absolute inset-0 z-30 overflow-hidden rounded-xl border border-[#D3D3D3] bg-white shadow-xl">
+				<div
+					className="absolute inset-0 z-30 overflow-hidden rounded-xl border border-[#D3D3D3] bg-white shadow-xl"
+					style={{
+						transform: `rotate(${-rotation}deg) scale(${1 / scale})`,
+						transformOrigin: 'center',
+					}}
+				>
 					<div className="flex h-full flex-col overflow-y-auto p-3">
 						<div className="flex items-center justify-between gap-2">
 							<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
