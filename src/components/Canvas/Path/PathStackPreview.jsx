@@ -4,6 +4,28 @@ import PathStackHint from './PathStackHint';
 
 /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 
+function getStepSources(step) {
+	const sources = [];
+	const seen = new Set();
+
+	(step?.resources ?? []).forEach((resource) => {
+		let citations = [];
+		if (Array.isArray(resource.citations) && resource.citations.length > 0) {
+			citations = resource.citations;
+		} else if (resource.url) {
+			citations = [{ url: resource.url, title: resource.name }];
+		}
+
+		citations.forEach((citation) => {
+			if (!citation?.url || seen.has(citation.url)) return;
+			seen.add(citation.url);
+			sources.push(citation);
+		});
+	});
+
+	return sources;
+}
+
 const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdatePath, children }) => {
 	const { scale = 1, rotation = 0 } = element;
 	const { steps } = path;
@@ -19,6 +41,7 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 	const completionTimeoutRef = useRef(null);
 	const noticeTimeoutRef = useRef(null);
 	const activeStep = activeSteps[activeIndex] ?? activeSteps[0] ?? null;
+	const stepSources = getStepSources(activeStep);
 
 	const cycleTo = (nextIndex, direction) => {
 		if (isCycling || activeSteps.length < 2) return;
@@ -280,6 +303,41 @@ const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdat
 										</li>
 									))}
 								</ul>
+							</div>
+						)}
+						{stepSources.length > 0 && (
+							<div className="mt-auto flex items-center gap-1 border-t border-[#D3D3D3] pt-2">
+								{stepSources.slice(0, 4).map((source) => {
+									let host = null;
+									try {
+										host = new URL(source.url).host;
+									} catch {
+										host = null;
+									}
+
+									return (
+										<a
+											key={source.url}
+											href={source.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											title={source.title || source.url}
+											onClick={(event) => event.stopPropagation()}
+											onMouseDown={(event) => event.stopPropagation()}
+											className="flex h-7 w-7 items-center justify-center rounded-full border border-[#D3D3D3] bg-white shadow-sm hover:bg-[#ECF4FA]"
+										>
+											{host ? (
+												<img
+													src={`https://www.google.com/s2/favicons?domain=${host}&sz=32`}
+													alt={host}
+													className="h-4 w-4 rounded-sm"
+												/>
+											) : (
+												<span className="text-xs">🔗</span>
+											)}
+										</a>
+									);
+								})}
 							</div>
 						)}
 						</div>
