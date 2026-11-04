@@ -1,25 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
-const PathStackHint = ({ stepCount, onExpand }) => (
-	<button
-		type="button"
-		className="relative mt-2 flex min-h-[44px] w-[170px] items-center justify-center rounded-lg border border-[#9BB8CC] bg-white px-3 text-sm font-bold text-[#053254] shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
-		onClick={(event) => {
-			event.stopPropagation();
-			onExpand();
-		}}
-		onMouseDown={(event) => event.stopPropagation()}
-		aria-label={`Show ${stepCount} goal path steps`}
-	>
-		<span className="absolute -top-1 left-2 h-2 w-[calc(100%-1rem)] -translate-y-1 rounded-t border border-[#9BB8CC] bg-[#ECF4FA]" />
-		<span className="relative">✨ {stepCount} path steps</span>
-	</button>
+const PathStackHint = () => (
+	<div className="pointer-events-none absolute inset-0" aria-hidden="true">
+		<div className="absolute inset-0 -translate-x-2 -translate-y-2 rounded border border-[#9BB8CC] bg-[#D9E9F5] shadow-sm" />
+		<div className="absolute inset-0 translate-x-2 -translate-y-1 rounded border border-[#9BB8CC] bg-[#ECF4FA] shadow-sm" />
+	</div>
 );
-
-PathStackHint.propTypes = {
-	stepCount: PropTypes.number.isRequired,
-	onExpand: PropTypes.func.isRequired,
-};
 
 export default PathStackHint;

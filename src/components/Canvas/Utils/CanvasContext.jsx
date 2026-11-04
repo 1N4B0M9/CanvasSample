@@ -18,7 +18,7 @@ import { useCanvasData } from './CanvasDataContext';
 import useElementOperations from './useElementOperations';
 import useConnectionOperations from './useConnectionOperations';
 import { ConvertCanvasToJson, ConvertJsonToCanvas } from './CanvasIO';
-import { getInitialImageDimensions } from './imageSizing';
+import { getInitialImageDimensions, getPathMinimumDimensions, getPathMinimumScale } from './imageSizing';
 
 // Create context
 const CanvasContext = createContext(null);
@@ -78,7 +78,28 @@ export const CanvasProvider = ({ children, canvasId }) => {
 
 		if (canvas && canvas.data) {
 			if (canvas.data.elements) {
-				setElements(canvas.data.elements);
+				setElements(
+					canvas.data.elements.map((element) => {
+						if (element.type !== 'image' || !element.path?.steps?.length) return element;
+
+						const currentWidth = element.width || 1;
+						const currentHeight = element.height || 1;
+						const dimensions = getPathMinimumDimensions(currentWidth, currentHeight);
+						const dx = (dimensions.width - currentWidth) / 2;
+						const dy = (dimensions.height - currentHeight) / 2;
+						const scale = Math.max(element.scale || 1, getPathMinimumScale(dimensions.width, dimensions.height));
+						if (dx === 0 && dy === 0 && scale === (element.scale || 1)) return element;
+
+						return {
+							...element,
+							x: element.x - dx,
+							y: element.y - dy,
+							width: dimensions.width,
+							height: dimensions.height,
+							scale,
+						};
+					}),
+				);
 			}
 
 			if (canvas.data.connections) {

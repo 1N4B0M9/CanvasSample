@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fitImageDimensions } from '../../Utils/imageSizing';
 
-const ImageElement = ({ element, onUpdate, isPathExpanded, isEditingLabel, setIsEditingLabel }) => {
+const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) => {
 	const [imageError, setImageError] = useState(false);
 	const [isLoaded, setIsLoaded] = useState(false);
 
@@ -73,9 +73,7 @@ const ImageElement = ({ element, onUpdate, isPathExpanded, isEditingLabel, setIs
 				width: `${width}px`,
 				height: `${height}px`,
 				maxWidth: '100%',
-				transform: isPathExpanded ? 'translateY(-12px) scale(1.03)' : undefined,
 				transformOrigin: 'center',
-				boxShadow: isPathExpanded ? '0 12px 24px rgba(5, 50, 84, 0.25)' : undefined,
 			}}
 		>
 			{!isLoaded && !imageError && (
