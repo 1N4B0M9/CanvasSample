@@ -272,6 +272,7 @@ const CanvasElement = ({
 							right: '-8px',
 							bottom: '-8px',
 							pointerEvents: 'none',
+							zIndex: 32,
 						}}
 					>
 						<div className="absolute inset-2 border-2 border-blue-500 rounded" data-connection-border="true" />
