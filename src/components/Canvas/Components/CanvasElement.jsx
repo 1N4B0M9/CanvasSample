@@ -6,6 +6,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ImageElement from './Elements/ImageElement';
 import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
+import PathStackPreview from '../Path/PathStackPreview';
 import { useCanvas } from '../Utils/CanvasContext';
 
 const CanvasElement = ({
@@ -241,6 +242,9 @@ const CanvasElement = ({
 						)}
 					</div>
 				)}
+				{element.path && Array.isArray(element.path.steps) && (
+					<PathStackPreview element={element} path={element.path} />
+				)}
 			</div>
 
 			{isSelected && (
@@ -289,6 +293,20 @@ const CanvasElement = ({
 								transformOrigin: 'center',
 							}}
 						>
+							{element.type === 'image' && (
+								<button
+									className="rounded bg-white p-1 shadow hover:bg-gray-100"
+									onClick={(e) => {
+										e.stopPropagation();
+										onOpenPanel?.('', element.id);
+									}}
+									onMouseDown={(e) => e.stopPropagation()}
+									title="Get help with this goal"
+									aria-label="Get help with this goal"
+								>
+									✨
+								</button>
+							)}
 							<button
 								className="p-1 bg-white rounded shadow hover:bg-gray-100"
 								onClick={handleStartConnection}

@@ -38,6 +38,7 @@ const CanvasContent = () => {
 		addImageElement,
 		addImageFromSearch,
 		elements,
+		updateElement,
 		connections,
 		arrows,
 		selectedIds,
@@ -61,6 +62,7 @@ const CanvasContent = () => {
 	const [pathPrefill, setPathPrefill] = React.useState('');
 	const [pathAnchorId, setPathAnchorId] = React.useState(null);
 	const [activeToolPanel, setActiveToolPanel] = React.useState(null);
+	const pathAnchorElement = elements.find((element) => element.id === pathAnchorId) ?? null;
 
 	const [isPanning, setIsPanning] = React.useState(false);
 	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
@@ -222,9 +224,38 @@ const CanvasContent = () => {
 		setActiveToolPanel(panel);
 	}, []);
 
-	// "Put this path on my board" — Phase 1 reuses text elements via savePathwayToBoard
+	// "Put this path on my board" — anchored paths stay on the source element;
+	// unanchored paths retain the existing text-element and arrow behavior.
 	const handlePlacePathOnBoard = React.useCallback(
-		({ goalSummary, steps, resourcesByStep }) => {
+		({ goal, goalSummary, planId, steps, resourcesByStep }) => {
+			if (pathAnchorId) {
+				const anchorElement = elements.find((element) => element.id === pathAnchorId);
+				if (anchorElement) {
+					updateElement({
+						...anchorElement,
+						path: {
+							version: 1,
+							planId: planId ?? `path-${Date.now()}`,
+							goal: goal || goalSummary || 'my goal',
+							goalSummary: goalSummary || goal || 'my goal',
+							createdAt: new Date().toISOString(),
+							steps: steps.map((step) => ({
+								id: step.id,
+								order: step.order,
+								title: step.title,
+								why: step.why,
+								resources: resourcesByStep[step.id] ?? [],
+								done: Boolean(step.done),
+								doneAt: step.doneAt ?? null,
+							})),
+						},
+					});
+					setPathOpen(false);
+					setPathAnchorId(null);
+					return;
+				}
+			}
+
 			const pathwaySteps = steps.map((step) => {
 				const topOrg = (resourcesByStep[step.id] ?? [])[0];
 				const helpLine = topOrg ? `\nWho can help: ${topOrg.name}${topOrg.phone ? ` — ${topOrg.phone}` : ''}` : '';
@@ -240,7 +271,7 @@ const CanvasContent = () => {
 			setPathOpen(false);
 			setPathAnchorId(null);
 		},
-		[savePathwayToBoard, pathAnchorId],
+		[elements, pathAnchorId, savePathwayToBoard, updateElement],
 	);
 
 	const handleDrop = (e) => {
@@ -553,6 +584,7 @@ const CanvasContent = () => {
 			<PathPanel
 				open={pathOpen}
 				prefillQuery={pathPrefill}
+				anchorElement={pathAnchorElement}
 				onClose={() => {
 					setPathOpen(false);
 					setPathAnchorId(null);

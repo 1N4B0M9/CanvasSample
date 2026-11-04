@@ -8,7 +8,7 @@ const EXAMPLE_CHIPS = ['I want a job', 'A place to live', 'Get my kids back', 'G
  * "What do you want to work toward?" — free text in their own words,
  * example chips for the blank-page problem, optional voice input.
  */
-const AskView = ({ initialQuery, onSubmit }) => {
+const AskView = ({ initialQuery, prompt, suggestionQuery, onSubmit }) => {
 	const [text, setText] = useState(initialQuery ?? '');
 	const {
 		supported: voiceSupported,
@@ -25,7 +25,9 @@ const AskView = ({ initialQuery, onSubmit }) => {
 	return (
 		<div className="flex flex-col gap-4 p-5">
 			<div>
-				<h2 className="text-[22px] font-bold leading-7 text-[#053254]">What do you want to work toward?</h2>
+				<h2 className="text-[22px] font-bold leading-7 text-[#053254]">
+					{prompt || 'What do you want to work toward?'}
+				</h2>
 				<p className="mt-1 text-[16px] leading-6 text-[#44546A]">Say it in your own words.</p>
 			</div>
 
@@ -59,6 +61,15 @@ const AskView = ({ initialQuery, onSubmit }) => {
 			</div>
 
 			<div className="flex flex-wrap gap-2">
+				{suggestionQuery && (
+					<button
+						type="button"
+						onClick={() => setText(suggestionQuery)}
+						className="min-h-[44px] rounded-full bg-[#ECF4FA] px-4 text-[16px] font-bold text-[#053254] hover:bg-[#d9e9f5]"
+					>
+						Use “{suggestionQuery}”
+					</button>
+				)}
 				{EXAMPLE_CHIPS.map((chip) => (
 					<button
 						key={chip}
@@ -85,11 +96,15 @@ const AskView = ({ initialQuery, onSubmit }) => {
 
 AskView.propTypes = {
 	initialQuery: PropTypes.string,
+	prompt: PropTypes.string,
+	suggestionQuery: PropTypes.string,
 	onSubmit: PropTypes.func.isRequired,
 };
 
 AskView.defaultProps = {
 	initialQuery: '',
+	prompt: '',
+	suggestionQuery: '',
 };
 
 export default AskView;
