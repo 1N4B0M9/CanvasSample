@@ -15,6 +15,7 @@ import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
 import DeleteConfirmModal from '../Components/DeleteConfirmModal';
 import PathPanel from '../Path/PathPanel';
 import ViewportHUD from './ViewportHUD';
+import { getPathMinimumDimensions, getPathMinimumScale } from '../Utils/imageSizing';
 
 const CanvasContent = () => {
 	const {
@@ -239,8 +240,21 @@ const CanvasContent = () => {
 			if (pathAnchorId) {
 				const anchorElement = elements.find((element) => element.id === pathAnchorId);
 				if (anchorElement?.type === 'image') {
+					const currentWidth = anchorElement.width || 1;
+					const currentHeight = anchorElement.height || 1;
+					const dimensions = getPathMinimumDimensions(currentWidth, currentHeight);
+					const dx = (dimensions.width - currentWidth) / 2;
+					const dy = (dimensions.height - currentHeight) / 2;
 					updateElement({
 						...anchorElement,
+						x: anchorElement.x - dx,
+						y: anchorElement.y - dy,
+						width: dimensions.width,
+						height: dimensions.height,
+						scale: Math.max(
+							anchorElement.scale || 1,
+							getPathMinimumScale(dimensions.width, dimensions.height),
+						),
 						path: {
 							version: 1,
 							planId: planId ?? `path-${Date.now()}`,

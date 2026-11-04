@@ -177,6 +177,7 @@ const CanvasElement = ({
 			e,
 		);
 	};
+	const hasPathStack = element.type === 'image' && Array.isArray(element.path?.steps);
 
 	return (
 		<div
@@ -202,11 +203,25 @@ const CanvasElement = ({
 		>
 			<div ref={contentRef} className="relative">
 				{/* Render the appropriate element type */}
-				{element.type === 'image' ? (
+				{hasPathStack ? (
+					<PathStackPreview
+						element={element}
+						path={element.path}
+						isExpanded={isPathExpanded}
+						onExpandedChange={setIsPathExpanded}
+						onUpdatePath={(nextPath) => onUpdate({ ...element, path: nextPath })}
+					>
+						<ImageElement
+							element={element}
+							onUpdate={onUpdate}
+							isEditingLabel={isEditingLabel}
+							setIsEditingLabel={setIsEditingLabel}
+						/>
+					</PathStackPreview>
+				) : element.type === 'image' ? (
 					<ImageElement
 						element={element}
 						onUpdate={onUpdate}
-						isPathExpanded={isPathExpanded}
 						isEditingLabel={isEditingLabel}
 						setIsEditingLabel={setIsEditingLabel}
 					/>
@@ -285,14 +300,6 @@ const CanvasElement = ({
 							</div>
 						)}
 					</div>
-				)}
-				{element.path && Array.isArray(element.path.steps) && (
-					<PathStackPreview
-						element={element}
-						path={element.path}
-						onExpandedChange={setIsPathExpanded}
-						onUpdatePath={(nextPath) => onUpdate({ ...element, path: nextPath })}
-					/>
 				)}
 			</div>
 
@@ -399,16 +406,18 @@ const CanvasElement = ({
 
 							{element.type === 'image' && (
 								<button
+									type="button"
 									className="rounded bg-white p-1 shadow hover:bg-gray-100"
 									onClick={(e) => {
 										e.stopPropagation();
-										onOpenPanel?.('', element.id);
+										if (hasPathStack) setIsPathExpanded(true);
+										else onOpenPanel?.('', element.id);
 									}}
 									onMouseDown={(e) => e.stopPropagation()}
-									title="Get help with this goal"
-									aria-label="Get help with this goal"
+									title={hasPathStack ? 'View steps' : 'Get help with this goal'}
+									aria-label={hasPathStack ? 'View steps' : 'Get help with this goal'}
 								>
-									✨
+									{hasPathStack ? 'View steps' : '✨'}
 								</button>
 							)}
 							<button

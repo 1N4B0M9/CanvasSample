@@ -1,15 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import PathStackHint from './PathStackHint';
 
 /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 
-const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => {
+const PathStackPreview = ({ element, path, isExpanded, onExpandedChange, onUpdatePath, children }) => {
 	const { scale = 1, rotation = 0 } = element;
 	const { steps } = path;
 	const activeSteps = steps.filter((step) => !step.done);
 	const completedSteps = steps.filter((step) => step.done);
-	const [isExpanded, setIsExpanded] = useState(false);
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [cycleDirection, setCycleDirection] = useState(1);
 	const [isCycling, setIsCycling] = useState(false);
@@ -20,14 +19,6 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 	const completionTimeoutRef = useRef(null);
 	const noticeTimeoutRef = useRef(null);
 	const activeStep = activeSteps[activeIndex] ?? activeSteps[0] ?? null;
-
-	const setExpanded = useCallback(
-		(expanded) => {
-			setIsExpanded(expanded);
-			onExpandedChange(expanded);
-		},
-		[onExpandedChange],
-	);
 
 	const cycleTo = (nextIndex, direction) => {
 		if (isCycling || activeSteps.length < 2) return;
@@ -78,7 +69,7 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 			cycleTo((activeIndex - 1 + activeSteps.length) % activeSteps.length, -1);
 		} else if (event.key === 'Escape') {
 			event.preventDefault();
-			setExpanded(false);
+			onExpandedChange(false);
 		}
 	};
 
@@ -99,12 +90,12 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 		if (!isExpanded) return undefined;
 
 		const handleOutsidePointerDown = (event) => {
-			if (!rootRef.current?.contains(event.target)) setExpanded(false);
+			if (!rootRef.current?.contains(event.target)) onExpandedChange(false);
 		};
 		const handleEscape = (event) => {
 			if (event.key === 'Escape') {
 				event.preventDefault();
-				setExpanded(false);
+				onExpandedChange(false);
 			}
 		};
 
@@ -114,7 +105,7 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 			document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
 			window.removeEventListener('keydown', handleEscape);
 		};
-	}, [isExpanded, setExpanded]);
+	}, [isExpanded, onExpandedChange]);
 
 	if (!steps.length) return null;
 
@@ -125,52 +116,63 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 	return (
 		<div
 			ref={rootRef}
-			className="absolute left-0 top-full z-10 mt-2 text-left"
+			className="relative text-left"
 			style={{
+				width: element.width || 300,
+				height: element.height || 220,
 				transform: `rotate(${-rotation}deg) scale(${1 / scale})`,
-				transformOrigin: 'top left',
+				transformOrigin: 'center',
 			}}
-			onMouseDown={(event) => event.stopPropagation()}
-			onClick={(event) => event.stopPropagation()}
+			onMouseDown={(event) => {
+				if (isExpanded) event.stopPropagation();
+			}}
+			onClick={(event) => {
+				if (isExpanded) event.stopPropagation();
+			}}
 			draggable={false}
 			data-path-preview="true"
 		>
-			{!isExpanded ? (
-				<PathStackHint stepCount={steps.length} onExpand={() => setExpanded(true)} />
-			) : (
-				<div className="w-[320px]">
-					<div className="relative h-3">
-						<div className="absolute left-3 top-1 h-3 w-[calc(100%-1.5rem)] rotate-1 rounded border border-[#D3D3D3] bg-[#D9E9F5] shadow-sm" />
-						<div className="absolute left-1 top-0 h-3 w-[calc(100%-1.5rem)] -rotate-1 rounded border border-[#D3D3D3] bg-[#ECF4FA] shadow-sm" />
-					</div>
-					<div className="rounded-xl border border-[#D3D3D3] bg-white p-4 shadow-xl">
+			<div className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${isExpanded ? 'opacity-0' : 'opacity-100'}`}>
+				<PathStackHint />
+			</div>
+			<div
+				className={`absolute inset-0 z-20 transition-all duration-200 ${
+					isExpanded ? 'translate-y-[-12px] opacity-0' : 'translate-y-0 opacity-100'
+				}`}
+				style={{ pointerEvents: isExpanded ? 'none' : 'auto' }}
+			>
+				{children}
+			</div>
+			{isExpanded && (
+				<div className="absolute inset-0 z-30 overflow-hidden rounded-xl border border-[#D3D3D3] bg-white shadow-xl">
+					<div className="flex h-full flex-col overflow-y-auto p-3">
 						<div className="flex items-center justify-between gap-2">
 							<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
 								{path.goalSummary || path.goal || 'Goal path'}
 							</p>
 							<button
 								type="button"
-								className="min-h-[36px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
-								onClick={() => setExpanded(false)}
+								className="min-h-[32px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
+								onClick={() => onExpandedChange(false)}
 								aria-label="Collapse goal path"
 							>
 								×
 							</button>
 						</div>
-						<p className="mt-2 text-sm font-bold text-[#44546A]">
+						<p className="mt-1 text-xs font-bold text-[#44546A]">
 							{completedSteps.length} of {steps.length} done
 						</p>
 						{completionNotice && (
-							<div className="mt-2 rounded-lg bg-[#EAF6EF] px-3 py-2 text-sm font-bold text-[#1B7A43]" role="status">
+							<div className="mt-2 rounded bg-[#EAF6EF] px-2 py-1 text-xs font-bold text-[#1B7A43]" role="status">
 								{completionNotice}
 							</div>
 						)}
 						{activeStep ? (
 							<>
-								<div className="mt-3 flex items-center justify-between gap-2">
+								<div className="mt-2 flex items-center justify-between gap-2">
 									<button
 										type="button"
-										className="min-h-[44px] min-w-[44px] rounded-full border border-[#D3D3D3] text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
+										className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
 										onClick={() =>
 											cycleTo((activeIndex - 1 + activeSteps.length) % activeSteps.length, -1)
 										}
@@ -179,23 +181,23 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 									>
 										←
 									</button>
-									<p className="text-sm font-bold text-[#44546A]">
+									<p className="text-xs font-bold text-[#44546A]">
 										Step {activeStep.order} of {steps.length}
 									</p>
-									<span className="w-[44px]" aria-hidden="true" />
+									<span className="w-9" aria-hidden="true" />
 								</div>
 								<button
 									type="button"
-									className={`mt-3 w-full rounded-xl border border-[#D3D3D3] bg-[#F8FBFD] p-4 text-left shadow-sm transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${cardTransitionClass}`}
+									className={`mt-2 w-full rounded-lg border border-[#D3D3D3] bg-[#F8FBFD] p-3 text-left transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${cardTransitionClass}`}
 									onClick={() => cycleTo((activeIndex + 1) % activeSteps.length, 1)}
 									onKeyDown={handleCardKeyDown}
 									disabled={activeSteps.length < 2 || isCycling || isCompleting}
 									aria-label={`${activeStep.title}. Step ${activeStep.order} of ${steps.length}. Use arrow keys to change steps.`}
 								>
-									<p className="text-base font-bold text-[#053254]">{activeStep.title}</p>
-									{activeStep.why && <p className="mt-1 text-sm text-[#111827]">{activeStep.why}</p>}
+									<p className="text-sm font-bold text-[#053254]">{activeStep.title}</p>
+									{activeStep.why && <p className="mt-1 text-xs text-[#111827]">{activeStep.why}</p>}
 									{activeStep.resources?.length > 0 && (
-										<ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-xs text-[#44546A]">
+										<ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-[11px] text-[#44546A]">
 											{activeStep.resources.map((resource) => (
 												<li key={`${activeStep.id}-${resource.name}`}>
 													{resource.name}
@@ -216,11 +218,10 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 											))}
 										</ul>
 									)}
-									<p className="mt-3 text-xs font-bold text-[#1665c0]">Click card for next step</p>
 								</button>
 								<button
 									type="button"
-									className="mt-2 min-h-[44px] w-full rounded-lg bg-[#1B7A43] px-3 text-sm font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60"
+									className="mt-2 min-h-[36px] w-full rounded-lg bg-[#1B7A43] px-2 text-xs font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60"
 									onClick={completeActiveStep}
 									disabled={isCompleting}
 								>
@@ -228,23 +229,23 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 								</button>
 							</>
 						) : (
-							<p className="mt-4 rounded-lg bg-[#EAF6EF] p-3 text-sm font-bold text-[#1B7A43]">
+							<p className="mt-3 rounded bg-[#EAF6EF] p-2 text-xs font-bold text-[#1B7A43]">
 								All steps completed.
 							</p>
 						)}
 						{completedSteps.length > 0 && (
-							<div className="mt-4 border-t border-[#D3D3D3] pt-3">
-								<p className="text-sm font-bold text-[#053254]">Completed steps</p>
-								<ul className="mt-2 flex flex-col gap-2">
+							<div className="mt-2 border-t border-[#D3D3D3] pt-2">
+								<p className="text-xs font-bold text-[#053254]">Completed steps</p>
+								<ul className="mt-1 flex flex-col gap-1">
 									{completedSteps.map((step) => (
 										<li
 											key={step.id}
-											className="flex items-center justify-between gap-2 rounded-lg bg-[#EAF6EF] px-3 py-2 text-sm text-[#1B7A43]"
+											className="flex items-center justify-between gap-2 rounded bg-[#EAF6EF] px-2 py-1 text-xs text-[#1B7A43]"
 										>
 											<span className="line-through">{step.title}</span>
 											<button
 												type="button"
-												className="min-h-[36px] rounded px-2 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
+												className="min-h-[28px] rounded px-1 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
 												onClick={() => undoStep(step.id, step.title)}
 											>
 												Undo
@@ -263,9 +264,12 @@ const PathStackPreview = ({ element, path, onExpandedChange, onUpdatePath }) => 
 
 PathStackPreview.propTypes = {
 	element: PropTypes.shape({
+		width: PropTypes.number,
+		height: PropTypes.number,
 		scale: PropTypes.number,
 		rotation: PropTypes.number,
 	}).isRequired,
+	isExpanded: PropTypes.bool.isRequired,
 	path: PropTypes.shape({
 		goal: PropTypes.string,
 		goalSummary: PropTypes.string,
@@ -284,6 +288,7 @@ PathStackPreview.propTypes = {
 	}).isRequired,
 	onExpandedChange: PropTypes.func,
 	onUpdatePath: PropTypes.func.isRequired,
+	children: PropTypes.node.isRequired,
 };
 
 PathStackPreview.defaultProps = {
