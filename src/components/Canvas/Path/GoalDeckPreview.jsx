@@ -221,7 +221,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	};
 
 	const renderCardContent = (step, isTop, localRotation) => {
-		const controlVisibility = isTop ? '' : 'invisible';
 		const noticeVisibility = isTop && completionNotice ? 'visible' : 'invisible';
 
 		return (
@@ -237,18 +236,15 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 					<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
 						{path.goalSummary || path.goal || 'Goal path'}
 					</p>
-					{isTop ? (
-						<button
-							type="button"
-							className="min-h-[32px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
-							onClick={() => onExpandedChange(false)}
-							aria-label="Collapse goal path"
-						>
-							×
-						</button>
-					) : (
-						<span className="min-h-[32px] min-w-[32px]" aria-hidden="true" />
-					)}
+					<button
+						type="button"
+						className="min-h-[32px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
+						onClick={() => onExpandedChange(false)}
+						disabled={!isTop}
+						aria-label="Collapse goal path"
+					>
+						×
+					</button>
 				</div>
 				<p className="mt-1 text-xs font-bold text-[#44546A]">
 					{completedSteps.length} of {steps.length} done
@@ -277,7 +273,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 						))}
 					</ul>
 				)}
-				<div className={`mt-2 flex items-center justify-between gap-2 ${controlVisibility}`}>
+				<div className="mt-2 flex items-center justify-between gap-2">
 					<button
 						type="button"
 						className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
@@ -302,7 +298,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 				</div>
 				<button
 					type="button"
-					className={`mt-2 min-h-[36px] w-full rounded-lg bg-[#1B7A43] px-2 text-xs font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60 ${controlVisibility}`}
+					className="mt-2 min-h-[36px] w-full rounded-lg bg-[#1B7A43] px-2 text-xs font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60"
 					onClick={completeStep}
 					disabled={!isTop || Boolean(animation)}
 				>
@@ -322,7 +318,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 								<span className="line-through">{completed.title}</span>
 								<button
 									type="button"
-									className={`min-h-[28px] rounded px-1 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${controlVisibility}`}
+									className="min-h-[28px] rounded px-1 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
 									onClick={() => undoStep(completed.id, completed.title)}
 									disabled={!isTop}
 								>
