@@ -5,7 +5,7 @@ import { getPathPreviewOffset } from '../Utils/imageSizing';
 
 /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-noninteractive-tabindex */
 
-const ANIMATION_MS = 260;
+const ANIMATION_MS = 220;
 
 function getStepSources(step) {
 	const sources = [];
@@ -317,9 +317,10 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	const renderDeckCard = (step, depth) => {
 		const isTop = depth === 0;
 		const isPreviousIncoming = animation === 'previous' && depth === deckSteps.length - 1;
-		const offset = depth === 0 ? 0 : getPathPreviewOffset(depth, width, height, scale);
+		const visualDepth = animation === 'next' && depth > 0 ? depth - 1 : depth;
+		const offset = visualDepth === 0 ? 0 : getPathPreviewOffset(visualDepth, width, height, scale);
 		let localRotation = 0;
-		if (depth > 0) localRotation = depth % 2 === 0 ? -1 : 1;
+		if (visualDepth > 0) localRotation = visualDepth % 2 === 0 ? -1 : 1;
 		let x = offset;
 		let y = -offset;
 		let opacity = 1;
@@ -329,17 +330,23 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 			x = width * 0.8;
 			rotationOffset = 8;
 			opacity = 0;
-		} else if (animation === 'previous-enter' && isPreviousIncoming) {
+		} else if (animation === 'previous-enter' && depth === deckSteps.length - 1) {
 			x = -width * 0.8;
 			rotationOffset = -8;
 			opacity = 0;
+		} else if (animation === 'previous' && isPreviousIncoming) {
+			x = 0;
+			y = 0;
+			rotationOffset = 0;
+			opacity = 1;
 		} else if (animation === 'complete' && isTop) {
 			y = height * 0.35;
 			rotationOffset = 6;
 			opacity = 0;
 		}
 
-		const transitionClass = reducedMotion || animation === 'previous-enter' ? '' : 'transition-[transform,opacity] duration-250 ease-out';
+		const transitionClass =
+			reducedMotion || animation === 'previous-enter' ? '' : 'transition-[transform,opacity] ease-out';
 
 		return (
 			<div
@@ -348,6 +355,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 				style={{
 					zIndex: deckSteps.length - depth,
 					opacity,
+					transitionDuration: reducedMotion ? '0ms' : `${ANIMATION_MS}ms`,
 					pointerEvents: isTop ? 'auto' : 'none',
 					transform: `translate(${x}px, ${y}px) rotate(${-rotation + rotationOffset}deg)`,
 					transformOrigin: 'center',
