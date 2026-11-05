@@ -374,9 +374,9 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 				<div
 					className="absolute left-1/2 top-1/2"
 					style={{
-						width: `${width * scale}px`,
-						height: `${height * scale}px`,
-						transform: `translate(-50%, -50%) rotate(${-localRotation}deg) scale(${1 / scale})`,
+						width: `${width}px`,
+						height: `${height}px`,
+						transform: `translate(-50%, -50%) rotate(${-localRotation}deg)`,
 						transformOrigin: 'center',
 					}}
 				>
