@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ImageElement from './Elements/ImageElement';
 import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
-import PathStackPreview from '../Path/PathStackPreview';
+import GoalDeckPreview from '../Path/GoalDeckPreview';
 import { useCanvas } from '../Utils/CanvasContext';
 
 const CanvasElement = ({
@@ -140,7 +140,7 @@ const CanvasElement = ({
 	let pathButtonText = '✨';
 	let pathButtonLabel = 'Get help with this goal';
 	if (hasPathStack) {
-		pathButtonText = isPathExpanded ? '×' : 'View steps';
+		pathButtonText = isPathExpanded ? '×' : '▤';
 		pathButtonLabel = isPathExpanded ? 'Close steps' : 'View steps';
 	}
 
@@ -169,7 +169,7 @@ const CanvasElement = ({
 			<div ref={contentRef} className="relative">
 				{/* Render the appropriate element type */}
 				{hasPathStack ? (
-					<PathStackPreview
+					<GoalDeckPreview
 						element={element}
 						path={element.path}
 						isExpanded={isPathExpanded}
@@ -182,7 +182,7 @@ const CanvasElement = ({
 							isEditingLabel={isEditingLabel}
 							setIsEditingLabel={setIsEditingLabel}
 						/>
-					</PathStackPreview>
+					</GoalDeckPreview>
 				) : element.type === 'image' ? (
 					<ImageElement
 						element={element}
