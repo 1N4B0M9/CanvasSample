@@ -30,7 +30,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	const { scale = 1, rotation = 0 } = element;
 	const { steps } = path;
 	const activeSteps = steps;
-	const completedSteps = steps.filter((step) => step.done);
 	const activeIdsKey = activeSteps.map((step) => step.id).join('|');
 	const [deckIds, setDeckIds] = useState(() => activeSteps.map((step) => step.id));
 	const [animation, setAnimation] = useState(null);
@@ -79,7 +78,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		nodes.forEach((node) => observer.observe(node));
 		measure();
 		return () => observer.disconnect();
-	}, [activeIdsKey, completedSteps.length, completionNotice, width, height]);
+	}, [activeIdsKey, completionNotice, width, height]);
 
 	useEffect(() => {
 		setDeckIds((previous) => {
@@ -183,13 +182,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 			if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
 			noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
 		}, duration);
-	};
-
-	const undoStep = (stepId, title) => {
-		updateStepDone(stepId, false);
-		setCompletionNotice(`Undo · ${title}`);
-		if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
-		noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
 	};
 
 	const handleTopCardKeyDown = (event) => {
@@ -304,27 +296,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 				)}
 				<div className={`mt-2 min-h-[26px] rounded bg-[#EAF6EF] px-2 py-1 text-xs font-bold text-[#1B7A43] ${noticeVisibility}`} role="status">
 					{completionNotice || 'Step completed'}
-				</div>
-				<div className={`mt-2 border-t border-[#D3D3D3] pt-2 ${completedSteps.length > 0 ? '' : 'invisible'}`}>
-					<p className="text-xs font-bold text-[#053254]">Completed steps</p>
-					<ul className="mt-1 flex flex-col gap-1">
-						{completedSteps.map((completed) => (
-							<li
-								key={completed.id}
-								className="flex items-center justify-between gap-2 rounded bg-[#EAF6EF] px-2 py-1 text-xs text-[#1B7A43]"
-							>
-								<span className="line-through">{completed.title}</span>
-								<button
-									type="button"
-									className="min-h-[28px] rounded px-1 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
-									onClick={() => undoStep(completed.id, completed.title)}
-									disabled={!isTop}
-								>
-									Undo
-								</button>
-							</li>
-						))}
-					</ul>
 				</div>
 				<div className="absolute bottom-3 left-3 right-3 bg-white/95">{renderSources(step)}</div>
 			</div>
