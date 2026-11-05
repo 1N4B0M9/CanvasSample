@@ -318,7 +318,11 @@ const CanvasElement = ({
 							{element.type === 'image' && (
 								<button
 									type="button"
-									className="flex-none whitespace-nowrap rounded bg-white p-1 shadow hover:bg-gray-100"
+									className={
+										hasPathStack
+											? 'flex-none whitespace-nowrap rounded bg-white p-1 shadow hover:bg-gray-100'
+											: 'flex-none whitespace-nowrap rounded-full bg-[#053254] px-4 py-2 text-[15px] font-bold text-white shadow hover:bg-[#0a4a78]'
+									}
 									onClick={(e) => {
 										e.stopPropagation();
 										if (hasPathStack) setIsPathExpanded((expanded) => !expanded);
@@ -329,7 +333,7 @@ const CanvasElement = ({
 									title={pathButtonLabel}
 									aria-label={pathButtonLabel}
 								>
-									{pathButtonText}
+									{hasPathStack ? pathButtonText : 'Build a path for this →'}
 								</button>
 							)}
 							{hasPathStack && (
