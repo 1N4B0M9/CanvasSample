@@ -94,7 +94,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		if (!isExpanded) return undefined;
 
 		const handleOutsidePointerDown = (event) => {
-			if (event.target.closest?.('[data-path-toggle="true"]')) return;
+			if (event.target.closest?.('[data-path-toggle="true"], [data-path-resize="true"]')) return;
 			if (!rootRef.current?.contains(event.target)) onExpandedChange(false);
 		};
 		const handleEscape = (event) => {
