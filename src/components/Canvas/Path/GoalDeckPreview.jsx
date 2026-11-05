@@ -36,7 +36,9 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	const [animation, setAnimation] = useState(null);
 	const [completionNotice, setCompletionNotice] = useState(null);
 	const [reducedMotion, setReducedMotion] = useState(false);
+	const [contentFitScale, setContentFitScale] = useState(1);
 	const rootRef = useRef(null);
+	const contentRef = useRef(null);
 	const animationTimeoutRef = useRef(null);
 	const noticeTimeoutRef = useRef(null);
 
@@ -46,6 +48,22 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		.map((id) => activeSteps.find((step) => step.id === id))
 		.filter(Boolean);
 	const activeStep = deckSteps[0] ?? null;
+
+	useEffect(() => {
+		const node = contentRef.current;
+		if (!node) return undefined;
+
+		const measure = () => {
+			const widthScale = node.scrollWidth ? node.clientWidth / node.scrollWidth : 1;
+			const heightScale = node.scrollHeight ? node.clientHeight / node.scrollHeight : 1;
+			setContentFitScale(Math.min(1, widthScale, heightScale));
+		};
+
+		const observer = new ResizeObserver(measure);
+		observer.observe(node);
+		measure();
+		return () => observer.disconnect();
+	}, [activeStep?.id, completedSteps.length, completionNotice, width, height]);
 
 	useEffect(() => {
 		setDeckIds((previous) => {
@@ -202,12 +220,19 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		);
 	};
 
-	const renderCardContent = (step, isTop) => {
+	const renderCardContent = (step, isTop, localRotation) => {
 		const controlVisibility = isTop ? '' : 'invisible';
 		const noticeVisibility = isTop && completionNotice ? 'visible' : 'invisible';
 
 		return (
-			<div className="flex h-full flex-col overflow-y-auto p-3">
+			<div
+				ref={isTop ? contentRef : undefined}
+				className="flex h-full flex-col overflow-hidden p-3"
+				style={{
+					transform: `rotate(${-localRotation}deg) scale(${contentFitScale})`,
+					transformOrigin: 'center',
+				}}
+			>
 				<div className="flex items-center justify-between gap-2">
 					<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
 						{path.goalSummary || path.goal || 'Goal path'}
@@ -377,7 +402,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 						transformOrigin: 'center',
 					}}
 				>
-					{renderCardContent(step, isTop)}
+					{renderCardContent(step, isTop, localRotation)}
 				</div>
 			</div>
 		);
