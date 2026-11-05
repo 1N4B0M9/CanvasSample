@@ -260,7 +260,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 					</button>
 				</div>
 				<p className="mt-1 text-xs font-bold text-[#44546A]">
-					{completedSteps.length} of {steps.length} done
+					Step {step.order} of {steps.length}
 				</p>
 				<p className="mt-2 text-sm font-bold text-[#053254]">{step.title}</p>
 				{step.why && <p className="mt-1 text-xs text-[#111827]">{step.why}</p>}
@@ -286,29 +286,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 						))}
 					</ul>
 				)}
-				<div className="mt-2 flex items-center justify-between gap-2">
-					<button
-						type="button"
-						className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
-						onClick={() => cycleDeck(-1)}
-						disabled={!isTop || deckSteps.length < 2 || Boolean(animation)}
-						aria-label="Previous goal step"
-					>
-						←
-					</button>
-					<p className="text-xs font-bold text-[#44546A]">
-						Step {step.order} of {steps.length}
-					</p>
-					<button
-						type="button"
-						className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
-						onClick={() => cycleDeck(1)}
-						disabled={!isTop || deckSteps.length < 2 || Boolean(animation)}
-						aria-label="Next goal step"
-					>
-						→
-					</button>
-				</div>
 				<div className={`mt-2 min-h-[26px] rounded bg-[#EAF6EF] px-2 py-1 text-xs font-bold text-[#1B7A43] ${noticeVisibility}`} role="status">
 					{completionNotice || 'Step completed'}
 				</div>
@@ -439,6 +416,40 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 			{isExpanded && (
 				<div className="absolute inset-0">
 					{deckSteps.map((step, depth) => renderDeckCard(step, depth))}
+					{deckSteps.length > 1 && (
+						<>
+							<button
+								type="button"
+								className="absolute z-[60] flex h-9 w-9 items-center justify-center rounded-full border border-[#D3D3D3] bg-white text-base font-bold text-[#053254] shadow-md hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
+								style={{
+									left: `${-44 / scale}px`,
+									top: '50%',
+									transform: `translateY(-50%) rotate(${-rotation}deg) scale(${1 / scale})`,
+									transformOrigin: 'center',
+								}}
+								onClick={() => cycleDeck(-1)}
+								disabled={Boolean(animation)}
+								aria-label="Previous goal step"
+							>
+								←
+							</button>
+							<button
+								type="button"
+								className="absolute z-[60] flex h-9 w-9 items-center justify-center rounded-full border border-[#D3D3D3] bg-white text-base font-bold text-[#053254] shadow-md hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
+								style={{
+									right: `${-44 / scale}px`,
+									top: '50%',
+									transform: `translateY(-50%) rotate(${-rotation}deg) scale(${1 / scale})`,
+									transformOrigin: 'center',
+								}}
+								onClick={() => cycleDeck(1)}
+								disabled={Boolean(animation)}
+								aria-label="Next goal step"
+							>
+								→
+							</button>
+						</>
+					)}
 				</div>
 			)}
 		</div>
