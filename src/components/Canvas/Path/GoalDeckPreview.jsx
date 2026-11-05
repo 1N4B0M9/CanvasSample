@@ -29,7 +29,7 @@ function getStepSources(step) {
 const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdatePath, children }) => {
 	const { scale = 1, rotation = 0 } = element;
 	const { steps } = path;
-	const activeSteps = steps.filter((step) => !step.done);
+	const activeSteps = steps;
 	const completedSteps = steps.filter((step) => step.done);
 	const activeIdsKey = activeSteps.map((step) => step.id).join('|');
 	const [deckIds, setDeckIds] = useState(() => activeSteps.map((step) => step.id));
@@ -147,12 +147,21 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		});
 	};
 
-	const completeStep = () => {
+	const toggleActiveDone = () => {
 		if (!activeStep || animation) return;
+		if (activeStep.done) {
+			updateStepDone(activeStep.id, false);
+			setCompletionNotice(`Undo · ${activeStep.title}`);
+			if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
+			noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
+			return;
+		}
+
 		const duration = reducedMotion ? 0 : ANIMATION_MS;
 		setAnimation('complete');
 		animationTimeoutRef.current = window.setTimeout(() => {
 			updateStepDone(activeStep.id, true);
+			setDeckIds((previous) => (previous.length < 2 ? previous : [...previous.slice(1), previous[0]]));
 			setAnimation(null);
 			setCompletionNotice(`Step completed · ${activeStep.title}`);
 			if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
@@ -238,12 +247,16 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 					</p>
 					<button
 						type="button"
-						className="min-h-[32px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
-						onClick={() => onExpandedChange(false)}
-						disabled={!isTop}
-						aria-label="Collapse goal path"
+						className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-xl transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${
+							step.done
+								? 'border-[#1B7A43] bg-[#1B7A43] text-white'
+								: 'border-[#D3D3D3] bg-white text-transparent hover:border-[#1B7A43]'
+						}`}
+						onClick={toggleActiveDone}
+						disabled={!isTop || Boolean(animation)}
+						aria-label={step.done ? `Mark "${step.title}" not done` : `Mark "${step.title}" done`}
 					>
-						×
+						✓
 					</button>
 				</div>
 				<p className="mt-1 text-xs font-bold text-[#44546A]">
@@ -296,14 +309,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 						→
 					</button>
 				</div>
-				<button
-					type="button"
-					className="mt-2 min-h-[36px] w-full rounded-lg bg-[#1B7A43] px-2 text-xs font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60"
-					onClick={completeStep}
-					disabled={!isTop || Boolean(animation)}
-				>
-					✓ Mark step complete
-				</button>
 				<div className={`mt-2 min-h-[26px] rounded bg-[#EAF6EF] px-2 py-1 text-xs font-bold text-[#1B7A43] ${noticeVisibility}`} role="status">
 					{completionNotice || 'Step completed'}
 				</div>
