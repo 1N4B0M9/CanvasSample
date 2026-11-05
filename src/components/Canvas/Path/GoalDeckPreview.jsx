@@ -345,13 +345,14 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 
 		const transitionClass =
 			reducedMotion || animation === 'previous-enter' ? '' : 'transition-[transform,opacity] ease-out';
+		const isPreviousCard = depth === deckSteps.length - 1 && (animation === 'previous-enter' || animation === 'previous');
 
 		return (
 			<div
 				key={step.id}
 				className={`absolute inset-0 overflow-hidden rounded-xl border border-[#D3D3D3] bg-white shadow-xl ${transitionClass}`}
 				style={{
-					zIndex: deckSteps.length - depth,
+					zIndex: isPreviousCard ? deckSteps.length + 1 : deckSteps.length - depth,
 					opacity,
 					transitionDuration: reducedMotion ? '0ms' : `${ANIMATION_MS}ms`,
 					pointerEvents: isTop ? 'auto' : 'none',
