@@ -283,8 +283,11 @@ const CanvasElement = ({
 							pointerEvents: 'none',
 							zIndex: 32,
 						}}
+						data-path-resize={isPathExpanded ? 'true' : undefined}
 					>
-						<div className="absolute inset-2 border-2 border-blue-500 rounded" data-connection-border="true" />
+						{!isPathExpanded && (
+							<div className="absolute inset-2 border-2 border-blue-500 rounded" data-connection-border="true" />
+						)}
 
 						{/* scale handles and mini-toolbar only make sense for single-select */}
 						{selectedIds.size === 1 && (
