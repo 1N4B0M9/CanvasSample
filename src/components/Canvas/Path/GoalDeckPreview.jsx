@@ -422,7 +422,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 								type="button"
 								className="absolute z-[60] flex h-9 w-9 items-center justify-center rounded-full border border-[#D3D3D3] bg-white text-base font-bold text-[#053254] shadow-md hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
 								style={{
-									left: `${-44 / scale}px`,
+									left: `${-52 / scale}px`,
 									top: '50%',
 									transform: `translateY(-50%) rotate(${-rotation}deg) scale(${1 / scale})`,
 									transformOrigin: 'center',
@@ -437,7 +437,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 								type="button"
 								className="absolute z-[60] flex h-9 w-9 items-center justify-center rounded-full border border-[#D3D3D3] bg-white text-base font-bold text-[#053254] shadow-md hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
 								style={{
-									right: `${-44 / scale}px`,
+									right: `${-52 / scale}px`,
 									top: '50%',
 									transform: `translateY(-50%) rotate(${-rotation}deg) scale(${1 / scale})`,
 									transformOrigin: 'center',
