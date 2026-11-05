@@ -210,19 +210,22 @@ const CanvasElement = ({
 				)}
 				{/* Below-element row: path pill (selected only, so full boards stay quiet) +
 				    always-visible clickable source icons. Never hover-only. */}
-				{(element.type === 'text' || element.type === 'mentor') && (
+				{(element.type === 'text' || element.type === 'mentor' || (element.type === 'image' && !hasPathStack)) && (
 					<div className="absolute left-0 top-full z-20 mt-1 flex flex-col items-start gap-1">
 						{isSelected &&
-							element.content &&
-							element.content.trim().length >= 8 &&
+							(element.type === 'image' ||
+								(element.content && element.content.trim().length >= 8)) &&
 							!isEditing &&
+							!isEditingLabel &&
 							!isConnecting &&
 							!isCreatingArrow && (
 								<button
 									type="button"
 									onClick={(e) => {
 										e.stopPropagation();
-										if (typeof onOpenPanel === 'function') onOpenPanel(element.content, element.id);
+										if (typeof onOpenPanel === 'function') {
+											onOpenPanel(element.type === 'image' ? '' : element.content, element.id);
+										}
 									}}
 									onMouseDown={(e) => e.stopPropagation()}
 									className="whitespace-nowrap rounded-full bg-[#053254] px-4 py-2 text-[15px] font-bold text-white shadow hover:bg-[#0a4a78]"
@@ -315,7 +318,7 @@ const CanvasElement = ({
 								transformOrigin: 'center',
 							}}
 						>
-							{element.type === 'image' && (
+							{element.type === 'image' && hasPathStack && (
 								<button
 									type="button"
 									className={
