@@ -251,7 +251,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		return (
 			<div
 				ref={getContentRef(step.id)}
-				className="flex h-full flex-col overflow-hidden p-3"
+				className="relative flex h-full flex-col overflow-hidden p-3 pb-12"
 				style={{
 					transform: `rotate(${-localRotation}deg) scale(${contentFitScale})`,
 					transformOrigin: 'center',
@@ -326,7 +326,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 						))}
 					</ul>
 				</div>
-				<div className="mt-auto">{renderSources(step)}</div>
+				<div className="absolute bottom-3 left-3 right-3 bg-white/95">{renderSources(step)}</div>
 			</div>
 		);
 	};
