@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import PathStackHint from './PathStackHint';
 import { getPathPreviewOffset } from '../Utils/imageSizing';
@@ -38,7 +38,8 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	const [reducedMotion, setReducedMotion] = useState(false);
 	const [contentFitScale, setContentFitScale] = useState(1);
 	const rootRef = useRef(null);
-	const contentRef = useRef(null);
+	const contentRefs = useRef(new Map());
+	const contentRefCallbacks = useRef(new Map());
 	const animationTimeoutRef = useRef(null);
 	const noticeTimeoutRef = useRef(null);
 
@@ -49,21 +50,36 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		.filter(Boolean);
 	const activeStep = deckSteps[0] ?? null;
 
-	useEffect(() => {
-		const node = contentRef.current;
-		if (!node) return undefined;
+	const getContentRef = (stepId) => {
+		if (!contentRefCallbacks.current.has(stepId)) {
+			contentRefCallbacks.current.set(stepId, (node) => {
+				if (node) contentRefs.current.set(stepId, node);
+				else contentRefs.current.delete(stepId);
+			});
+		}
+		return contentRefCallbacks.current.get(stepId);
+	};
+
+	useLayoutEffect(() => {
+		const nodes = [...contentRefs.current.values()];
+		if (!nodes.length) return undefined;
 
 		const measure = () => {
-			const widthScale = node.scrollWidth ? node.clientWidth / node.scrollWidth : 1;
-			const heightScale = node.scrollHeight ? node.clientHeight / node.scrollHeight : 1;
-			setContentFitScale(Math.min(1, widthScale, heightScale));
+			const footprintScale = Math.min(width / 300, height / 220);
+			const fitScale = nodes.reduce((smallest, node) => {
+				if (!node.clientWidth || !node.clientHeight) return smallest;
+				const widthScale = node.scrollWidth ? node.clientWidth / node.scrollWidth : 1;
+				const heightScale = node.scrollHeight ? node.clientHeight / node.scrollHeight : 1;
+				return Math.min(smallest, widthScale, heightScale);
+			}, footprintScale);
+			setContentFitScale((previous) => (Math.abs(previous - fitScale) < 0.001 ? previous : fitScale));
 		};
 
 		const observer = new ResizeObserver(measure);
-		observer.observe(node);
+		nodes.forEach((node) => observer.observe(node));
 		measure();
 		return () => observer.disconnect();
-	}, [activeStep?.id, completedSteps.length, completionNotice, width, height]);
+	}, [activeIdsKey, completedSteps.length, completionNotice, width, height]);
 
 	useEffect(() => {
 		setDeckIds((previous) => {
@@ -234,7 +250,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 
 		return (
 			<div
-				ref={isTop ? contentRef : undefined}
+				ref={getContentRef(step.id)}
 				className="flex h-full flex-col overflow-hidden p-3"
 				style={{
 					transform: `rotate(${-localRotation}deg) scale(${contentFitScale})`,
