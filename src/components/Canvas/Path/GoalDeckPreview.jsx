@@ -202,117 +202,115 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		);
 	};
 
-	const renderCardContent = (step, isTop) => (
-		<div className="flex h-full flex-col overflow-y-auto p-3">
-			<div className="flex items-center justify-between gap-2">
-				<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
-					{isTop ? path.goalSummary || path.goal || 'Goal path' : `${step.order}. ${step.title}`}
-				</p>
-				{isTop && (
-					<button
-						type="button"
-						className="min-h-[32px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
-						onClick={() => onExpandedChange(false)}
-						aria-label="Collapse goal path"
-					>
-						×
-					</button>
-				)}
-			</div>
-			{isTop && (
+	const renderCardContent = (step, isTop) => {
+		const controlVisibility = isTop ? '' : 'invisible';
+		const noticeVisibility = isTop && completionNotice ? 'visible' : 'invisible';
+
+		return (
+			<div className="flex h-full flex-col overflow-y-auto p-3">
+				<div className="flex items-center justify-between gap-2">
+					<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
+						{path.goalSummary || path.goal || 'Goal path'}
+					</p>
+					{isTop ? (
+						<button
+							type="button"
+							className="min-h-[32px] rounded px-2 text-lg font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
+							onClick={() => onExpandedChange(false)}
+							aria-label="Collapse goal path"
+						>
+							×
+						</button>
+					) : (
+						<span className="min-h-[32px] min-w-[32px]" aria-hidden="true" />
+					)}
+				</div>
 				<p className="mt-1 text-xs font-bold text-[#44546A]">
 					{completedSteps.length} of {steps.length} done
 				</p>
-			)}
-			<p className="mt-2 text-sm font-bold text-[#053254]">{step.title}</p>
-			{step.why && <p className="mt-1 text-xs text-[#111827]">{step.why}</p>}
-			{step.resources?.length > 0 && (
-				<ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-[11px] text-[#44546A]">
-					{step.resources.map((resource) => (
-						<li key={`${step.id}-${resource.name}`}>
-							{resource.name}
-							{resource.phone ? ` — ${resource.phone}` : ''}
-							{resource.url && (
-								<a
-									className="ml-1 text-[#1665c0] underline"
-									href={resource.url}
-									target="_blank"
-									rel="noopener noreferrer"
-									onMouseDown={(event) => event.stopPropagation()}
-									onClick={(event) => event.stopPropagation()}
-								>
-									Website
-								</a>
-							)}
-						</li>
-					))}
-				</ul>
-			)}
-			{isTop && (
-				<>
-					<div className="mt-2 flex items-center justify-between gap-2">
-						<button
-							type="button"
-							className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
-							onClick={() => cycleDeck(-1)}
-							disabled={deckSteps.length < 2 || Boolean(animation)}
-							aria-label="Previous goal step"
-						>
-							←
-						</button>
-						<p className="text-xs font-bold text-[#44546A]">
-							Step {step.order} of {steps.length}
-						</p>
-						<button
-							type="button"
-							className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
-							onClick={() => cycleDeck(1)}
-							disabled={deckSteps.length < 2 || Boolean(animation)}
-							aria-label="Next goal step"
-						>
-							→
-						</button>
-					</div>
+				<p className="mt-2 text-sm font-bold text-[#053254]">{step.title}</p>
+				{step.why && <p className="mt-1 text-xs text-[#111827]">{step.why}</p>}
+				{step.resources?.length > 0 && (
+					<ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-[11px] text-[#44546A]">
+						{step.resources.map((resource) => (
+							<li key={`${step.id}-${resource.name}`}>
+								{resource.name}
+								{resource.phone ? ` — ${resource.phone}` : ''}
+								{resource.url && (
+									<a
+										className="ml-1 text-[#1665c0] underline"
+										href={resource.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										onMouseDown={(event) => event.stopPropagation()}
+										onClick={(event) => event.stopPropagation()}
+									>
+										Website
+									</a>
+								)}
+							</li>
+						))}
+					</ul>
+				)}
+				<div className={`mt-2 flex items-center justify-between gap-2 ${controlVisibility}`}>
 					<button
 						type="button"
-						className="mt-2 min-h-[36px] w-full rounded-lg bg-[#1B7A43] px-2 text-xs font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60"
-						onClick={completeStep}
-						disabled={Boolean(animation)}
+						className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
+						onClick={() => cycleDeck(-1)}
+						disabled={!isTop || deckSteps.length < 2 || Boolean(animation)}
+						aria-label="Previous goal step"
 					>
-						✓ Mark step complete
+						←
 					</button>
-					{completionNotice && (
-						<div className="mt-2 rounded bg-[#EAF6EF] px-2 py-1 text-xs font-bold text-[#1B7A43]" role="status">
-							{completionNotice}
-						</div>
-					)}
-					{completedSteps.length > 0 && (
-						<div className="mt-2 border-t border-[#D3D3D3] pt-2">
-							<p className="text-xs font-bold text-[#053254]">Completed steps</p>
-							<ul className="mt-1 flex flex-col gap-1">
-								{completedSteps.map((completed) => (
-									<li
-										key={completed.id}
-										className="flex items-center justify-between gap-2 rounded bg-[#EAF6EF] px-2 py-1 text-xs text-[#1B7A43]"
-									>
-										<span className="line-through">{completed.title}</span>
-										<button
-											type="button"
-											className="min-h-[28px] rounded px-1 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
-											onClick={() => undoStep(completed.id, completed.title)}
-										>
-											Undo
-										</button>
-									</li>
-								))}
-							</ul>
-						</div>
-					)}
-					{renderSources(step)}
-				</>
-			)}
-		</div>
-	);
+					<p className="text-xs font-bold text-[#44546A]">
+						Step {step.order} of {steps.length}
+					</p>
+					<button
+						type="button"
+						className="min-h-[36px] min-w-[36px] rounded-full border border-[#D3D3D3] text-base font-bold text-[#053254] hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] disabled:opacity-40"
+						onClick={() => cycleDeck(1)}
+						disabled={!isTop || deckSteps.length < 2 || Boolean(animation)}
+						aria-label="Next goal step"
+					>
+						→
+					</button>
+				</div>
+				<button
+					type="button"
+					className={`mt-2 min-h-[36px] w-full rounded-lg bg-[#1B7A43] px-2 text-xs font-bold text-white hover:bg-[#166535] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#053254] disabled:opacity-60 ${controlVisibility}`}
+					onClick={completeStep}
+					disabled={!isTop || Boolean(animation)}
+				>
+					✓ Mark step complete
+				</button>
+				<div className={`mt-2 min-h-[26px] rounded bg-[#EAF6EF] px-2 py-1 text-xs font-bold text-[#1B7A43] ${noticeVisibility}`} role="status">
+					{completionNotice || 'Step completed'}
+				</div>
+				<div className={`mt-2 border-t border-[#D3D3D3] pt-2 ${completedSteps.length > 0 ? '' : 'invisible'}`}>
+					<p className="text-xs font-bold text-[#053254]">Completed steps</p>
+					<ul className="mt-1 flex flex-col gap-1">
+						{completedSteps.map((completed) => (
+							<li
+								key={completed.id}
+								className="flex items-center justify-between gap-2 rounded bg-[#EAF6EF] px-2 py-1 text-xs text-[#1B7A43]"
+							>
+								<span className="line-through">{completed.title}</span>
+								<button
+									type="button"
+									className={`min-h-[28px] rounded px-1 font-bold underline hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${controlVisibility}`}
+									onClick={() => undoStep(completed.id, completed.title)}
+									disabled={!isTop}
+								>
+									Undo
+								</button>
+							</li>
+						))}
+					</ul>
+				</div>
+				<div className="mt-auto">{renderSources(step)}</div>
+			</div>
+		);
+	};
 
 	const renderDeckCard = (step, depth) => {
 		const isTop = depth === 0;
