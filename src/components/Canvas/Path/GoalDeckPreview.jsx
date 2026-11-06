@@ -375,9 +375,6 @@ const GoalDeckPreview = ({
 									✓
 								</button>
 							</div>
-							<p className="mt-2 text-xs font-bold text-[#44546A]">
-								{activeSubsteps.filter((substep) => substep.done).length} of {activeSubsteps.length} substeps done
-							</p>
 							{renderSources(activeSubstep)}
 						</div>
 						<div className="mt-2 flex items-center justify-between gap-2">
@@ -453,8 +450,7 @@ const GoalDeckPreview = ({
 									data-substeps-control="true"
 									disabled={!isTop}
 								>
-									View substeps (
-									{step.subpath.steps.filter((substep) => substep.done).length} of {step.subpath.steps.length} done)
+									View substeps
 								</button>
 							) : (
 								<button
