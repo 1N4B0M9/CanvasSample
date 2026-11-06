@@ -272,6 +272,7 @@ const CanvasContent = () => {
 							goal: goal || goalSummary || 'my goal',
 							goalSummary: goalSummary || goal || 'my goal',
 							createdAt: new Date().toISOString(),
+							totalSteps: steps.length,
 							steps: stepsToAttach.map((step) => ({
 								id: step.id,
 								order: step.order,
