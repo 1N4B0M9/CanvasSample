@@ -172,16 +172,10 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 			return;
 		}
 
-		const duration = reducedMotion ? 0 : ANIMATION_MS;
-		setAnimation('complete');
-		animationTimeoutRef.current = window.setTimeout(() => {
-			updateStepDone(activeStep.id, true);
-			setDeckIds((previous) => (previous.length < 2 ? previous : [...previous.slice(1), previous[0]]));
-			setAnimation(null);
-			setCompletionNotice(`Step completed · ${activeStep.title}`);
-			if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
-			noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
-		}, duration);
+		updateStepDone(activeStep.id, true);
+		setCompletionNotice(`Step completed · ${activeStep.title}`);
+		if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
+		noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
 	};
 
 	const handleTopCardKeyDown = (event) => {
@@ -327,10 +321,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 			y = 0;
 			rotationOffset = 0;
 			opacity = 1;
-		} else if (animation === 'complete' && isTop) {
-			y = height * 0.35;
-			rotationOffset = 6;
-			opacity = 0;
 		}
 
 		const transitionClass =
