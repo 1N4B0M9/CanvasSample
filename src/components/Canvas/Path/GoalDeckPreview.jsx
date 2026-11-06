@@ -322,7 +322,7 @@ const GoalDeckPreview = ({
 			>
 				<div className="flex items-center justify-between gap-2">
 					<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
-						{path.goalSummary || path.goal || 'Goal path'}
+						{isTop && showingSubsteps ? step.title : path.goalSummary || path.goal || 'Goal path'}
 					</p>
 					<button
 						type="button"
@@ -340,17 +340,26 @@ const GoalDeckPreview = ({
 				</div>
 				<p className="mt-1 text-xs font-bold text-[#44546A]">
 					Step {step.order} of {steps.length}
+					{isTop && showingSubsteps ? ' · Substeps' : ''}
 				</p>
 				{isTop && showingSubsteps && activeSubstep ? (
 					<div
-						className="mt-2 flex flex-1 flex-col"
+						className="relative mt-2 flex flex-1 flex-col"
 						data-substeps-content="true"
 						onClick={(event) => event.stopPropagation()}
 						onMouseDown={(event) => event.stopPropagation()}
 						onKeyDown={handleSubstepKeyDown}
 					>
+						<button
+							type="button"
+							className="self-start text-[11px] font-bold text-[#1665c0] underline"
+							onClick={() => setExpandedSubstepId(null)}
+							data-substeps-control="true"
+						>
+							← Main step
+						</button>
 						<div
-							className={`flex-1 transition-transform duration-200 ${getSubstepTransitionClass(substepAnimation)}`}
+							className={`mt-2 flex-1 transition-transform duration-200 ${getSubstepTransitionClass(substepAnimation)}`}
 						>
 							<div className="flex items-start justify-between gap-2">
 								<div>
@@ -375,8 +384,8 @@ const GoalDeckPreview = ({
 									✓
 								</button>
 							</div>
-							{renderSources(activeSubstep)}
 						</div>
+						<div className="absolute bottom-12 left-0 right-0 bg-white/95">{renderSources(activeSubstep)}</div>
 						<div className="mt-2 flex items-center justify-between gap-2">
 							<button
 								type="button"
@@ -402,14 +411,6 @@ const GoalDeckPreview = ({
 								→
 							</button>
 						</div>
-						<button
-							type="button"
-							className="mt-2 min-h-[28px] text-[11px] font-bold text-[#1665c0] underline"
-							onClick={() => setExpandedSubstepId(null)}
-							data-substeps-control="true"
-						>
-							Collapse substeps
-						</button>
 					</div>
 				) : (
 					<>
