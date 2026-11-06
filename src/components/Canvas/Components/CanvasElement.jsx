@@ -136,7 +136,7 @@ const CanvasElement = ({
 			e,
 		);
 	};
-	const hasPathStack = element.type === 'image' && Array.isArray(element.path?.steps);
+	const hasPathStack = element.type === 'image' && Array.isArray(element.path?.steps) && element.path.steps.length > 0;
 	let pathButtonText = '✨';
 	let pathButtonLabel = 'Get help with this goal';
 	if (hasPathStack) {

@@ -77,7 +77,15 @@ const PlanView = ({
 			{showPlaceButton && phase === 'done' && steps.length > 0 && (
 				<button
 					type="button"
-					onClick={() => onPlaceOnBoard(steps, resourcesByStep)}
+					onClick={() =>
+						onPlaceOnBoard(
+							steps.map((step) => ({
+								...step,
+								done: doneSteps.has(step.id),
+							})),
+							resourcesByStep,
+						)
+					}
 					className="min-h-[48px] w-full rounded-[10px] bg-[#053254] text-[16px] font-bold text-white hover:bg-[#053254CC]"
 				>
 					⊕ Put this path on my board

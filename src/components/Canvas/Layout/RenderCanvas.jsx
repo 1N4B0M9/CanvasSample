@@ -240,6 +240,13 @@ const CanvasContent = () => {
 			if (pathAnchorId) {
 				const anchorElement = elements.find((element) => element.id === pathAnchorId);
 				if (anchorElement?.type === 'image') {
+					const stepsToAttach = steps.filter((step) => !step.done);
+					if (!stepsToAttach.length) {
+						setPathOpen(false);
+						setPathAnchorId(null);
+						return;
+					}
+
 					const currentWidth = anchorElement.width || 1;
 					const currentHeight = anchorElement.height || 1;
 					const dimensions = getPathMinimumDimensions(
@@ -265,7 +272,7 @@ const CanvasContent = () => {
 							goal: goal || goalSummary || 'my goal',
 							goalSummary: goalSummary || goal || 'my goal',
 							createdAt: new Date().toISOString(),
-							steps: steps.map((step) => ({
+							steps: stepsToAttach.map((step) => ({
 								id: step.id,
 								order: step.order,
 								title: step.title,

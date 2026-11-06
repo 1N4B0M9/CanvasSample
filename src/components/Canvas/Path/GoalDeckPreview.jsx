@@ -255,7 +255,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 					</p>
 					<button
 						type="button"
-						className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-xl transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${
+						className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-base transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${
 							step.done
 								? 'border-[#1B7A43] bg-[#1B7A43] text-white'
 								: 'border-[#D3D3D3] bg-white text-transparent hover:border-[#1B7A43]'
