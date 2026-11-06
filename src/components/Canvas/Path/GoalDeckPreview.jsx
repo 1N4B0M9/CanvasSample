@@ -276,7 +276,7 @@ const GoalDeckPreview = ({
 		if (!sources.length) return null;
 
 		return (
-			<div className="mt-2 flex items-center gap-1 border-t border-[#D3D3D3] pt-2">
+			<div className="mt-2 flex w-fit items-center gap-1 border-t border-[#D3D3D3] pt-2">
 				{sources.slice(0, 4).map((source) => {
 					let host = null;
 					try {
@@ -440,11 +440,12 @@ const GoalDeckPreview = ({
 								))}
 							</ul>
 						)}
-						<div className="mt-auto flex justify-end">
+						<div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2 bg-white/95">
+							<div className="min-w-0">{renderSources(step)}</div>
 							{step.subpath ? (
 								<button
 									type="button"
-									className="min-h-[28px] text-[11px] font-bold text-[#1665c0] underline"
+									className="whitespace-nowrap text-[11px] font-bold text-[#1665c0] underline"
 									onClick={() => {
 										setExpandedSubstepId(step.id);
 										setSubstepIndex(0);
@@ -467,7 +468,6 @@ const GoalDeckPreview = ({
 								</button>
 							)}
 						</div>
-						<div className="absolute bottom-3 left-3 right-3 bg-white/95">{renderSources(step)}</div>
 					</>
 				)}
 			</div>
