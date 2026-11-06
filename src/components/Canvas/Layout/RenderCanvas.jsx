@@ -240,7 +240,9 @@ const CanvasContent = () => {
 			if (pathAnchorId) {
 				const anchorElement = elements.find((element) => element.id === pathAnchorId);
 				if (anchorElement?.type === 'image') {
-					const stepsToAttach = steps.filter((step) => !step.done);
+					const stepsToAttach = steps
+						.filter((step) => !step.done)
+						.map((step, index) => ({ ...step, order: index + 1 }));
 					if (!stepsToAttach.length) {
 						setPathOpen(false);
 						setPathAnchorId(null);
