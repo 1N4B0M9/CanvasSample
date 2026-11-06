@@ -672,6 +672,7 @@ const CanvasContent = () => {
 				open={pathOpen}
 				prefillQuery={pathPrefill}
 				anchorElement={pathAnchorElement}
+				substepsRequest={substepsRequest}
 				onClose={() => {
 					setPathOpen(false);
 					setPathAnchorId(null);
