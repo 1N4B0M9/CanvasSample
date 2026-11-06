@@ -62,6 +62,8 @@ const CanvasContent = () => {
 	const [pathOpen, setPathOpen] = React.useState(false);
 	const [pathPrefill, setPathPrefill] = React.useState('');
 	const [pathAnchorId, setPathAnchorId] = React.useState(null);
+	const [substepsRequest, setSubstepsRequest] = React.useState(null);
+	const [substepsFocusRequest, setSubstepsFocusRequest] = React.useState(null);
 	const [activeToolPanel, setActiveToolPanel] = React.useState(null);
 	const pathAnchorElement = elements.find((element) => element.id === pathAnchorId) ?? null;
 
@@ -215,6 +217,53 @@ const CanvasContent = () => {
 		setPathPrefill(content ?? '');
 		setPathAnchorId(triggeredByElementId);
 		setPathOpen(true);
+	}, []);
+
+	const openSubstepsForElement = React.useCallback(
+		(elementId, stepId) => {
+			const anchorElement = elements.find((element) => element.id === elementId);
+			const step = anchorElement?.path?.steps?.find((candidate) => candidate.id === stepId);
+			if (!anchorElement?.path || !step) return;
+
+			setActiveToolPanel(null);
+			setPathPrefill('');
+			setPathAnchorId(elementId);
+			setSubstepsRequest({
+				goal: anchorElement.path.goal || anchorElement.path.goalSummary || '',
+				path: anchorElement.path,
+				step,
+			});
+			setPathOpen(true);
+		},
+		[elements],
+	);
+
+	const handleAddSubsteps = React.useCallback(
+		({ elementId, stepId, subpath }) => {
+			const anchorElement = elements.find((element) => element.id === elementId);
+			if (!anchorElement?.path) return;
+
+			updateElement({
+				...anchorElement,
+				path: {
+					...anchorElement.path,
+					steps: anchorElement.path.steps.map((step) =>
+						step.id === stepId ? { ...step, subpath } : step,
+					),
+				},
+			});
+			setSubstepsRequest(null);
+			setPathOpen(false);
+			setPathAnchorId(null);
+			setSubstepsFocusRequest({ elementId, stepId });
+		},
+		[elements, updateElement],
+	);
+
+	const closeSubstepsReview = React.useCallback(() => {
+		setSubstepsRequest(null);
+		setPathOpen(false);
+		setPathAnchorId(null);
 	}, []);
 
 	const handleUpdatePath = React.useCallback(
@@ -623,9 +672,12 @@ const CanvasContent = () => {
 				onClose={() => {
 					setPathOpen(false);
 					setPathAnchorId(null);
+					setSubstepsRequest(null);
 				}}
 				onPlaceOnBoard={handlePlacePathOnBoard}
 				onUpdatePath={handleUpdatePath}
+				onAddSubsteps={handleAddSubsteps}
+				onCloseSubsteps={closeSubstepsReview}
 			/>
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
@@ -665,7 +717,12 @@ const CanvasContent = () => {
 					className="select-none"
 				>
 					<RenderConnections />
-					<RenderElements onOpenPanel={openPathForElement} panelAnchorId={pathOpen ? pathAnchorId : null} />
+					<RenderElements
+						onOpenPanel={openPathForElement}
+						onOpenSubsteps={openSubstepsForElement}
+						substepsFocusRequest={substepsFocusRequest}
+						panelAnchorId={pathOpen ? pathAnchorId : null}
+					/>
 				</div>
 
 			</div>

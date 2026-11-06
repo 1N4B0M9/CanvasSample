@@ -27,6 +27,8 @@ const CanvasElement = ({
 	onStartArrow,
 	onCompleteArrow,
 	onOpenPanel,
+	onOpenSubsteps,
+	substepsFocusRequest,
 	isPanelAnchor = false,
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
@@ -175,6 +177,8 @@ const CanvasElement = ({
 						isExpanded={isPathExpanded}
 						onExpandedChange={setIsPathExpanded}
 						onUpdatePath={(nextPath) => onUpdate({ ...element, path: nextPath })}
+						onOpenSubsteps={(stepId) => onOpenSubsteps?.(element.id, stepId)}
+						substepsFocusRequest={substepsFocusRequest}
 					>
 						<ImageElement
 							element={element}

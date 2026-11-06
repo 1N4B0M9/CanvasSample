@@ -6,13 +6,24 @@ import IntakeView from './IntakeView';
 import PlanView from './PlanView';
 import CrisisView from './CrisisView';
 import SavedPathView from './SavedPathView';
+import SubstepsReviewView from './SubstepsReviewView';
 
 /**
  * "My Path" — the single surface replacing FindResourcesModal, PathwayOverlay and
  * BoardResourcesSidebar. Full-height right panel on desktop, bottom sheet on mobile.
  * Owns the SSE connection via usePlanStream.
  */
-const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard, onUpdatePath }) => {
+const PathPanel = ({
+	open,
+	prefillQuery,
+	anchorElement,
+	substepsRequest,
+	onClose,
+	onPlaceOnBoard,
+	onUpdatePath,
+	onAddSubsteps,
+	onCloseSubsteps,
+}) => {
 	const {
 		phase,
 		intent,
@@ -39,6 +50,12 @@ const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard,
 	useEffect(() => {
 		if (!open) return;
 
+		if (substepsRequest) {
+			setShowSavedPath(false);
+			reset();
+			return;
+		}
+
 		if (savedPath) {
 			setShowSavedPath(true);
 			lastPrefillRef.current = null;
@@ -54,14 +71,22 @@ const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard,
 		} else if (!prefillQuery) {
 			reset();
 		}
-	}, [open, prefillQuery, savedPath, anchorElement?.id, ask, reset]);
+	}, [open, prefillQuery, savedPath, substepsRequest, anchorElement?.id, ask, reset]);
 
 	const handleRegenerate = () => {
 		const completedSteps = savedPath?.steps.filter((step) => step.done).length ?? 0;
+		const completedSubsteps =
+			savedPath?.steps.reduce(
+				(count, step) => count + (step.subpath?.steps ?? []).filter((substep) => substep.done).length,
+				0,
+			) ?? 0;
+		const completedCount = completedSteps + completedSubsteps;
 		if (
-			completedSteps > 0 &&
+			completedCount > 0 &&
 			// eslint-disable-next-line no-alert
-			!window.confirm(`This path has ${completedSteps} completed step${completedSteps === 1 ? '' : 's'}. Regenerate it anyway?`)
+			!window.confirm(
+				`This path has completed steps or substeps. Regenerating it will remove that progress. Continue?`,
+			)
 		) {
 			return;
 		}
@@ -99,6 +124,7 @@ const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard,
 			className="fixed right-0 top-0 z-[60] flex h-full w-[380px] max-w-full flex-col bg-[#ECF4FA] shadow-2xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-auto max-sm:h-[80%] max-sm:w-full max-sm:rounded-t-2xl"
 			role="dialog"
 			aria-label="My Path"
+			data-path-panel="true"
 		>
 			<div className="flex items-center justify-between border-b border-[#D3D3D3] bg-white px-5 py-3">
 				<span className="text-[18px] font-bold text-[#053254]">My Path</span>
@@ -124,7 +150,15 @@ const PathPanel = ({ open, prefillQuery, anchorElement, onClose, onPlaceOnBoard,
 			</div>
 
 			<div className="flex-1 overflow-y-auto">
-				{showSavedPath && savedPath ? (
+				{substepsRequest ? (
+					<SubstepsReviewView
+						goal={substepsRequest.goal}
+						path={substepsRequest.path}
+						step={substepsRequest.step}
+						onAdd={(subpath) => onAddSubsteps({ ...substepsRequest, subpath })}
+						onClose={onCloseSubsteps}
+					/>
+				) : showSavedPath && savedPath ? (
 					<SavedPathView path={savedPath} onRegenerate={handleRegenerate} onUpdatePath={onUpdatePath} />
 				) : (
 					<>
@@ -205,14 +239,22 @@ PathPanel.propTypes = {
 			steps: PropTypes.arrayOf(PropTypes.shape({})),
 		}),
 	}),
+	substepsRequest: PropTypes.shape({
+		goal: PropTypes.string,
+		path: PropTypes.object.isRequired,
+		step: PropTypes.object.isRequired,
+	}),
 	onClose: PropTypes.func.isRequired,
 	onPlaceOnBoard: PropTypes.func.isRequired,
 	onUpdatePath: PropTypes.func.isRequired,
+	onAddSubsteps: PropTypes.func.isRequired,
+	onCloseSubsteps: PropTypes.func.isRequired,
 };
 
 PathPanel.defaultProps = {
 	prefillQuery: '',
 	anchorElement: null,
+	substepsRequest: null,
 };
 
 export default PathPanel;
