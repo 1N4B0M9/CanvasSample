@@ -33,14 +33,12 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	const activeIdsKey = activeSteps.map((step) => step.id).join('|');
 	const [deckIds, setDeckIds] = useState(() => activeSteps.map((step) => step.id));
 	const [animation, setAnimation] = useState(null);
-	const [completionNotice, setCompletionNotice] = useState(null);
 	const [reducedMotion, setReducedMotion] = useState(false);
 	const [contentFitScale, setContentFitScale] = useState(1);
 	const rootRef = useRef(null);
 	const contentRefs = useRef(new Map());
 	const contentRefCallbacks = useRef(new Map());
 	const animationTimeoutRef = useRef(null);
-	const noticeTimeoutRef = useRef(null);
 
 	const width = element.width || 300;
 	const height = element.height || 220;
@@ -78,7 +76,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		nodes.forEach((node) => observer.observe(node));
 		measure();
 		return () => observer.disconnect();
-	}, [activeIdsKey, completionNotice, width, height]);
+	}, [activeIdsKey, width, height]);
 
 	useEffect(() => {
 		setDeckIds((previous) => {
@@ -100,7 +98,6 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	useEffect(
 		() => () => {
 			if (animationTimeoutRef.current) window.clearTimeout(animationTimeoutRef.current);
-			if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
 		},
 		[],
 	);
@@ -166,16 +163,10 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		if (!activeStep || animation) return;
 		if (activeStep.done) {
 			updateStepDone(activeStep.id, false);
-			setCompletionNotice(`Undo · ${activeStep.title}`);
-			if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
-			noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
 			return;
 		}
 
 		updateStepDone(activeStep.id, true);
-		setCompletionNotice(`Step completed · ${activeStep.title}`);
-		if (noticeTimeoutRef.current) window.clearTimeout(noticeTimeoutRef.current);
-		noticeTimeoutRef.current = window.setTimeout(() => setCompletionNotice(null), 3500);
 	};
 
 	const handleTopCardKeyDown = (event) => {
@@ -231,10 +222,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		);
 	};
 
-	const renderCardContent = (step, isTop, localRotation) => {
-		const noticeVisibility = isTop && completionNotice ? 'visible' : 'invisible';
-
-		return (
+	const renderCardContent = (step, isTop, localRotation) => (
 			<div
 				ref={getContentRef(step.id)}
 				className="relative flex h-full flex-col overflow-hidden p-3 pb-12"
@@ -288,13 +276,9 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 						))}
 					</ul>
 				)}
-				<div className={`mt-2 min-h-[26px] rounded bg-[#EAF6EF] px-2 py-1 text-xs font-bold text-[#1B7A43] ${noticeVisibility}`} role="status">
-					{completionNotice || 'Step completed'}
-				</div>
 				<div className="absolute bottom-3 left-3 right-3 bg-white/95">{renderSources(step)}</div>
 			</div>
 		);
-	};
 
 	const renderDeckCard = (step, depth) => {
 		const isTop = depth === 0;
