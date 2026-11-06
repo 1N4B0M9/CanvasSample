@@ -26,7 +26,22 @@ function getStepSources(step) {
 	return sources;
 }
 
-const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdatePath, children }) => {
+function getSubstepTransitionClass(animation) {
+	if (animation === 'next') return 'translate-x-4 opacity-0';
+	if (animation === 'previous') return '-translate-x-4 opacity-0';
+	return 'translate-x-0 opacity-100';
+}
+
+const GoalDeckPreview = ({
+	element,
+	path,
+	isExpanded,
+	onExpandedChange,
+	onUpdatePath,
+	onOpenSubsteps,
+	substepsFocusRequest,
+	children,
+}) => {
 	const { scale = 1, rotation = 0 } = element;
 	const { steps } = path;
 	const activeSteps = steps;
@@ -35,6 +50,9 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 	const [animation, setAnimation] = useState(null);
 	const [reducedMotion, setReducedMotion] = useState(false);
 	const [contentFitScale, setContentFitScale] = useState(1);
+	const [expandedSubstepId, setExpandedSubstepId] = useState(null);
+	const [substepIndex, setSubstepIndex] = useState(0);
+	const [substepAnimation, setSubstepAnimation] = useState(null);
 	const rootRef = useRef(null);
 	const contentRefs = useRef(new Map());
 	const contentRefCallbacks = useRef(new Map());
@@ -46,6 +64,25 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		.map((id) => activeSteps.find((step) => step.id === id))
 		.filter(Boolean);
 	const activeStep = deckSteps[0] ?? null;
+	const activeSubpath = activeStep?.subpath;
+	const activeSubsteps = activeSubpath?.steps ?? [];
+	const showingSubsteps = Boolean(activeStep && expandedSubstepId === activeStep.id && activeSubsteps.length);
+	const activeSubstep = activeSubsteps[substepIndex] ?? activeSubsteps[0] ?? null;
+
+	useEffect(() => {
+		if (
+			substepsFocusRequest?.elementId === element.id &&
+			substepsFocusRequest.stepId
+		) {
+			setExpandedSubstepId(substepsFocusRequest.stepId);
+			setSubstepIndex(0);
+		}
+	}, [element.id, substepsFocusRequest]);
+
+	useEffect(() => {
+		setExpandedSubstepId(null);
+		setSubstepIndex(0);
+	}, [activeStep?.id]);
 
 	const getContentRef = (stepId) => {
 		if (!contentRefCallbacks.current.has(stepId)) {
@@ -106,7 +143,12 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		if (!isExpanded) return undefined;
 
 		const handleOutsidePointerDown = (event) => {
-			if (event.target.closest?.('[data-path-toggle="true"], [data-path-resize="true"]')) return;
+			if (
+				event.target.closest?.(
+					'[data-path-toggle="true"], [data-path-resize="true"], [data-path-panel="true"], [data-substeps-control="true"]',
+				)
+			)
+				return;
 			if (!rootRef.current?.contains(event.target)) onExpandedChange(false);
 		};
 		const handleEscape = (event) => {
@@ -167,6 +209,53 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 		}
 
 		updateStepDone(activeStep.id, true);
+	};
+
+	const updateSubstepDone = (substepId, done) => {
+		if (!activeStep?.subpath) return;
+		onUpdatePath({
+			...path,
+			steps: steps.map((step) =>
+				step.id === activeStep.id
+					? {
+							...step,
+							subpath: {
+								...step.subpath,
+								steps: step.subpath.steps.map((substep) =>
+									substep.id === substepId
+										? {
+												...substep,
+												done,
+												doneAt: done ? substep.doneAt || new Date().toISOString() : null,
+											}
+										: substep,
+								),
+							},
+						}
+					: step,
+			),
+		});
+	};
+
+	const cycleSubsteps = (direction) => {
+		if (substepAnimation || activeSubsteps.length < 2) return;
+		const nextIndex = (substepIndex + direction + activeSubsteps.length) % activeSubsteps.length;
+		setSubstepAnimation(direction > 0 ? 'next' : 'previous');
+		window.setTimeout(() => {
+			setSubstepIndex(nextIndex);
+			setSubstepAnimation(null);
+		}, 180);
+	};
+
+	const handleSubstepKeyDown = (event) => {
+		event.stopPropagation();
+		if (event.key === 'ArrowRight') {
+			event.preventDefault();
+			cycleSubsteps(1);
+		} else if (event.key === 'ArrowLeft') {
+			event.preventDefault();
+			cycleSubsteps(-1);
+		}
 	};
 
 	const handleTopCardKeyDown = (event) => {
@@ -252,31 +341,135 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 				<p className="mt-1 text-xs font-bold text-[#44546A]">
 					Step {step.order} of {steps.length}
 				</p>
-				<p className="mt-2 text-sm font-bold text-[#053254]">{step.title}</p>
-				{step.why && <p className="mt-1 text-xs text-[#111827]">{step.why}</p>}
-				{step.resources?.length > 0 && (
-					<ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-[11px] text-[#44546A]">
-						{step.resources.map((resource) => (
-							<li key={`${step.id}-${resource.name}`}>
-								{resource.name}
-								{resource.phone ? ` — ${resource.phone}` : ''}
-								{resource.url && (
-									<a
-										className="ml-1 text-[#1665c0] underline"
-										href={resource.url}
-										target="_blank"
-										rel="noopener noreferrer"
-										onMouseDown={(event) => event.stopPropagation()}
-										onClick={(event) => event.stopPropagation()}
-									>
-										Website
-									</a>
-								)}
-							</li>
-						))}
-					</ul>
+				{isTop && showingSubsteps && activeSubstep ? (
+					<div
+						className="mt-2 flex flex-1 flex-col"
+						data-substeps-content="true"
+						onClick={(event) => event.stopPropagation()}
+						onMouseDown={(event) => event.stopPropagation()}
+						onKeyDown={handleSubstepKeyDown}
+					>
+						<div
+							className={`flex-1 transition-transform duration-200 ${getSubstepTransitionClass(substepAnimation)}`}
+						>
+							<div className="flex items-start justify-between gap-2">
+								<div>
+									<p className="text-sm font-bold text-[#053254]">{activeSubstep.title}</p>
+									<p className="mt-1 text-xs text-[#111827]">{activeSubstep.why || activeSubstep.detail}</p>
+								</div>
+								<button
+									type="button"
+									className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${
+										activeSubstep.done
+											? 'border-[#1665c0] bg-[#1665c0] text-white'
+											: 'border-[#1665c0] bg-white text-transparent hover:bg-[#ECF4FA]'
+									}`}
+									onClick={() => updateSubstepDone(activeSubstep.id, !activeSubstep.done)}
+									aria-label={
+										activeSubstep.done
+											? `Mark "${activeSubstep.title}" not done`
+											: `Mark "${activeSubstep.title}" done`
+									}
+									data-substeps-control="true"
+								>
+									✓
+								</button>
+							</div>
+							<p className="mt-2 text-xs font-bold text-[#44546A]">
+								{activeSubsteps.filter((substep) => substep.done).length} of {activeSubsteps.length} substeps done
+							</p>
+							{renderSources(activeSubstep)}
+						</div>
+						<div className="mt-2 flex items-center justify-between gap-2">
+							<button
+								type="button"
+								className="min-h-[30px] min-w-[30px] rounded-full border border-[#1665c0] text-xs font-bold text-[#1665c0] hover:bg-[#ECF4FA] disabled:opacity-40"
+								onClick={() => cycleSubsteps(-1)}
+								disabled={activeSubsteps.length < 2 || Boolean(substepAnimation)}
+								aria-label="Previous substep"
+								data-substeps-control="true"
+							>
+								←
+							</button>
+							<span className="text-[11px] font-bold text-[#44546A]">
+								Substep {substepIndex + 1} of {activeSubsteps.length}
+							</span>
+							<button
+								type="button"
+								className="min-h-[30px] min-w-[30px] rounded-full border border-[#1665c0] text-xs font-bold text-[#1665c0] hover:bg-[#ECF4FA] disabled:opacity-40"
+								onClick={() => cycleSubsteps(1)}
+								disabled={activeSubsteps.length < 2 || Boolean(substepAnimation)}
+								aria-label="Next substep"
+								data-substeps-control="true"
+							>
+								→
+							</button>
+						</div>
+						<button
+							type="button"
+							className="mt-2 min-h-[28px] text-[11px] font-bold text-[#1665c0] underline"
+							onClick={() => setExpandedSubstepId(null)}
+							data-substeps-control="true"
+						>
+							Collapse substeps
+						</button>
+					</div>
+				) : (
+					<>
+						<p className="mt-2 text-sm font-bold text-[#053254]">{step.title}</p>
+						{step.why && <p className="mt-1 text-xs text-[#111827]">{step.why}</p>}
+						{step.resources?.length > 0 && (
+							<ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-[11px] text-[#44546A]">
+								{step.resources.map((resource) => (
+									<li key={`${step.id}-${resource.name}`}>
+										{resource.name}
+										{resource.phone ? ` — ${resource.phone}` : ''}
+										{resource.url && (
+											<a
+												className="ml-1 text-[#1665c0] underline"
+												href={resource.url}
+												target="_blank"
+												rel="noopener noreferrer"
+												onMouseDown={(event) => event.stopPropagation()}
+												onClick={(event) => event.stopPropagation()}
+											>
+												Website
+											</a>
+										)}
+									</li>
+								))}
+							</ul>
+						)}
+						<div className="mt-auto flex justify-end">
+							{step.subpath ? (
+								<button
+									type="button"
+									className="min-h-[28px] text-[11px] font-bold text-[#1665c0] underline"
+									onClick={() => {
+										setExpandedSubstepId(step.id);
+										setSubstepIndex(0);
+									}}
+									data-substeps-control="true"
+									disabled={!isTop}
+								>
+									View substeps (
+									{step.subpath.steps.filter((substep) => substep.done).length} of {step.subpath.steps.length} done)
+								</button>
+							) : (
+								<button
+									type="button"
+									className="whitespace-nowrap rounded-full bg-[#053254] px-3 py-1 text-[11px] font-bold text-white shadow hover:bg-[#0a4a78]"
+									onClick={() => onOpenSubsteps?.(step.id)}
+									data-substeps-control="true"
+									disabled={!isTop}
+								>
+									Build a path for this →
+								</button>
+							)}
+						</div>
+						<div className="absolute bottom-3 left-3 right-3 bg-white/95">{renderSources(step)}</div>
+					</>
 				)}
-				<div className="absolute bottom-3 left-3 right-3 bg-white/95">{renderSources(step)}</div>
 			</div>
 		);
 
@@ -326,7 +519,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 				role={isTop ? 'button' : undefined}
 				tabIndex={isTop ? 0 : undefined}
 				onClick={(event) => {
-					if (!isTop || event.target.closest?.('button,a')) return;
+					if (!isTop || event.target.closest?.('button,a,[data-substeps-content="true"]')) return;
 					cycleDeck(1);
 				}}
 				onKeyDown={isTop ? handleTopCardKeyDown : undefined}
@@ -419,6 +612,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 
 GoalDeckPreview.propTypes = {
 	element: PropTypes.shape({
+		id: PropTypes.string,
 		width: PropTypes.number,
 		height: PropTypes.number,
 		scale: PropTypes.number,
@@ -437,17 +631,27 @@ GoalDeckPreview.propTypes = {
 				why: PropTypes.string,
 				done: PropTypes.bool,
 				doneAt: PropTypes.string,
+				subpath: PropTypes.shape({
+					steps: PropTypes.arrayOf(PropTypes.shape({})),
+				}),
 				resources: PropTypes.arrayOf(PropTypes.shape({})),
 			}),
 		).isRequired,
 	}).isRequired,
 	onExpandedChange: PropTypes.func,
 	onUpdatePath: PropTypes.func.isRequired,
+	onOpenSubsteps: PropTypes.func,
+	substepsFocusRequest: PropTypes.shape({
+		elementId: PropTypes.string,
+		stepId: PropTypes.string,
+	}),
 	children: PropTypes.node.isRequired,
 };
 
 GoalDeckPreview.defaultProps = {
 	onExpandedChange: () => {},
+	onOpenSubsteps: () => {},
+	substepsFocusRequest: null,
 };
 
 export default GoalDeckPreview;

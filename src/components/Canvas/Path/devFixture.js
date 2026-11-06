@@ -108,6 +108,37 @@ const DEV_PLAN_FIXTURE = {
 			},
 		],
 	},
+	substepsByStep: {
+		'step-2': {
+			steps: [
+				{
+					order: 1,
+					title: 'Search nearby jobs',
+					detail: 'Look for jobs that match your skills and schedule.',
+					label: null,
+				},
+				{
+					order: 2,
+					title: 'Save promising listings',
+					detail: 'Keep the jobs you want to apply for in one place.',
+					label: null,
+				},
+				{
+					order: 3,
+					title: 'Ask for application help',
+					detail: 'Get help if an online application is difficult.',
+					label: null,
+				},
+			],
+			searchResults: [
+				{
+					title: 'CareerLink',
+					url: 'https://www.careerlink.com/',
+					date: null,
+				},
+			],
+		},
+	},
 	planMeta: {
 		planId: 'dev-fixture-find-work',
 		cached: false,
