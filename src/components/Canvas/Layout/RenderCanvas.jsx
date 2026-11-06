@@ -230,6 +230,8 @@ const CanvasContent = () => {
 			setPathPrefill('');
 			setPathAnchorId(elementId);
 			setSubstepsRequest({
+				elementId,
+				stepId,
 				goal: anchorElement.path.goal || anchorElement.path.goalSummary || '',
 				path: anchorElement.path,
 				step,
