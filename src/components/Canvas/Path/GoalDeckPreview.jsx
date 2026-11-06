@@ -29,6 +29,7 @@ function getStepSources(step) {
 const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdatePath, children }) => {
 	const { scale = 1, rotation = 0 } = element;
 	const { steps } = path;
+	const totalSteps = path.totalSteps || steps.length;
 	const activeSteps = steps;
 	const activeIdsKey = activeSteps.map((step) => step.id).join('|');
 	const [deckIds, setDeckIds] = useState(() => activeSteps.map((step) => step.id));
@@ -268,7 +269,7 @@ const GoalDeckPreview = ({ element, path, isExpanded, onExpandedChange, onUpdate
 					</button>
 				</div>
 				<p className="mt-1 text-xs font-bold text-[#44546A]">
-					Step {step.order} of {steps.length}
+					Step {step.order} of {totalSteps}
 				</p>
 				<p className="mt-2 text-sm font-bold text-[#053254]">{step.title}</p>
 				{step.why && <p className="mt-1 text-xs text-[#111827]">{step.why}</p>}
@@ -454,6 +455,7 @@ GoalDeckPreview.propTypes = {
 	path: PropTypes.shape({
 		goal: PropTypes.string,
 		goalSummary: PropTypes.string,
+		totalSteps: PropTypes.number,
 		createdAt: PropTypes.string,
 		steps: PropTypes.arrayOf(
 			PropTypes.shape({
