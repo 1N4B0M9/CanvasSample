@@ -216,6 +216,7 @@ const CanvasContent = () => {
 		setActiveToolPanel(null);
 		setPathPrefill(content ?? '');
 		setPathAnchorId(triggeredByElementId);
+		setSubstepsRequest(null);
 		setPathOpen(true);
 	}, []);
 
@@ -278,6 +279,7 @@ const CanvasContent = () => {
 		if (panel) {
 			setPathOpen(false);
 			setPathAnchorId(null);
+			setSubstepsRequest(null);
 		}
 		setActiveToolPanel(panel);
 	}, []);
@@ -660,6 +662,7 @@ const CanvasContent = () => {
 					setActiveToolPanel(null);
 					setPathPrefill('');
 					setPathAnchorId(null);
+					setSubstepsRequest(null);
 					setPathOpen(true);
 				}}
 			/>
