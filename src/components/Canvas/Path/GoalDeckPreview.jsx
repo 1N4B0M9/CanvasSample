@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import PathStackHint from './PathStackHint';
-import { getPathPreviewOffset } from '../Utils/imageSizing';
+import { getPathPreviewOffset, PATH_MIN_HEIGHT, PATH_MIN_WIDTH } from '../Utils/imageSizing';
 
 /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-noninteractive-tabindex */
 
@@ -101,7 +101,7 @@ const GoalDeckPreview = ({
 		if (!nodes.length) return undefined;
 
 		const measure = () => {
-			const footprintScale = Math.min(width / 300, height / 220);
+			const footprintScale = Math.sqrt((width / PATH_MIN_WIDTH) * (height / PATH_MIN_HEIGHT));
 			const scaleNormalization = 1 / baseElementScaleRef.current;
 			const fitScale = nodes.reduce((smallest, node) => {
 				if (!node.clientWidth || !node.clientHeight) return smallest;
