@@ -1,16 +1,11 @@
 name = "project-rebound-getpathway"
 main = "src/index.js" # pathway v2 (legacy single-file getPathway.js kept until cutover is verified)
-compatibility_date = "2026-06-01" # modern date required for the Secrets Store binding's native .get()
+compatibility_date = "2026-06-01" # modern Workers runtime
 workers_dev = true
 
 [[kv_namespaces]]
 binding = "PATHWAYS_KV"
-id = "0f6a2b7165fe459fa389ffd6c16227d7"
-
-[[secrets_store_secrets]]
-binding = "ANTHROPIC_API_KEY"
-store_id = "7db525dce94147e49cf2e3e4421c129c" # default_secrets_store
-secret_name = "ANTHROPIC_API_KEY"
+id = "3ee9694bd0304caca4b1ff9381d1b635"
 
 [[queues.producers]]
 binding = "VERIFY_QUEUE"
