@@ -1,25 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import useSubSteps from '../Recommendations/useSubSteps';
+
+const SLOW_REQUEST_DELAY_MS = 10_000;
 
 const SubstepsReviewView = ({ goal, path, step, onAdd, onClose }) => {
 	const { fetchSubSteps, loading: apiLoading, error: apiError } = useSubSteps();
 	const [result, setResult] = useState(null);
+	const [showSlowMessage, setShowSlowMessage] = useState(false);
+	const requestIdRef = useRef(0);
 
 	useEffect(() => {
 		let cancelled = false;
+		const requestId = requestIdRef.current + 1;
+		requestIdRef.current = requestId;
+		setResult(null);
+		setShowSlowMessage(false);
+		const slowMessageTimeoutId = window.setTimeout(() => {
+			if (!cancelled && requestId === requestIdRef.current) setShowSlowMessage(true);
+		}, SLOW_REQUEST_DELAY_MS);
 
 		const load = async () => {
 			const response = await fetchSubSteps({
 				goalText: goal || path.goalSummary || path.goal,
 				stepText: `${step.title}. ${step.why || ''}`,
 			});
-			if (!cancelled && response) setResult(response);
+			if (!cancelled && requestId === requestIdRef.current && response) setResult(response);
 		};
 
 		load();
 		return () => {
 			cancelled = true;
+			window.clearTimeout(slowMessageTimeoutId);
 		};
 	}, [fetchSubSteps, goal, path.goal, path.goalSummary, step.id, step.title, step.why]);
 
@@ -76,7 +88,16 @@ const SubstepsReviewView = ({ goal, path, step, onAdd, onClose }) => {
 				</div>
 			</div>
 
-			{apiLoading && <p className="animate-pulse text-[16px] text-[#44546A]">Building smaller steps…</p>}
+			{apiLoading && (
+				<div className="flex flex-col gap-1" aria-live="polite">
+					<p className="animate-pulse text-[16px] text-[#44546A]">Building smaller steps…</p>
+					{showSlowMessage && (
+						<p className="text-[14px] leading-[20px] text-[#44546A]">
+							This can take up to a minute while we check current resources.
+						</p>
+					)}
+				</div>
+			)}
 			{apiError && <p className="text-[15px] text-[#B3261E]">{apiError}</p>}
 			{result?.steps?.length > 0 && (
 				<>
