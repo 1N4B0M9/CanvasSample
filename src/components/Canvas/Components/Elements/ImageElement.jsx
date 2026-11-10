@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fitImageDimensions } from '../../Utils/imageSizing';
 
 const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) => {
 	const [imageError, setImageError] = useState(false);
@@ -17,9 +18,28 @@ const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) 
 		setImageError(true);
 	};
 
-	const handleImageLoad = () => {
+	const handleImageLoad = (event) => {
 		console.log('Image loaded successfully:', element);
 		setIsLoaded(true);
+
+		const naturalWidth = event.currentTarget.naturalWidth;
+		const naturalHeight = event.currentTarget.naturalHeight;
+		const imageAspectRatio = naturalWidth > 0 && naturalHeight > 0 ? naturalWidth / naturalHeight : null;
+		if (element.fitToImage) {
+			const { width, height } = fitImageDimensions(
+				naturalWidth,
+				naturalHeight,
+			);
+			onUpdate?.({
+				...element,
+				width,
+				height,
+				imageAspectRatio,
+				fitToImage: false,
+			});
+		} else if (imageAspectRatio && element.imageAspectRatio !== imageAspectRatio) {
+			onUpdate?.({ ...element, imageAspectRatio });
+		}
 	};
 
 	let imageSource = null;
@@ -54,8 +74,13 @@ const ImageElement = ({ element, onUpdate, isEditingLabel, setIsEditingLabel }) 
 
 	return (
 		<div
-			className="relative overflow-hidden rounded border border-gray-300"
-			style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }}
+			className="relative overflow-hidden rounded border border-gray-300 transition-all duration-200"
+			style={{
+				width: `${width}px`,
+				height: `${height}px`,
+				maxWidth: '100%',
+				transformOrigin: 'center',
+			}}
 		>
 			{!isLoaded && !imageError && (
 				<div className="absolute inset-0 flex items-center justify-center bg-gray-100">

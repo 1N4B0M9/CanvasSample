@@ -1,6 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
+import { getInitialImageDimensions, getPathMinimumScale } from './imageSizing';
 
 const DEFAULT_OFFSET = { x: 0, y: 0 };
+
+const getElementMinimumScale = (element) => {
+	if (element?.type !== 'image' || !element.path?.steps?.length) return 0.2;
+
+	return getPathMinimumScale(element.width, element.height);
+};
 
 const useElementOperations = (elements, setElements, selectedId, setSelectedId, connections, setConnections, viewportZoom = 1, viewportOffset = DEFAULT_OFFSET) => {
 	const [isDragging, setIsDragging] = useState(false);
@@ -40,6 +47,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 
 			const reader = new FileReader();
 			reader.onload = (event) => {
+				const { maxWidth, maxHeight } = getInitialImageDimensions();
 				const newImage = {
 					id: Date.now().toString(),
 					type: 'image',
@@ -48,8 +56,9 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 					y,
 					rotation: 0,
 					scale: 1,
-					width: 100,
-					height: 100,
+					width: maxWidth,
+					height: maxHeight,
+					fitToImage: true,
 				};
 
 				setElements((prev) => [...prev, newImage]);
@@ -251,7 +260,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 						el.id === elementId
 							? {
 									...el,
-									scale: Math.max(0.2, Math.min(5, newScale)),
+									scale: Math.max(getElementMinimumScale(el), Math.min(5, newScale)),
 								}
 							: el,
 					),
@@ -284,7 +293,7 @@ const useElementOperations = (elements, setElements, selectedId, setSelectedId, 
 						const newScale = el.scale * scaleChange;
 						return {
 							...el,
-							scale: Math.max(0.2, Math.min(5, newScale)),
+							scale: Math.max(getElementMinimumScale(el), Math.min(5, newScale)),
 						};
 					}
 					return el;

@@ -6,6 +6,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ImageElement from './Elements/ImageElement';
 import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
+import GoalDeckPreview from '../Path/GoalDeckPreview';
 import { useCanvas } from '../Utils/CanvasContext';
 
 const CanvasElement = ({
@@ -26,10 +27,13 @@ const CanvasElement = ({
 	onStartArrow,
 	onCompleteArrow,
 	onOpenPanel,
+	onOpenSubsteps,
+	substepsFocusRequest,
 	isPanelAnchor = false,
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
+	const [isPathExpanded, setIsPathExpanded] = useState(false);
 	const { highlightedStepIds, canvasRef } = useCanvas();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
@@ -38,7 +42,7 @@ const CanvasElement = ({
 	const lastMeasuredRef = useRef({ w: 0, h: 0 });
 
 	const measureElementSize = useCallback(() => {
-		if (!elementRef.current) return;
+		if (!elementRef.current || element.type === 'image') return;
 		// offsetWidth/offsetHeight are layout pixels, unaffected by CSS transforms
 		// on this element or any ancestor — safe to store as world coordinates.
 		const w = elementRef.current.offsetWidth;
@@ -49,11 +53,11 @@ const CanvasElement = ({
 	}, [element.id, onUpdateSize]);
 
 	useEffect(() => {
-		if (!elementRef.current) return;
+		if (!elementRef.current || element.type === 'image') return;
 		const observer = new ResizeObserver(measureElementSize);
 		observer.observe(elementRef.current);
 		return () => observer.disconnect();
-	}, [element.id]);
+	}, [element.id, element.type, measureElementSize]);
 
 	useEffect(() => {
 		if (!isSelected) setIsEditingLabel(false);
@@ -134,6 +138,13 @@ const CanvasElement = ({
 			e,
 		);
 	};
+	const hasPathStack = element.type === 'image' && Array.isArray(element.path?.steps) && element.path.steps.length > 0;
+	let pathButtonText = '✨';
+	let pathButtonLabel = 'Get help with this goal';
+	if (hasPathStack) {
+		pathButtonText = isPathExpanded ? '×' : '▤';
+		pathButtonLabel = isPathExpanded ? 'Close steps' : 'View steps';
+	}
 
 	return (
 		<div
@@ -145,6 +156,7 @@ const CanvasElement = ({
 				top: element.y,
 				transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
 				transformOrigin: 'center',
+				zIndex: isPathExpanded ? 40 : undefined,
 				cursor: isEditing ? 'text' : 'move',
 				boxShadow:
 					isPanelAnchor || highlightedStepIds.includes(element.id)
@@ -158,7 +170,24 @@ const CanvasElement = ({
 		>
 			<div ref={contentRef} className="relative">
 				{/* Render the appropriate element type */}
-				{element.type === 'image' ? (
+				{hasPathStack ? (
+					<GoalDeckPreview
+						element={element}
+						path={element.path}
+						isExpanded={isPathExpanded}
+						onExpandedChange={setIsPathExpanded}
+						onUpdatePath={(nextPath) => onUpdate({ ...element, path: nextPath })}
+						onOpenSubsteps={(stepId) => onOpenSubsteps?.(element.id, stepId)}
+						substepsFocusRequest={substepsFocusRequest}
+					>
+						<ImageElement
+							element={element}
+							onUpdate={onUpdate}
+							isEditingLabel={isEditingLabel}
+							setIsEditingLabel={setIsEditingLabel}
+						/>
+					</GoalDeckPreview>
+				) : element.type === 'image' ? (
 					<ImageElement
 						element={element}
 						onUpdate={onUpdate}
@@ -185,19 +214,22 @@ const CanvasElement = ({
 				)}
 				{/* Below-element row: path pill (selected only, so full boards stay quiet) +
 				    always-visible clickable source icons. Never hover-only. */}
-				{(element.type === 'text' || element.type === 'mentor') && (
+				{(element.type === 'text' || element.type === 'mentor' || (element.type === 'image' && !hasPathStack)) && (
 					<div className="absolute left-0 top-full z-20 mt-1 flex flex-col items-start gap-1">
 						{isSelected &&
-							element.content &&
-							element.content.trim().length >= 8 &&
+							(element.type === 'image' ||
+								(element.content && element.content.trim().length >= 8)) &&
 							!isEditing &&
+							!isEditingLabel &&
 							!isConnecting &&
 							!isCreatingArrow && (
 								<button
 									type="button"
 									onClick={(e) => {
 										e.stopPropagation();
-										if (typeof onOpenPanel === 'function') onOpenPanel(element.content, element.id);
+										if (typeof onOpenPanel === 'function') {
+											onOpenPanel(element.type === 'image' ? '' : element.content, element.id);
+										}
 									}}
 									onMouseDown={(e) => e.stopPropagation()}
 									className="whitespace-nowrap rounded-full bg-[#053254] px-4 py-2 text-[15px] font-bold text-white shadow hover:bg-[#0a4a78]"
@@ -253,9 +285,13 @@ const CanvasElement = ({
 							right: '-8px',
 							bottom: '-8px',
 							pointerEvents: 'none',
+							zIndex: 32,
 						}}
+						data-path-resize={isPathExpanded ? 'true' : undefined}
 					>
-						<div className="absolute inset-2 border-2 border-blue-500 rounded" data-connection-border="true" />
+						{!isPathExpanded && (
+							<div className="absolute inset-2 border-2 border-blue-500 rounded" data-connection-border="true" />
+						)}
 
 						{/* scale handles and mini-toolbar only make sense for single-select */}
 						{selectedIds.size === 1 && (
@@ -283,12 +319,48 @@ const CanvasElement = ({
 
 					{selectedIds.size === 1 && (
 						<div
-							className="absolute -top-8 left-1/2 flex gap-2"
+							className="absolute -top-10 left-1/2 z-40 flex w-max items-center gap-2"
 							style={{
 								transform: `translateX(-50%) scale(${1 / element.scale})`,
 								transformOrigin: 'center',
 							}}
 						>
+							{element.type === 'image' && hasPathStack && (
+								<button
+									type="button"
+									className={
+										hasPathStack
+											? 'flex-none whitespace-nowrap rounded bg-white p-1 shadow hover:bg-gray-100'
+											: 'flex-none whitespace-nowrap rounded-full bg-[#053254] px-4 py-2 text-[15px] font-bold text-white shadow hover:bg-[#0a4a78]'
+									}
+									onClick={(e) => {
+										e.stopPropagation();
+										if (hasPathStack) setIsPathExpanded((expanded) => !expanded);
+										else onOpenPanel?.('', element.id);
+									}}
+									onMouseDown={(e) => e.stopPropagation()}
+									data-path-toggle="true"
+									title={pathButtonLabel}
+									aria-label={pathButtonLabel}
+								>
+									{hasPathStack ? pathButtonText : 'Build a path for this →'}
+								</button>
+							)}
+							{hasPathStack && (
+								<button
+									type="button"
+									className="rounded bg-white p-1 shadow hover:bg-gray-100"
+									onClick={(e) => {
+										e.stopPropagation();
+										onOpenPanel?.('', element.id);
+									}}
+									onMouseDown={(e) => e.stopPropagation()}
+									title="Regenerate path"
+									aria-label="Regenerate path"
+								>
+									↻
+								</button>
+							)}
 							<button
 								className="p-1 bg-white rounded shadow hover:bg-gray-100"
 								onClick={handleStartConnection}

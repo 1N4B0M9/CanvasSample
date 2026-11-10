@@ -15,6 +15,7 @@ import ProfileMenu from '../../../Layouts/Navbar/profileMenu';
 import DeleteConfirmModal from '../Components/DeleteConfirmModal';
 import PathPanel from '../Path/PathPanel';
 import ViewportHUD from './ViewportHUD';
+import { getPathMinimumDimensions, getPathMinimumScale } from '../Utils/imageSizing';
 
 const CanvasContent = () => {
 	const {
@@ -38,6 +39,7 @@ const CanvasContent = () => {
 		addImageElement,
 		addImageFromSearch,
 		elements,
+		updateElement,
 		connections,
 		arrows,
 		selectedIds,
@@ -60,7 +62,10 @@ const CanvasContent = () => {
 	const [pathOpen, setPathOpen] = React.useState(false);
 	const [pathPrefill, setPathPrefill] = React.useState('');
 	const [pathAnchorId, setPathAnchorId] = React.useState(null);
+	const [substepsRequest, setSubstepsRequest] = React.useState(null);
+	const [substepsFocusRequest, setSubstepsFocusRequest] = React.useState(null);
 	const [activeToolPanel, setActiveToolPanel] = React.useState(null);
+	const pathAnchorElement = elements.find((element) => element.id === pathAnchorId) ?? null;
 
 	const [isPanning, setIsPanning] = React.useState(false);
 	const [isSpaceDown, setIsSpaceDown] = React.useState(false);
@@ -211,20 +216,134 @@ const CanvasContent = () => {
 		setActiveToolPanel(null);
 		setPathPrefill(content ?? '');
 		setPathAnchorId(triggeredByElementId);
+		setSubstepsRequest(null);
 		setPathOpen(true);
 	}, []);
+
+	const openSubstepsForElement = React.useCallback(
+		(elementId, stepId) => {
+			const anchorElement = elements.find((element) => element.id === elementId);
+			const step = anchorElement?.path?.steps?.find((candidate) => candidate.id === stepId);
+			if (!anchorElement?.path || !step) return;
+
+			setActiveToolPanel(null);
+			setPathPrefill('');
+			setPathAnchorId(elementId);
+			setSubstepsRequest({
+				elementId,
+				stepId,
+				goal: anchorElement.path.goal || anchorElement.path.goalSummary || '',
+				path: anchorElement.path,
+				step,
+			});
+			setPathOpen(true);
+		},
+		[elements],
+	);
+
+	const handleAddSubsteps = React.useCallback(
+		({ elementId, stepId, subpath }) => {
+			const anchorElement = elements.find((element) => element.id === elementId);
+			if (!anchorElement?.path) return;
+
+			updateElement({
+				...anchorElement,
+				path: {
+					...anchorElement.path,
+					steps: anchorElement.path.steps.map((step) =>
+						step.id === stepId ? { ...step, subpath } : step,
+					),
+				},
+			});
+			setSubstepsRequest(null);
+			setPathOpen(false);
+			setPathAnchorId(null);
+			setSubstepsFocusRequest({ elementId, stepId });
+		},
+		[elements, updateElement],
+	);
+
+	const closeSubstepsReview = React.useCallback(() => {
+		setSubstepsRequest(null);
+		setPathOpen(false);
+		setPathAnchorId(null);
+	}, []);
+
+	const handleUpdatePath = React.useCallback(
+		(nextPath) => {
+			const anchorElement = elements.find((element) => element.id === pathAnchorId);
+			if (anchorElement) updateElement({ ...anchorElement, path: nextPath });
+		},
+		[elements, pathAnchorId, updateElement],
+	);
 
 	const handleToolPanelChange = React.useCallback((panel) => {
 		if (panel) {
 			setPathOpen(false);
 			setPathAnchorId(null);
+			setSubstepsRequest(null);
 		}
 		setActiveToolPanel(panel);
 	}, []);
 
-	// "Put this path on my board" — Phase 1 reuses text elements via savePathwayToBoard
+	// "Put this path on my board" — anchored paths stay on the source element;
+	// unanchored paths retain the existing text-element and arrow behavior.
 	const handlePlacePathOnBoard = React.useCallback(
-		({ goalSummary, steps, resourcesByStep }) => {
+		({ goal, goalSummary, planId, steps, resourcesByStep }) => {
+			if (pathAnchorId) {
+				const anchorElement = elements.find((element) => element.id === pathAnchorId);
+				if (anchorElement?.type === 'image') {
+					const stepsToAttach = steps
+						.filter((step) => !step.done)
+						.map((step, index) => ({ ...step, order: index + 1 }));
+					if (!stepsToAttach.length) {
+						setPathOpen(false);
+						setPathAnchorId(null);
+						return;
+					}
+
+					const currentWidth = anchorElement.width || 1;
+					const currentHeight = anchorElement.height || 1;
+					const dimensions = getPathMinimumDimensions(
+						currentWidth,
+						currentHeight,
+						anchorElement.imageAspectRatio,
+					);
+					const dx = (dimensions.width - currentWidth) / 2;
+					const dy = (dimensions.height - currentHeight) / 2;
+					updateElement({
+						...anchorElement,
+						x: anchorElement.x - dx,
+						y: anchorElement.y - dy,
+						width: dimensions.width,
+						height: dimensions.height,
+						scale: Math.max(
+							anchorElement.scale || 1,
+							getPathMinimumScale(dimensions.width, dimensions.height),
+						),
+						path: {
+							version: 1,
+							planId: planId ?? `path-${Date.now()}`,
+							goal: goal || goalSummary || 'my goal',
+							goalSummary: goalSummary || goal || 'my goal',
+							createdAt: new Date().toISOString(),
+							steps: stepsToAttach.map((step) => ({
+								id: step.id,
+								order: step.order,
+								title: step.title,
+								why: step.why,
+								resources: resourcesByStep[step.id] ?? [],
+								done: Boolean(step.done),
+								doneAt: step.doneAt ?? null,
+							})),
+						},
+					});
+					setPathOpen(false);
+					setPathAnchorId(null);
+					return;
+				}
+			}
+
 			const pathwaySteps = steps.map((step) => {
 				const topOrg = (resourcesByStep[step.id] ?? [])[0];
 				const helpLine = topOrg ? `\nWho can help: ${topOrg.name}${topOrg.phone ? ` — ${topOrg.phone}` : ''}` : '';
@@ -240,7 +359,7 @@ const CanvasContent = () => {
 			setPathOpen(false);
 			setPathAnchorId(null);
 		},
-		[savePathwayToBoard, pathAnchorId],
+		[elements, pathAnchorId, savePathwayToBoard, updateElement],
 	);
 
 	const handleDrop = (e) => {
@@ -545,6 +664,7 @@ const CanvasContent = () => {
 					setActiveToolPanel(null);
 					setPathPrefill('');
 					setPathAnchorId(null);
+					setSubstepsRequest(null);
 					setPathOpen(true);
 				}}
 			/>
@@ -553,11 +673,17 @@ const CanvasContent = () => {
 			<PathPanel
 				open={pathOpen}
 				prefillQuery={pathPrefill}
+				anchorElement={pathAnchorElement}
+				substepsRequest={substepsRequest}
 				onClose={() => {
 					setPathOpen(false);
 					setPathAnchorId(null);
+					setSubstepsRequest(null);
 				}}
 				onPlaceOnBoard={handlePlacePathOnBoard}
+				onUpdatePath={handleUpdatePath}
+				onAddSubsteps={handleAddSubsteps}
+				onCloseSubsteps={closeSubstepsReview}
 			/>
 
 			{/* Main canvas drawing area - FITS WITHIN AVAILABLE CONTAINER SPACE */}
@@ -597,7 +723,12 @@ const CanvasContent = () => {
 					className="select-none"
 				>
 					<RenderConnections />
-					<RenderElements onOpenPanel={openPathForElement} panelAnchorId={pathOpen ? pathAnchorId : null} />
+					<RenderElements
+						onOpenPanel={openPathForElement}
+						onOpenSubsteps={openSubstepsForElement}
+						substepsFocusRequest={substepsFocusRequest}
+						panelAnchorId={pathOpen ? pathAnchorId : null}
+					/>
 				</div>
 
 			</div>

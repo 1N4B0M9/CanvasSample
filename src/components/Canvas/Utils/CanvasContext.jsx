@@ -18,6 +18,12 @@ import { useCanvasData } from './CanvasDataContext';
 import useElementOperations from './useElementOperations';
 import useConnectionOperations from './useConnectionOperations';
 import { ConvertCanvasToJson, ConvertJsonToCanvas } from './CanvasIO';
+import {
+	getInitialImageDimensions,
+	getPathMinimumDimensions,
+	getPathMinimumScale,
+	getPathPreviewOffset,
+} from './imageSizing';
 
 // Create context
 const CanvasContext = createContext(null);
@@ -69,15 +75,39 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	// Refs
 	const canvasRef = useRef(null);
 	const saveTimeoutRef = useRef(null);
+	const loadedCanvasIdRef = useRef(null);
 
-	// Load canvas data from CanvasDataContext on mount
+	// Load canvas data once per canvas after the provider has finished loading.
 	useEffect(() => {
-		const { canvases } = canvasDataContext;
+		const { canvases, loading } = canvasDataContext;
+		if (loading || loadedCanvasIdRef.current === canvasId) return;
+
 		const canvas = canvases.find((c) => c.id === canvasId);
 
 		if (canvas && canvas.data) {
 			if (canvas.data.elements) {
-				setElements(canvas.data.elements);
+				setElements(
+					canvas.data.elements.map((element) => {
+						if (element.type !== 'image' || !element.path?.steps?.length) return element;
+
+						const currentWidth = element.width || 1;
+						const currentHeight = element.height || 1;
+						const dimensions = getPathMinimumDimensions(currentWidth, currentHeight, element.imageAspectRatio);
+						const dx = (dimensions.width - currentWidth) / 2;
+						const dy = (dimensions.height - currentHeight) / 2;
+						const scale = Math.max(element.scale || 1, getPathMinimumScale(dimensions.width, dimensions.height));
+						if (dx === 0 && dy === 0 && scale === (element.scale || 1)) return element;
+
+						return {
+							...element,
+							x: element.x - dx,
+							y: element.y - dy,
+							width: dimensions.width,
+							height: dimensions.height,
+							scale,
+						};
+					}),
+				);
 			}
 
 			if (canvas.data.connections) {
@@ -96,8 +126,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				setBackgroundScale(canvas.data.backgroundScale);
 			}
 			setBoardResources(canvas.data.boardResources ?? []);
+			loadedCanvasIdRef.current = canvasId;
 		}
-	}, [canvasId, canvasDataContext]);
+	}, [canvasId, canvasDataContext.canvases, canvasDataContext.loading]);
 
 	// Save to CanvasDataContext whenever data changes
 	useEffect(() => {
@@ -277,9 +308,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				}
 			}
 
-			// Calculate screen-fitting dimensions
-			const maxWidth = window.innerWidth * 0.3; // 30% of screen width
-			const maxHeight = window.innerHeight * 0.3; // 30% of screen height
+			const { maxWidth, maxHeight } = getInitialImageDimensions();
 
 			const newElement = {
 				id: `image-${Date.now()}`,
@@ -288,8 +317,9 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				alt: file.name || 'Uploaded image',
 				x,
 				y,
-				width: Math.min(300, maxWidth), // Responsive width
-				height: Math.min(200, maxHeight), // Responsive height
+				width: maxWidth,
+				height: maxHeight,
+				fitToImage: true,
 				rotation: 0,
 				scale: 1,
 			};
@@ -337,9 +367,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				}
 			}
 
-			// Calculate screen-fitting dimensions
-			const maxWidth = window.innerWidth * 0.3; // 30% of screen width
-			const maxHeight = window.innerHeight * 0.3; // 30% of screen height
+			const { maxWidth, maxHeight } = getInitialImageDimensions();
 
 			// Create element with responsive dimensions
 			const newElement = {
@@ -347,14 +375,16 @@ export const CanvasProvider = ({ children, canvasId }) => {
 				type: 'image',
 				src: imageData.url,
 				alt: imageData.title || 'Unsplash image',
+				...(imageData.searchQuery ? { searchQuery: imageData.searchQuery } : {}),
 				attribution: {
 					photographer: imageData.photographer || 'Unknown',
 					photographerUrl: imageData.photographerUrl || '',
 				},
 				x,
 				y,
-				width: Math.min(300, maxWidth), // Responsive width
-				height: Math.min(200, maxHeight), // Responsive height
+				width: maxWidth,
+				height: maxHeight,
+				fitToImage: true,
 				rotation: 0,
 				scale: 1,
 			};
@@ -1205,6 +1235,25 @@ export const CanvasProvider = ({ children, canvasId }) => {
 							ctx.fillText(line, 8, 24 + index * lineHeight);
 						});
 					} else if (element.type === 'image') {
+						if (Array.isArray(element.path?.steps) && element.path.steps.length > 0) {
+							const previewCount = Math.min(3, element.path.steps.length);
+							Array.from({ length: previewCount }, (_, index) => previewCount - index).forEach(
+								(depth, index) => {
+									const offset = getPathPreviewOffset(
+										depth,
+										element.width,
+										element.height,
+										finalScale,
+									);
+									ctx.fillStyle = index % 2 === 0 ? '#D9E9F5' : '#ECF4FA';
+									ctx.strokeStyle = '#9BB8CC';
+									ctx.lineWidth = 1;
+									ctx.fillRect(offset, -offset, element.width, element.height);
+									ctx.strokeRect(offset, -offset, element.width, element.height);
+								},
+							);
+						}
+
 						// Draw image element
 						try {
 							const imageSrc = element.fileUrl || element.src;

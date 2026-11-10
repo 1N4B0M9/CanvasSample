@@ -19,6 +19,7 @@ export default function usePlanStream() {
 	const [hotlines, setHotlines] = useState([]);
 	const [planMeta, setPlanMeta] = useState(null);
 	const [error, setError] = useState(null);
+	const [query, setQuery] = useState('');
 
 	const queryRef = useRef('');
 	const boardContextRef = useRef(null);
@@ -35,6 +36,7 @@ export default function usePlanStream() {
 		setHotlines([]);
 		setPlanMeta(null);
 		setError(null);
+		setQuery('');
 		queryRef.current = '';
 		boardContextRef.current = null;
 		correctionsRef.current = [];
@@ -155,14 +157,15 @@ export default function usePlanStream() {
 
 	/** First call: just the query (+ optional board context). */
 	const ask = useCallback(
-		(query, boardContext = null) => {
-			queryRef.current = query;
+		(goalQuery, boardContext = null) => {
+			queryRef.current = goalQuery;
+			setQuery(goalQuery);
 			boardContextRef.current = boardContext;
 			correctionsRef.current = [];
 			setSteps([]);
 			setResourcesByStep({});
 			setPlanMeta(null);
-			stream({ query, boardContext: boardContext ?? undefined });
+			stream({ query: goalQuery, boardContext: boardContext ?? undefined });
 		},
 		[stream],
 	);
@@ -203,6 +206,7 @@ export default function usePlanStream() {
 	return {
 		phase,
 		intent,
+		query,
 		questions,
 		steps,
 		resourcesByStep,

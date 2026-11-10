@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import ResourceChip from './ResourceChip';
 import useSubSteps from '../Recommendations/useSubSteps';
+
+const SLOW_REQUEST_DELAY_MS = 10_000;
 
 /**
  * One step of the path: number, title, why, check-off, resources for the step,
@@ -11,15 +13,37 @@ const StepCard = ({ step, resources, grounding, done, onToggleDone, onCorrectAss
 	const [askOpen, setAskOpen] = useState(false);
 	const [askText, setAskText] = useState('');
 	const [subSteps, setSubSteps] = useState(null);
-	const { fetchSubSteps, loading: askLoading } = useSubSteps();
+	const [showSlowMessage, setShowSlowMessage] = useState(false);
+	const requestIdRef = useRef(0);
+	const mountedRef = useRef(false);
+	const { fetchSubSteps, loading: askLoading, error: askError } = useSubSteps();
+
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
 
 	const handleAsk = async () => {
-		const result = await fetchSubSteps({
-			goalText: goalSummary,
-			stepText: `${step.title}. ${step.why}`,
-			userQuery: askText || undefined,
-		});
-		if (result?.steps?.length) setSubSteps(result.steps);
+		const requestId = requestIdRef.current + 1;
+		requestIdRef.current = requestId;
+		setSubSteps(null);
+		setShowSlowMessage(false);
+		const slowMessageTimeoutId = window.setTimeout(() => {
+			if (mountedRef.current && requestId === requestIdRef.current) setShowSlowMessage(true);
+		}, SLOW_REQUEST_DELAY_MS);
+
+		try {
+			const result = await fetchSubSteps({
+				goalText: goalSummary,
+				stepText: `${step.title}. ${step.why}`,
+				userQuery: askText || undefined,
+			});
+			if (requestId === requestIdRef.current && result?.steps?.length) setSubSteps(result.steps);
+		} finally {
+			window.clearTimeout(slowMessageTimeoutId);
+		}
 	};
 
 	return (
@@ -102,6 +126,17 @@ const StepCard = ({ step, resources, grounding, done, onToggleDone, onCorrectAss
 										className="mt-1 w-full rounded-[10px] border border-[#D3D3D3] px-3 py-2 text-[16px] font-normal focus:border-[#1665c0] focus:outline-none"
 									/>
 								</label>
+								{askLoading && (
+									<div className="mt-2 flex flex-col gap-1" aria-live="polite">
+										<p className="animate-pulse text-[14px] text-[#44546A]">Building smaller steps…</p>
+										{showSlowMessage && (
+											<p className="text-[13px] leading-[18px] text-[#44546A]">
+												This can take up to a minute while we check current resources.
+											</p>
+										)}
+									</div>
+								)}
+								{askError && <p className="mt-2 text-[14px] leading-[20px] text-[#B3261E]">{askError}</p>}
 								<div className="mt-2 flex gap-2">
 									<button
 										type="button"

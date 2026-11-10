@@ -121,6 +121,7 @@ const ImageSearch = ({ addImage, isBackgroundMode = false, title = 'Image Search
 				url: image.url,
 				title: image.title,
 				description: image.title,
+				searchQuery: searchTerm.trim(),
 				photographer: image.photographer,
 				photographerUrl: image.photographerUrl,
 				downloadLink: image.downloadLink,
