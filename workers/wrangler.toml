@@ -3,6 +3,9 @@ main = "src/index.js" # pathway v2 (legacy single-file getPathway.js kept until 
 compatibility_date = "2026-06-01" # modern Workers runtime
 workers_dev = true
 
+[observability]
+enabled = true
+
 [[kv_namespaces]]
 binding = "PATHWAYS_KV"
 id = "3ee9694bd0304caca4b1ff9381d1b635"
