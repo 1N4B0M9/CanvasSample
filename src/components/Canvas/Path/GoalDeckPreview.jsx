@@ -6,6 +6,7 @@ import { getPathPreviewOffset } from '../Utils/imageSizing';
 /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-noninteractive-tabindex */
 
 const ANIMATION_MS = 220;
+const CARD_CONTENT_SCALE = 0.88;
 
 function getStepSources(step) {
 	const sources = [];
@@ -57,6 +58,7 @@ const GoalDeckPreview = ({
 	const contentRefs = useRef(new Map());
 	const contentRefCallbacks = useRef(new Map());
 	const animationTimeoutRef = useRef(null);
+	const baseElementScaleRef = useRef(Math.max(Number(scale) || 1, 0.1));
 
 	const width = element.width || 300;
 	const height = element.height || 220;
@@ -100,12 +102,13 @@ const GoalDeckPreview = ({
 
 		const measure = () => {
 			const footprintScale = Math.min(width / 300, height / 220);
+			const scaleNormalization = 1 / baseElementScaleRef.current;
 			const fitScale = nodes.reduce((smallest, node) => {
 				if (!node.clientWidth || !node.clientHeight) return smallest;
 				const widthScale = node.scrollWidth ? node.clientWidth / node.scrollWidth : 1;
 				const heightScale = node.scrollHeight ? node.clientHeight / node.scrollHeight : 1;
 				return Math.min(smallest, widthScale, heightScale);
-			}, footprintScale);
+			}, Math.min(footprintScale, scaleNormalization));
 			setContentFitScale((previous) => (Math.abs(previous - fitScale) < 0.001 ? previous : fitScale));
 		};
 
@@ -113,7 +116,17 @@ const GoalDeckPreview = ({
 		nodes.forEach((node) => observer.observe(node));
 		measure();
 		return () => observer.disconnect();
-	}, [activeIdsKey, width, height]);
+	}, [
+		activeIdsKey,
+		width,
+		height,
+		scale,
+		isExpanded,
+		activeStep?.id,
+		showingSubsteps,
+		substepIndex,
+		contentFitScale,
+	]);
 
 	useEffect(() => {
 		setDeckIds((previous) => {
@@ -271,12 +284,16 @@ const GoalDeckPreview = ({
 		}
 	};
 
-	const renderSources = (step) => {
+	const renderSources = (step, compact = false) => {
 		const sources = getStepSources(step);
 		if (!sources.length) return null;
 
 		return (
-			<div className="mt-2 flex w-fit items-center gap-1 border-t border-[#D3D3D3] pt-2">
+			<div
+				className={`flex w-fit items-center gap-1 ${
+					compact ? '' : 'mt-2 border-t border-[#D3D3D3] pt-2'
+				}`}
+			>
 				{sources.slice(0, 4).map((source) => {
 					let host = null;
 					try {
@@ -314,13 +331,17 @@ const GoalDeckPreview = ({
 	const renderCardContent = (step, isTop, localRotation) => (
 			<div
 				ref={getContentRef(step.id)}
-				className="relative flex h-full flex-col overflow-hidden p-3 pb-12"
+				className={`absolute left-1/2 top-1/2 flex flex-col overflow-hidden p-3 ${
+					isTop && showingSubsteps ? 'pb-3' : 'pb-12'
+				}`}
 				style={{
-					transform: `rotate(${-localRotation}deg) scale(${contentFitScale})`,
+					width: `${width / Math.max(contentFitScale * CARD_CONTENT_SCALE, 0.1)}px`,
+					height: `${height / Math.max(contentFitScale * CARD_CONTENT_SCALE, 0.1)}px`,
+					transform: `translate(-50%, -50%) rotate(${-localRotation}deg) scale(${contentFitScale * CARD_CONTENT_SCALE})`,
 					transformOrigin: 'center',
 				}}
 			>
-				<div className="flex items-center justify-between gap-2">
+				<div className="flex flex-shrink-0 items-center justify-between gap-2">
 					<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
 						{isTop && showingSubsteps ? step.title : path.goalSummary || path.goal || 'Goal path'}
 					</p>
@@ -338,31 +359,35 @@ const GoalDeckPreview = ({
 						✓
 					</button>
 				</div>
-				<p className="mt-1 text-xs font-bold text-[#44546A]">
-					Step {step.order} of {steps.length}
-					{isTop && showingSubsteps ? ' · Substeps' : ''}
-				</p>
-				{isTop && showingSubsteps && activeSubstep ? (
-					<div
-						className="relative mt-2 flex flex-1 flex-col"
-						data-substeps-content="true"
-						onClick={(event) => event.stopPropagation()}
-						onMouseDown={(event) => event.stopPropagation()}
-						onKeyDown={handleSubstepKeyDown}
-					>
+				<div className="mt-1 flex flex-shrink-0 items-center justify-between gap-2">
+					<p className="min-w-0 truncate text-xs font-bold text-[#44546A]">
+						Step {step.order} of {steps.length}
+						{isTop && showingSubsteps ? ' · Substeps' : ''}
+					</p>
+					{isTop && showingSubsteps && (
 						<button
 							type="button"
-							className="self-start text-[11px] font-bold text-[#1665c0] underline"
+							className="flex-shrink-0 text-[11px] font-bold text-[#1665c0] underline"
 							onClick={() => setExpandedSubstepId(null)}
 							data-substeps-control="true"
 						>
 							← Main step
 						</button>
+					)}
+				</div>
+				{isTop && showingSubsteps && activeSubstep ? (
+					<div
+						className="relative mt-2 flex min-h-0 flex-1 flex-col"
+						data-substeps-content="true"
+						onClick={(event) => event.stopPropagation()}
+						onMouseDown={(event) => event.stopPropagation()}
+						onKeyDown={handleSubstepKeyDown}
+					>
 						<div
-							className={`mt-2 flex-1 transition-transform duration-200 ${getSubstepTransitionClass(substepAnimation)}`}
+							className={`mt-2 flex-shrink-0 transition-transform duration-200 ${getSubstepTransitionClass(substepAnimation)}`}
 						>
 							<div className="flex items-start justify-between gap-2">
-								<div>
+								<div className="min-w-0 flex-1">
 									<p className="text-sm font-bold text-[#053254]">{activeSubstep.title}</p>
 									<p className="mt-1 text-xs text-[#111827]">{activeSubstep.why || activeSubstep.detail}</p>
 								</div>
@@ -385,31 +410,33 @@ const GoalDeckPreview = ({
 								</button>
 							</div>
 						</div>
-						<div className="absolute bottom-12 left-0 right-0 bg-white/95">{renderSources(activeSubstep)}</div>
-						<div className="mt-2 flex items-center justify-between gap-2">
-							<button
-								type="button"
-								className="min-h-[30px] min-w-[30px] rounded-full border border-[#1665c0] text-xs font-bold text-[#1665c0] hover:bg-[#ECF4FA] disabled:opacity-40"
-								onClick={() => cycleSubsteps(-1)}
-								disabled={activeSubsteps.length < 2 || Boolean(substepAnimation)}
-								aria-label="Previous substep"
-								data-substeps-control="true"
-							>
-								←
-							</button>
-							<span className="text-[11px] font-bold text-[#44546A]">
-								Substep {substepIndex + 1} of {activeSubsteps.length}
-							</span>
-							<button
-								type="button"
-								className="min-h-[30px] min-w-[30px] rounded-full border border-[#1665c0] text-xs font-bold text-[#1665c0] hover:bg-[#ECF4FA] disabled:opacity-40"
-								onClick={() => cycleSubsteps(1)}
-								disabled={activeSubsteps.length < 2 || Boolean(substepAnimation)}
-								aria-label="Next substep"
-								data-substeps-control="true"
-							>
-								→
-							</button>
+						<div className="mt-auto flex flex-shrink-0 items-center justify-between gap-2 border-t border-[#D3D3D3] pt-2">
+							<div className="min-w-0 flex-1">{renderSources(activeSubstep, true)}</div>
+							<div className="flex flex-shrink-0 items-center gap-1">
+								<button
+									type="button"
+									className="flex h-7 w-7 items-center justify-center rounded-full border border-[#1665c0] text-xs font-bold text-[#1665c0] hover:bg-[#ECF4FA] disabled:opacity-40"
+									onClick={() => cycleSubsteps(-1)}
+									disabled={activeSubsteps.length < 2 || Boolean(substepAnimation)}
+									aria-label="Previous substep"
+									data-substeps-control="true"
+								>
+									←
+								</button>
+								<span className="whitespace-nowrap text-[10px] font-bold text-[#44546A]">
+									{substepIndex + 1} / {activeSubsteps.length}
+								</span>
+								<button
+									type="button"
+									className="flex h-7 w-7 items-center justify-center rounded-full border border-[#1665c0] text-xs font-bold text-[#1665c0] hover:bg-[#ECF4FA] disabled:opacity-40"
+									onClick={() => cycleSubsteps(1)}
+									disabled={activeSubsteps.length < 2 || Boolean(substepAnimation)}
+									aria-label="Next substep"
+									data-substeps-control="true"
+								>
+									→
+								</button>
+							</div>
 						</div>
 					</div>
 				) : (

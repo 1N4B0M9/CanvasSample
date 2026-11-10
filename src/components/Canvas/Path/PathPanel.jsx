@@ -39,7 +39,6 @@ const PathPanel = ({
 		skipIntake,
 		sendCorrection,
 		reset,
-		loadFixture,
 	} = usePlanStream();
 
 	const [showSavedPath, setShowSavedPath] = useState(false);
@@ -95,12 +94,6 @@ const PathPanel = ({
 		reset();
 		const goal = savedPath?.goal || prefillQuery;
 		if (goal) ask(goal);
-	};
-
-	const handleLoadDevFixture = async () => {
-		if (process.env.NODE_ENV === 'production') return;
-		const { default: devFixture } = await import('./devFixture');
-		loadFixture(devFixture);
 	};
 
 	if (!open) return null;
@@ -174,15 +167,6 @@ const PathPanel = ({
 									suggestionQuery={anchorElement?.type === 'image' ? anchorElement.searchQuery : ''}
 									onSubmit={ask}
 								/>
-								{process.env.NODE_ENV !== 'production' && (
-									<button
-										type="button"
-										onClick={handleLoadDevFixture}
-										className="mx-5 mb-5 min-h-[44px] w-[calc(100%-2.5rem)] rounded-[10px] border border-dashed border-[#1665c0] px-3 text-[14px] font-bold text-[#1665c0] hover:bg-white"
-									>
-										Development: load example plan
-									</button>
-								)}
 							</>
 						)}
 
