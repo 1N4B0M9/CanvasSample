@@ -5,28 +5,11 @@ import useSubSteps from '../Recommendations/useSubSteps';
 const SubstepsReviewView = ({ goal, path, step, onAdd, onClose }) => {
 	const { fetchSubSteps, loading: apiLoading, error: apiError } = useSubSteps();
 	const [result, setResult] = useState(null);
-	const [fixtureLoading, setFixtureLoading] = useState(true);
-	const [fixtureError, setFixtureError] = useState(null);
 
 	useEffect(() => {
 		let cancelled = false;
 
 		const load = async () => {
-			if (process.env.NODE_ENV !== 'production') {
-				try {
-					const { default: fixture } = await import('./devFixture');
-					const mockResult = fixture.substepsByStep?.[step.id];
-					if (mockResult) {
-						if (!cancelled) setResult(mockResult);
-						if (!cancelled) setFixtureLoading(false);
-						return;
-					}
-				} catch (error) {
-					if (!cancelled) setFixtureError(error.message);
-				}
-			}
-
-			if (!cancelled) setFixtureLoading(false);
 			const response = await fetchSubSteps({
 				goalText: goal || path.goalSummary || path.goal,
 				stepText: `${step.title}. ${step.why || ''}`,
@@ -80,9 +63,6 @@ const SubstepsReviewView = ({ goal, path, step, onAdd, onClose }) => {
 		});
 	};
 
-	const loading = fixtureLoading || apiLoading;
-	const error = fixtureError || apiError;
-
 	return (
 		<div className="flex flex-col gap-4 p-5">
 			<div>
@@ -96,8 +76,8 @@ const SubstepsReviewView = ({ goal, path, step, onAdd, onClose }) => {
 				</div>
 			</div>
 
-			{loading && <p className="animate-pulse text-[16px] text-[#44546A]">Building smaller steps…</p>}
-			{error && <p className="text-[15px] text-[#B3261E]">{error}</p>}
+			{apiLoading && <p className="animate-pulse text-[16px] text-[#44546A]">Building smaller steps…</p>}
+			{apiError && <p className="text-[15px] text-[#B3261E]">{apiError}</p>}
 			{result?.steps?.length > 0 && (
 				<>
 					<ol className="flex flex-col gap-2">

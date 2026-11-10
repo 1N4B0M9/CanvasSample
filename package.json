@@ -51,8 +51,7 @@
 		"lint": "eslint --ext .js,.jsx . --fix",
 		"predeploy": "DISABLE_ESLINT_PLUGIN=true npm run build",
 		"deploy": "firebase deploy",
-		"format": "prettier --write ./src",
-		"postbuild": "node scripts/removeDevFixtureBuild.js"
+		"format": "prettier --write ./src"
 	},
 	"browserslist": {
 		"production": [

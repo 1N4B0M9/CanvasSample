@@ -170,22 +170,6 @@ export default function usePlanStream() {
 		[stream],
 	);
 
-	const loadFixture = useCallback((fixture) => {
-		if (process.env.NODE_ENV === 'production' || !fixture) return;
-
-		if (abortRef.current) abortRef.current.abort();
-		queryRef.current = fixture.query ?? '';
-		setQuery(fixture.query ?? '');
-		setIntent(fixture.intent ?? null);
-		setQuestions([]);
-		setSteps(fixture.steps ?? []);
-		setResourcesByStep(fixture.resourcesByStep ?? {});
-		setHotlines([]);
-		setPlanMeta(fixture.planMeta ?? null);
-		setError(null);
-		setPhase('done');
-	}, []);
-
 	/** Second call: same query plus the intake answers. */
 	const submitAnswers = useCallback(
 		(answers) => {
@@ -234,6 +218,5 @@ export default function usePlanStream() {
 		skipIntake,
 		sendCorrection,
 		reset,
-		loadFixture,
 	};
 }
