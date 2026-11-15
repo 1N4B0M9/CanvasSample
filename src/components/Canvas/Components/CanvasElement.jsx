@@ -335,7 +335,7 @@ const CanvasElement = ({
 						)}
 
 						{/* scale handles and mini-toolbar only make sense for single-select */}
-						{selectedIds.size === 1 && (
+						{selectedIds.size === 1 && !isPathExpanded && (
 							<>
 								{['nw', 'ne', 'se', 'sw'].map((corner) => (
 									<div
@@ -442,7 +442,7 @@ const CanvasElement = ({
 									{hasPathStack ? pathButtonText : 'Build a path for this →'}
 								</button>
 							)}
-							{hasPathStack && (
+							{hasPathStack && !isPathExpanded && (
 								<button
 									type="button"
 									className="rounded bg-white p-1 shadow hover:bg-gray-100"
@@ -457,31 +457,35 @@ const CanvasElement = ({
 									↻
 								</button>
 							)}
-							<button
-								className="p-1 bg-white rounded shadow hover:bg-gray-100"
-								onClick={handleStartConnection}
-								title="Connect to another element"
-							>
-								↔
-							</button>
+							{!isPathExpanded && (
+								<>
+									<button
+										className="p-1 bg-white rounded shadow hover:bg-gray-100"
+										onClick={handleStartConnection}
+										title="Connect to another element"
+									>
+										↔
+									</button>
 
-							<button
-								className="p-1 bg-white rounded shadow hover:bg-gray-100"
-								onClick={handleStartArrow}
-								title="Create arrow to another element"
-							>
-								→
-							</button>
+									<button
+										className="p-1 bg-white rounded shadow hover:bg-gray-100"
+										onClick={handleStartArrow}
+										title="Create arrow to another element"
+									>
+										→
+									</button>
 
-							<button
-								className="p-1 bg-white rounded shadow hover:bg-gray-100 text-red-500"
-								onClick={(e) => {
-									e.stopPropagation();
-									onDelete(element.id);
-								}}
-							>
-								×
-							</button>
+									<button
+										className="p-1 bg-white rounded shadow hover:bg-gray-100 text-red-500"
+										onClick={(e) => {
+											e.stopPropagation();
+											onDelete(element.id);
+										}}
+									>
+										×
+									</button>
+								</>
+							)}
 						</div>
 					)}
 				</>

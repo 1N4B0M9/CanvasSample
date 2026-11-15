@@ -284,6 +284,8 @@ const GoalDeckPreview = ({
 		}
 	};
 
+	const handleActiveCardKeyDown = showingSubsteps ? handleSubstepKeyDown : handleTopCardKeyDown;
+
 	const renderSources = (step, compact = false) => {
 		const sources = getStepSources(step);
 		if (!sources.length) return null;
@@ -341,40 +343,48 @@ const GoalDeckPreview = ({
 					transformOrigin: 'center',
 				}}
 			>
-				<div className="flex flex-shrink-0 items-center justify-between gap-2">
-					<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
-						{isTop && showingSubsteps ? step.title : path.goalSummary || path.goal || 'Goal path'}
-					</p>
-					<button
-						type="button"
-						className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-base transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${
-							step.done
-								? 'border-[#1B7A43] bg-[#1B7A43] text-white'
-								: 'border-[#D3D3D3] bg-white text-transparent hover:border-[#1B7A43]'
-						}`}
-						onClick={toggleActiveDone}
-						disabled={!isTop || Boolean(animation)}
-						aria-label={step.done ? `Mark "${step.title}" not done` : `Mark "${step.title}" done`}
-					>
-						✓
-					</button>
-				</div>
-				<div className="mt-1 flex flex-shrink-0 items-center justify-between gap-2">
-					<p className="min-w-0 truncate text-xs font-bold text-[#44546A]">
-						Step {step.order} of {steps.length}
-						{isTop && showingSubsteps ? ' · Substeps' : ''}
-					</p>
-					{isTop && showingSubsteps && (
+				{isTop && showingSubsteps ? (
+					<div className="flex min-w-0 flex-col gap-1">
 						<button
 							type="button"
-							className="flex-shrink-0 text-[11px] font-bold text-[#1665c0] underline"
+							className="block w-full min-w-0 truncate text-left text-[11px] font-bold text-[#1665c0] underline"
 							onClick={() => setExpandedSubstepId(null)}
+							aria-label={`Back to main step: ${step.title}`}
 							data-substeps-control="true"
 						>
-							← Main step
+							← {step.title}
 						</button>
-					)}
-				</div>
+						<p className="text-xs font-bold text-[#44546A]">
+							Substep {substepIndex + 1} of {activeSubsteps.length}
+						</p>
+					</div>
+				) : (
+					<>
+						<div className="flex flex-shrink-0 items-center justify-between gap-2">
+							<p className="min-w-0 truncate text-sm font-bold text-[#053254]">
+								{path.goalSummary || path.goal || 'Goal path'}
+							</p>
+							<button
+								type="button"
+								className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-base transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0] ${
+									step.done
+										? 'border-[#1B7A43] bg-[#1B7A43] text-white'
+										: 'border-[#D3D3D3] bg-white text-transparent hover:border-[#1B7A43]'
+								}`}
+								onClick={toggleActiveDone}
+								disabled={!isTop || Boolean(animation)}
+								aria-label={step.done ? `Mark "${step.title}" not done` : `Mark "${step.title}" done`}
+							>
+								✓
+							</button>
+						</div>
+						<div className="mt-1 flex flex-shrink-0 items-center justify-between gap-2">
+							<p className="min-w-0 truncate text-xs font-bold text-[#44546A]">
+								Step {step.order} of {steps.length}
+							</p>
+						</div>
+					</>
+				)}
 				{isTop && showingSubsteps && activeSubstep ? (
 					<div
 						className="relative mt-2 flex min-h-0 flex-1 flex-col"
@@ -423,9 +433,6 @@ const GoalDeckPreview = ({
 								>
 									←
 								</button>
-								<span className="whitespace-nowrap text-[10px] font-bold text-[#44546A]">
-									{substepIndex + 1} / {activeSubsteps.length}
-								</span>
 								<button
 									type="button"
 									className="flex h-7 w-7 items-center justify-center rounded-full border border-[#1665c0] text-xs font-bold text-[#1665c0] hover:bg-[#ECF4FA] disabled:opacity-40"
@@ -546,7 +553,7 @@ const GoalDeckPreview = ({
 					if (!isTop || event.target.closest?.('button,a,[data-substeps-content="true"]')) return;
 					cycleDeck(1);
 				}}
-				onKeyDown={isTop ? handleTopCardKeyDown : undefined}
+				onKeyDown={isTop ? handleActiveCardKeyDown : undefined}
 				aria-label={isTop ? `${step.title}. Use arrow keys to change steps.` : undefined}
 			>
 				<div
@@ -594,7 +601,7 @@ const GoalDeckPreview = ({
 			{isExpanded && (
 				<div className="absolute inset-0">
 					{deckSteps.map((step, depth) => renderDeckCard(step, depth))}
-					{deckSteps.length > 1 && (
+					{deckSteps.length > 1 && !showingSubsteps && (
 						<>
 							<button
 								type="button"
