@@ -426,7 +426,7 @@ const MagazinePanel = ({ addImageElement, onClose, elementBank, setElementBank }
 	const handleAddToCanvas = (elementBankItem) => {
 		if (addImageElement && elementBankItem.file) {
 			// Add to canvas at center (x, y will be determined by drop position or canvas center)
-			addImageElement(elementBankItem.file);
+			addImageElement(elementBankItem.file, undefined, undefined, { hideFileLabel: true });
 		}
 	};
 

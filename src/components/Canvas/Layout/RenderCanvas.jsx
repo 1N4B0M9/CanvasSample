@@ -373,7 +373,7 @@ const CanvasContent = () => {
 			if (file && file.type.startsWith('image/')) {
 				const rect = canvasRef.current.getBoundingClientRect();
 				const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-				addImageElement(file, world.x, world.y);
+				addImageElement(file, world.x, world.y, { hideFileLabel: true });
 			}
 			return;
 		}

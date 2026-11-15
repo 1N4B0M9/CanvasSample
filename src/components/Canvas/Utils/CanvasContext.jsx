@@ -286,7 +286,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 	 * Add a local image from file upload with screen-fitting dimensions
 	 */
 	const addImageElement = useCallback(
-		(file, x, y) => {
+		(file, x, y, { hideFileLabel = false } = {}) => {
 			if (!file) {
 				console.error('No file provided to addImageElement');
 				return null;
@@ -313,7 +313,7 @@ export const CanvasProvider = ({ children, canvasId }) => {
 			const newElement = {
 				id: `image-${Date.now()}`,
 				type: 'image',
-				file,
+				...(hideFileLabel ? {} : { file }),
 				alt: file.name || 'Uploaded image',
 				x,
 				y,
