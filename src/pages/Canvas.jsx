@@ -11,7 +11,6 @@ const CanvasDataContent = () => {
 		const html = document.documentElement;
 		const body = document.body;
 		const previousHtmlOverflow = html.style.overflow;
-		const previousBodyOverflow = body.style.overflow;
 		const supportsOverflowClip = typeof CSS !== 'undefined' && CSS.supports('overflow', 'clip');
 		const overflowValue = supportsOverflowClip ? 'clip' : 'hidden';
 		const resetPageScroll = () => {
@@ -26,17 +25,13 @@ const CanvasDataContent = () => {
 		};
 
 		html.style.overflow = overflowValue;
-		body.style.overflow = overflowValue;
 		if (!supportsOverflowClip) {
 			html.addEventListener('scroll', resetPageScroll, { passive: true });
-			body.addEventListener('scroll', resetPageScroll, { passive: true });
 		}
 
 		return () => {
 			html.removeEventListener('scroll', resetPageScroll);
-			body.removeEventListener('scroll', resetPageScroll);
 			html.style.overflow = previousHtmlOverflow;
-			body.style.overflow = previousBodyOverflow;
 		};
 	}, []);
 
