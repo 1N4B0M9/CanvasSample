@@ -347,7 +347,7 @@ const GoalDeckPreview = ({
 					<div className="flex min-w-0 flex-col gap-1">
 						<button
 							type="button"
-							className="block w-full min-w-0 truncate text-left text-[11px] font-bold text-[#1665c0] underline"
+							className="inline-flex max-w-[90%] min-w-0 self-start items-center truncate overflow-hidden whitespace-nowrap rounded-full border border-[#1665c0] bg-white px-2.5 py-0.5 text-left text-[11px] font-bold text-[#1665c0] shadow-sm hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
 							onClick={() => setExpandedSubstepId(null)}
 							aria-label={`Back to main step: ${step.title}`}
 							data-substeps-control="true"
@@ -477,7 +477,7 @@ const GoalDeckPreview = ({
 							{step.subpath ? (
 								<button
 									type="button"
-									className="whitespace-nowrap text-[11px] font-bold text-[#1665c0] underline"
+									className="inline-flex items-center rounded-full border border-[#1665c0] bg-white px-3 py-1 text-[11px] font-bold text-[#1665c0] shadow-sm hover:bg-[#ECF4FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1665c0]"
 									onClick={() => {
 										setExpandedSubstepId(step.id);
 										setSubstepIndex(0);
