@@ -31,7 +31,7 @@ import CanvasElement from '../Components/CanvasElement';
  *
  * @returns {JSX.Element|null} Collection of all canvas elements or null if no elements exist
  */
-const RenderElements = ({ onOpenPanel, panelAnchorId }) => {
+const RenderElements = ({ onOpenPanel, onOpenSubsteps, substepsFocusRequest, panelAnchorId }) => {
 	// Extract all required state and callbacks from the canvas context
 	const {
 		// State
@@ -79,6 +79,8 @@ const RenderElements = ({ onOpenPanel, panelAnchorId }) => {
 					onStartArrow={handleStartArrow}
 					onCompleteArrow={handleCompleteArrow}
 					onOpenPanel={onOpenPanel}
+					onOpenSubsteps={onOpenSubsteps}
+					substepsFocusRequest={substepsFocusRequest}
 					isPanelAnchor={element.id === panelAnchorId}
 				/>
 			))}

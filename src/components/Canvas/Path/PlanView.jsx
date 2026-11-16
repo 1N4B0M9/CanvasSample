@@ -6,14 +6,30 @@ import StepCard from './StepCard';
  * The streaming plan: title in their words, steps appearing one by one,
  * check-off progress, and "Put this path on my board".
  */
-const PlanView = ({ phase, intent, steps, resourcesByStep, onCorrectAssumption, onPlaceOnBoard }) => {
-	const [doneSteps, setDoneSteps] = useState(() => new Set());
+const PlanView = ({
+	phase,
+	intent,
+	steps,
+	resourcesByStep,
+	onCorrectAssumption,
+	onPlaceOnBoard,
+	initialDoneStepIds,
+	onDoneStepsChange,
+	showPlaceButton,
+}) => {
+	const [doneSteps, setDoneSteps] = useState(() => new Set(initialDoneStepIds));
+	const initialDoneKey = initialDoneStepIds.join('|');
+
+	React.useEffect(() => {
+		setDoneSteps(new Set(initialDoneKey ? initialDoneKey.split('|') : []));
+	}, [initialDoneKey]);
 
 	const toggleDone = (stepId) => {
 		setDoneSteps((prev) => {
 			const next = new Set(prev);
 			if (next.has(stepId)) next.delete(stepId);
 			else next.add(stepId);
+			onDoneStepsChange?.(next);
 			return next;
 		});
 	};
@@ -58,10 +74,18 @@ const PlanView = ({ phase, intent, steps, resourcesByStep, onCorrectAssumption, 
 				</p>
 			)}
 
-			{phase === 'done' && steps.length > 0 && (
+			{showPlaceButton && phase === 'done' && steps.length > 0 && (
 				<button
 					type="button"
-					onClick={() => onPlaceOnBoard(steps, resourcesByStep)}
+					onClick={() =>
+						onPlaceOnBoard(
+							steps.map((step) => ({
+								...step,
+								done: doneSteps.has(step.id),
+							})),
+							resourcesByStep,
+						)
+					}
 					className="min-h-[48px] w-full rounded-[10px] bg-[#053254] text-[16px] font-bold text-white hover:bg-[#053254CC]"
 				>
 					⊕ Put this path on my board
@@ -78,10 +102,16 @@ PlanView.propTypes = {
 	resourcesByStep: PropTypes.objectOf(PropTypes.arrayOf(PropTypes.shape({}))).isRequired,
 	onCorrectAssumption: PropTypes.func.isRequired,
 	onPlaceOnBoard: PropTypes.func.isRequired,
+	initialDoneStepIds: PropTypes.arrayOf(PropTypes.string),
+	onDoneStepsChange: PropTypes.func,
+	showPlaceButton: PropTypes.bool,
 };
 
 PlanView.defaultProps = {
 	intent: null,
+	initialDoneStepIds: [],
+	onDoneStepsChange: null,
+	showPlaceButton: true,
 };
 
 export default PlanView;
