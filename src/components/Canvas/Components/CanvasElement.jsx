@@ -8,6 +8,19 @@ import TextElement from './Elements/TextElement';
 import MentorElement from './Elements/MentorElement';
 import { useCanvas } from '../Utils/CanvasContext';
 
+const TEXT_COLORS = [
+	{ name: 'Black', value: 'black' },
+	{ name: 'White', value: '#ffffff' },
+	{ name: 'Red', value: '#dc2626' },
+	{ name: 'Orange', value: '#ea580c' },
+	{ name: 'Yellow', value: '#eab308' },
+	{ name: 'Green', value: '#16a34a' },
+	{ name: 'Blue', value: '#2563eb' },
+	{ name: 'Purple', value: '#9333ea' },
+	{ name: 'Pink', value: '#db2777' },
+	{ name: 'Gray', value: '#6b7280' },
+];
+
 const CanvasElement = ({
 	element,
 	isSelected,
@@ -30,6 +43,7 @@ const CanvasElement = ({
 }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isEditingLabel, setIsEditingLabel] = useState(false);
+	const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 	const { highlightedStepIds, canvasRef } = useCanvas();
 	const elementRef = useRef(null);
 	const contentRef = useRef(null);
@@ -58,6 +72,25 @@ const CanvasElement = ({
 	useEffect(() => {
 		if (!isSelected) setIsEditingLabel(false);
 	}, [isSelected]);
+
+	useEffect(() => {
+		if (!isSelected || element.type !== 'text') {
+			setIsColorPickerOpen(false);
+		}
+	}, [element.id, element.type, isSelected]);
+
+	useEffect(() => {
+		if (!isColorPickerOpen) return undefined;
+
+		const handleKeyDown = (event) => {
+			if (event.key === 'Escape') {
+				setIsColorPickerOpen(false);
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+		return () => document.removeEventListener('keydown', handleKeyDown);
+	}, [isColorPickerOpen]);
 
 	const handleDoubleClick = () => {
 		if (element.type === 'text' || element.type === 'mentor') {
@@ -96,6 +129,14 @@ const CanvasElement = ({
 		if (typeof onStartArrow === 'function') {
 			onStartArrow(element.id, e);
 		}
+	};
+
+	const handleTextColorChange = (color) => {
+		onUpdate({
+			...element,
+			color,
+		});
+		setIsColorPickerOpen(false);
 	};
 
 	const getScaleHandleStyle = (corner) => {
@@ -289,6 +330,61 @@ const CanvasElement = ({
 								transformOrigin: 'center',
 							}}
 						>
+							{element.type === 'text' && (
+								<div className="relative">
+									<button
+										type="button"
+										className="flex h-7 w-7 items-center justify-center rounded bg-white p-1 shadow hover:bg-gray-100"
+										onClick={(e) => {
+											e.stopPropagation();
+											setIsColorPickerOpen((open) => !open);
+										}}
+										onMouseDown={(e) => e.stopPropagation()}
+										title="Change text color"
+										aria-label="Change text color"
+										aria-haspopup="true"
+										aria-expanded={isColorPickerOpen}
+										data-text-color-control="true"
+									>
+										<span
+											className="h-4 w-4 rounded-full border border-gray-400"
+											style={{ backgroundColor: element.color || 'black' }}
+											aria-hidden="true"
+										/>
+									</button>
+
+									{isColorPickerOpen && (
+										<div
+											className="absolute bottom-full left-0 z-50 mb-1 grid w-max grid-cols-5 gap-1 rounded border border-gray-200 bg-white p-1.5 shadow-lg"
+											role="group"
+											aria-label="Text colors"
+										>
+											{TEXT_COLORS.map((color) => {
+												const isCurrentColor = (element.color || 'black') === color.value;
+												return (
+													<button
+														key={color.value}
+														type="button"
+														className={`h-6 w-6 rounded-full border border-gray-400 ${
+															isCurrentColor ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+														}`}
+														style={{ backgroundColor: color.value }}
+														onClick={(e) => {
+															e.stopPropagation();
+															handleTextColorChange(color.value);
+														}}
+														onMouseDown={(e) => e.stopPropagation()}
+														title={color.name}
+														aria-label={color.name}
+														aria-pressed={isCurrentColor}
+													/>
+												);
+											})}
+										</div>
+									)}
+								</div>
+							)}
+
 							<button
 								className="p-1 bg-white rounded shadow hover:bg-gray-100"
 								onClick={handleStartConnection}
